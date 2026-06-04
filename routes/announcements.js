@@ -1,8 +1,9 @@
 // routes/announcements.js
 const router = require('express').Router();
 const db = require('../config/db');
-const { authMiddleware, requireVillageAdmin } = require('../middleware/auth');
+const { authMiddleware, requireSuper } = require('../middleware/auth');
 
+// GET — 公开，无需登录
 router.get('/', async (req, res) => {
   const [rows] = await db.execute(
     'SELECT id, title, content, tag_type, created_at FROM announcements WHERE is_active=1 ORDER BY created_at DESC LIMIT 20'
@@ -10,7 +11,8 @@ router.get('/', async (req, res) => {
   res.json({ code: 0, data: rows });
 });
 
-router.post('/', authMiddleware, requireVillageAdmin, async (req, res) => {
+// POST — 仅超管
+router.post('/', authMiddleware, requireSuper, async (req, res) => {
   const { title, content, tag_type } = req.body;
   if (!title || !content) return res.status(400).json({ code: 400, message: '标题和内容必填' });
   await db.execute(
@@ -20,7 +22,8 @@ router.post('/', authMiddleware, requireVillageAdmin, async (req, res) => {
   res.json({ code: 0, message: '公告发布成功' });
 });
 
-router.delete('/:id', authMiddleware, requireVillageAdmin, async (req, res) => {
+// DELETE — 仅超管
+router.delete('/:id', authMiddleware, requireSuper, async (req, res) => {
   await db.execute('UPDATE announcements SET is_active=0 WHERE id=?', [req.params.id]);
   res.json({ code: 0, message: '公告已撤回' });
 });

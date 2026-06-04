@@ -148,3 +148,24 @@ router.get('/export/scores', authMiddleware, requireVillageAdmin, async (req, re
 });
 
 module.exports = router;
+
+// PATCH /api/admin/admins/:id/reset-password — 重置密码（超管）
+router.patch('/admins/:id/reset-password', authMiddleware, requireSuper, async (req, res) => {
+  const { new_password } = req.body;
+  if (!new_password || new_password.length < 8)
+    return res.status(400).json({ code: 400, message: '密码不能少于8位' });
+  const bcrypt = require('bcryptjs');
+  const hash = await bcrypt.hash(new_password, 10);
+  await db.execute('UPDATE admins SET password=? WHERE id=?', [hash, req.params.id]);
+  res.json({ code: 0, message: '密码重置成功' });
+});
+
+// GET /api/admin/announcements — 公告列表（后台）
+router.get('/announcements', authMiddleware, requireSuper, async (req, res) => {
+  const [rows] = await db.execute(
+    'SELECT id,title,content,tag_type,is_active,created_at FROM announcements ORDER BY created_at DESC'
+  );
+  res.json({ code: 0, data: rows });
+});
+
+module.exports = router;

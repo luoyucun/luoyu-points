@@ -219,6 +219,7 @@ tr:last-child td{border-bottom:none;}
     <div class="sb-item" onclick="switchPage('goods')"><i class="ti ti-package"></i>物资管理</div>
     <div class="sb-section">系统</div>
     <div class="sb-item" onclick="switchPage('export')"><i class="ti ti-file-export"></i>数据导出</div>
+    <div class="sb-item" onclick="switchPage('notices')"><i class="ti ti-bell"></i>公告管理</div>
     <div class="sb-item" onclick="switchPage('admins')"><i class="ti ti-shield"></i>账号管理</div>
   </div>
   <div class="sb-footer">
@@ -385,6 +386,23 @@ tr:last-child td{border-bottom:none;}
     </div>
   </div>
 
+  <!-- 公告管理 -->
+  <div class="page" id="page-notices">
+    <div class="card">
+      <div class="card-hd"><i class="ti ti-bell"></i>公告管理
+        <div class="actions"><button class="btn btn-primary btn-sm" onclick="openAddNotice()"><i class="ti ti-plus"></i>发布公告</button></div>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>标题</th><th>类型</th><th>状态</th><th>发布时间</th><th>操作</th></tr></thead>
+            <tbody id="noticesTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- 账号管理 -->
   <div class="page" id="page-admins">
     <div class="card">
@@ -510,6 +528,38 @@ tr:last-child td{border-bottom:none;}
   </div>
 </div>
 
+<!-- 积分详情模态框 -->
+<div class="modal-overlay" id="scoreDetailModal">
+  <div class="modal" style="width:560px;">
+    <div class="modal-hd">积分记录详情<span class="modal-close" onclick="closeModal('scoreDetailModal')">×</span></div>
+    <div class="modal-bd" id="scoreDetailBody"></div>
+    <div class="modal-ft"><button class="btn btn-outline" onclick="closeModal('scoreDetailModal')">关闭</button></div>
+  </div>
+</div>
+
+<!-- 新增公告模态框 -->
+<div class="modal-overlay" id="addNoticeModal">
+  <div class="modal">
+    <div class="modal-hd">发布公告<span class="modal-close" onclick="closeModal('addNoticeModal')">×</span></div>
+    <div class="modal-bd">
+      <div class="form-row"><label>标题</label><input type="text" id="noticeTitle" placeholder="公告标题"></div>
+      <div class="form-row"><label>类型</label>
+        <select id="noticeTag">
+          <option value="全村告示">全村告示</option>
+          <option value="积分通知">积分通知</option>
+          <option value="兑换通知">兑换通知</option>
+          <option value="活动公告">活动公告</option>
+        </select>
+      </div>
+      <div class="form-row"><label>内容</label><textarea id="noticeContent" rows="5" placeholder="公告内容…"></textarea></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal('addNoticeModal')">取消</button>
+      <button class="btn btn-primary" onclick="confirmAddNotice()">发布</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -598,9 +648,9 @@ function switchPage(name) {
   document.getElementById('page-'+name).classList.add('active');
   document.querySelector(`.sb-item[onclick="switchPage('${name}')"]`).classList.add('active');
   currentPage = name;
-  const titles = {dashboard:'数据总览',villagers:'村民管理',scores:'积分管理',exchange:'兑换管理',goods:'物资管理',export:'数据导出',admins:'账号管理'};
+  const titles = {dashboard:'数据总览',villagers:'村民管理',scores:'积分管理',exchange:'兑换管理',goods:'物资管理',export:'数据导出',notices:'公告管理',admins:'账号管理'};
   document.getElementById('pageTitle').textContent = titles[name]||name;
-  const loaders = {dashboard:loadDashboard,villagers:loadVillagers,scores:loadScores,exchange:loadExchange,goods:loadGoods,admins:loadAdmins};
+  const loaders = {dashboard:loadDashboard,villagers:loadVillagers,scores:loadScores,exchange:loadExchange,goods:loadGoods,notices:loadNotices,admins:loadAdmins};
   if (loaders[name]) loaders[name]();
 }
 
@@ -722,6 +772,7 @@ async function loadScores() {
     const canRevoke = adminInfo.role==='super' && r.status==='approved' && !r.is_revoked;
     const approveBtn = r.status==='pending' ? `<button class="btn btn-outline btn-sm" onclick="approveScore(${r.id},1)" style="color:var(--green)"><i class="ti ti-check"></i>通过</button><button class="btn btn-outline btn-sm" onclick="approveScore(${r.id},0)" style="color:var(--red)"><i class="ti ti-x"></i>拒绝</button>` : '';
     const revokeBtn = canRevoke ? `<button class="btn btn-danger btn-sm" onclick="openRevoke(${r.id},'${r.villager_name}','${r.event_name}',${r.points})"><i class="ti ti-arrow-back-up"></i>撤回</button>` : '';
+    const detailBtn = `<button class="btn btn-outline btn-sm" onclick="viewScoreDetail(${r.id})"><i class="ti ti-eye"></i>详情</button>`;
     return `<tr>
       <td><strong>${r.villager_name}</strong></td>
       <td><span class="tag tag-green">${(r.group_no||'').replace('罗峪村','')}</span></td>
@@ -730,7 +781,7 @@ async function loadScores() {
       <td>${statusTag}${revokedTag}</td>
       <td style="color:var(--text3);">${r.submitted_by_name||'-'}</td>
       <td style="color:var(--text3);">${fmtDate(r.created_at)}</td>
-      <td style="display:flex;gap:4px;flex-wrap:wrap;">${approveBtn}${revokeBtn}</td>
+      <td style="display:flex;gap:4px;flex-wrap:wrap;">${detailBtn}${approveBtn}${revokeBtn}</td>
     </tr>`;
   }).join('');
 }
@@ -923,6 +974,69 @@ async function exportScores() {
   const date = new Date().toISOString().slice(0,10);
   downloadCSV(`罗峪村积分记录_${date}.csv`, toCSV(headers, rows));
   showToast(`导出成功，共 ${rows.length} 条`);
+}
+
+// ── 积分详情 ──
+async function viewScoreDetail(id) {
+  openModal('scoreDetailModal');
+  document.getElementById('scoreDetailBody').innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);">加载中…</div>';
+  const res = await api('GET', `/api/scores?page=1&limit=200`);
+  if (!res) return;
+  const rec = (res.data||[]).find(r=>r.id===id);
+  if (!rec) { document.getElementById('scoreDetailBody').innerHTML = '<div class="empty-state">记录不存在</div>'; return; }
+  const imgs = rec.image_urls && rec.image_urls.length
+    ? `<div style="margin-top:12px;"><div style="font-size:12px;color:var(--text3);margin-bottom:6px;">附件图片</div><div style="display:flex;gap:8px;flex-wrap:wrap;">${rec.image_urls.map(url=>`<img src="${url}" style="width:120px;height:90px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="window.open('${url}','_blank')">`).join('')}</div></div>`
+    : '';
+  document.getElementById('scoreDetailBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px;">
+      <div><span style="color:var(--text3);">村民：</span><strong>${rec.villager_name}</strong></div>
+      <div><span style="color:var(--text3);">所属组：</span>${(rec.group_no||'').replace('罗峪村','')}</div>
+      <div><span style="color:var(--text3);">事件：</span>${rec.event_name}</div>
+      <div><span style="color:var(--text3);">分值：</span><strong style="color:${rec.points>0?'var(--green)':'var(--red)'};">${rec.points>0?'+':''}${rec.points}</strong></div>
+      <div><span style="color:var(--text3);">提交人：</span>${rec.submitted_by_name||'-'}</div>
+      <div><span style="color:var(--text3);">时间：</span>${fmtDate(rec.created_at)}</div>
+      <div style="grid-column:1/-1;"><span style="color:var(--text3);">说明：</span>${rec.description||'（无）'}</div>
+      ${rec.is_revoked?`<div style="grid-column:1/-1;"><span class="tag tag-gray">已撤回</span></div>`:''}
+    </div>
+    ${imgs}`;
+}
+
+// ── 公告管理 ──
+async function loadNotices() {
+  const res = await api('GET', '/api/admin/announcements');
+  if (!res || res.code !== 0) return;
+  document.getElementById('noticesTbody').innerHTML = res.data.map(n=>`
+    <tr>
+      <td><strong>${n.title}</strong></td>
+      <td><span class="tag tag-blue">${n.tag_type}</span></td>
+      <td><span class="tag ${n.is_active?'tag-green':'tag-gray'}">${n.is_active?'已发布':'已撤回'}</span></td>
+      <td style="color:var(--text3);">${fmtDate(n.created_at)}</td>
+      <td>${n.is_active?`<button class="btn btn-danger btn-sm" onclick="revokeNotice(${n.id})"><i class="ti ti-trash"></i>撤回</button>`:'-'}</td>
+    </tr>`).join('') || `<tr><td colspan="5"><div class="empty-state"><i class="ti ti-bell-off"></i>暂无公告</div></td></tr>`;
+}
+
+function openAddNotice() {
+  document.getElementById('noticeTitle').value = '';
+  document.getElementById('noticeContent').value = '';
+  document.getElementById('noticeTag').value = '全村告示';
+  openModal('addNoticeModal');
+}
+
+async function confirmAddNotice() {
+  const title = document.getElementById('noticeTitle').value.trim();
+  const content = document.getElementById('noticeContent').value.trim();
+  const tag_type = document.getElementById('noticeTag').value;
+  if (!title || !content) { showToast('标题和内容不能为空', true); return; }
+  const res = await api('POST', '/api/announcements', { title, content, tag_type });
+  if (res && res.code===0) { showToast('公告已发布'); closeModal('addNoticeModal'); loadNotices(); }
+  else showToast(res?.message||'发布失败', true);
+}
+
+async function revokeNotice(id) {
+  if (!confirm('确认撤回该公告？')) return;
+  const res = await api('DELETE', `/api/announcements/${id}`);
+  if (res && res.code===0) { showToast('公告已撤回'); loadNotices(); }
+  else showToast(res?.message||'操作失败', true);
 }
 
 // ── 重置密码 ──

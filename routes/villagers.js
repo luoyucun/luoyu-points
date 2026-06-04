@@ -5,6 +5,32 @@ const { authMiddleware, requireVillageAdmin, requireSuper } = require('../middle
 
 // ⚠️ 具名路由必须在 /:id 之前，否则会被当作 id 参数匹配
 
+// POST /api/villagers/login — 村民登录（姓名+身份证后4位）
+router.post('/login', async (req, res) => {
+  const { name, id_last4 } = req.body;
+  if (!name || !id_last4)
+    return res.status(400).json({ code: 400, message: '姓名和身份证后4位不能为空' });
+  if (!/^\d{4}$/.test(id_last4))
+    return res.status(400).json({ code: 400, message: '身份证后4位须为4位数字' });
+
+  const [rows] = await db.execute(
+    'SELECT id,name,gender,group_no,id_last4,total_score FROM villagers WHERE name=? AND id_last4=? AND is_active=1',
+    [name.trim(), id_last4]
+  );
+  if (!rows.length)
+    return res.status(404).json({ code: 404, message: '未找到匹配的村民信息，请确认姓名和身份证后4位' });
+
+  const villager = rows[0];
+  // 组内排名
+  const [rankRows] = await db.execute(
+    'SELECT COUNT(*)+1 AS rank_no FROM villagers WHERE group_no=? AND is_active=1 AND total_score>? AND id!=?',
+    [villager.group_no, villager.total_score, villager.id]
+  );
+  villager.group_rank = rankRows[0].rank_no;
+
+  res.json({ code: 0, message: '登录成功', data: { villager } });
+});
+
 // GET /api/villagers/query — 村民公开查询（无需登录，姓名+身份证后4位）
 router.get('/query', async (req, res) => {
   const { name, id_last4 } = req.query;

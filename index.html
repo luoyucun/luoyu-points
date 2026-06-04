@@ -77,8 +77,8 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 
 /* ── Bottom Nav ── */
 .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:white;border-top:1px solid var(--border);display:flex;z-index:100;}
-.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px 10px;cursor:pointer;border:none;background:none;color:var(--text3);font-size:10px;}
-.nav-item i{font-size:22px;}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px 10px;cursor:pointer;border:none;background:none;color:var(--text3);font-size:12px;}
+.nav-item i{font-size:24px;}
 .nav-item.active{color:var(--green);}
 
 /* ── Screens ── */
@@ -88,61 +88,71 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 
 /* ── Cards ── */
 .card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:14px 16px;}
-.sec-title{font-size:12px;color:var(--text2);font-weight:500;margin-bottom:8px;}
+.sec-title{font-size:14px;color:var(--text2);font-weight:600;margin-bottom:10px;}
 
 /* ── Hero Score ── */
 .hero{background:var(--green);border-radius:var(--radius);padding:16px;color:white;}
-.hero .uname{font-size:13px;opacity:.85;margin-bottom:4px;}
+.hero .uname{font-size:15px;opacity:.85;margin-bottom:4px;}
 .hero .srow{display:flex;align-items:baseline;gap:6px;}
-.hero .snum{font-size:44px;font-weight:600;line-height:1;color:white;}
-.hero .slbl{font-size:14px;opacity:.8;}
-.hero .chg{font-size:12px;opacity:.8;margin-top:5px;}
-.hero .rpill{display:inline-block;background:rgba(255,255,255,.2);border-radius:20px;padding:2px 10px;font-size:11px;margin-top:8px;}
+.hero .snum{font-size:52px;font-weight:700;line-height:1;color:white;}
+.hero .slbl{font-size:16px;opacity:.8;}
+.hero .chg{font-size:14px;opacity:.8;margin-top:5px;}
+.hero .rpill{display:inline-block;background:rgba(255,255,255,.2);border-radius:20px;padding:3px 12px;font-size:13px;margin-top:8px;}
 
 /* ── Quick Grid ── */
 .qgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
-.qbtn{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:13px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;}
-.qbtn i{font-size:24px;}
-.qbtn .lbl{font-size:12px;color:var(--text2);}
+.qbtn{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;}
+.qbtn i{font-size:28px;}
+.qbtn .lbl{font-size:15px;color:var(--text2);font-weight:500;}
 .qbtn.cg i{color:var(--green);}
 .qbtn.ct i{color:var(--teal);}
 .qbtn.ca i{color:var(--amber);}
 .qbtn.cb i{color:var(--blue);}
+.qbtn.cp i{color:#8b5cf6;}
 
 /* ── Log Items ── */
-.log-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
+.log-item{display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);}
 .log-item:last-child{border-bottom:none;}
-.log-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.log-icon{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
 .log-icon.add{background:var(--green-bg);color:var(--green);}
 .log-icon.sub{background:var(--red-bg);color:var(--red);}
 .log-info{flex:1;min-width:0;}
-.log-evt{font-size:14px;color:var(--text);}
-.log-desc{font-size:12px;color:var(--text2);margin-top:2px;line-height:1.4;}
-.log-meta{font-size:11px;color:var(--text3);margin-top:3px;display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
-.log-pts{font-size:15px;font-weight:600;flex-shrink:0;}
+.log-evt{font-size:16px;color:var(--text);}
+.log-desc{font-size:13px;color:var(--text2);margin-top:3px;line-height:1.4;}
+.log-meta{font-size:12px;color:var(--text3);margin-top:4px;display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.log-pts{font-size:18px;font-weight:700;flex-shrink:0;}
 .log-pts.add{color:var(--green);}
 .log-pts.sub{color:var(--red);}
-.tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:8px;}
+.tag{display:inline-block;font-size:11px;padding:2px 7px;border-radius:8px;}
 .tg{background:var(--green-bg);color:var(--green-dark);}
 .tt{background:var(--teal-bg);color:var(--teal);}
 .ta{background:var(--amber-bg);color:var(--amber);}
 .tb{background:var(--blue-bg);color:var(--blue);}
 
 /* ── Leaderboard ── */
-.lb-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
+.lb-item{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);}
 .lb-item:last-child{border-bottom:none;}
-.lb-rank{width:24px;text-align:center;font-size:14px;font-weight:600;color:var(--text2);flex-shrink:0;}
-.lb-av{width:36px;height:36px;border-radius:50%;background:var(--green-bg);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;color:var(--green-dark);flex-shrink:0;}
-.lb-name{flex:1;font-size:14px;}
-.lb-grp{font-size:11px;color:var(--text3);}
-.lb-score{font-size:15px;font-weight:600;color:var(--green);}
+.lb-rank{width:28px;text-align:center;font-size:16px;font-weight:700;color:var(--text2);flex-shrink:0;}
+.lb-av{width:40px;height:40px;border-radius:50%;background:var(--green-bg);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:var(--green-dark);flex-shrink:0;}
+.lb-name{flex:1;font-size:16px;font-weight:500;}
+.lb-grp{font-size:12px;color:var(--text3);}
+.lb-score{font-size:18px;font-weight:700;color:var(--green);}
 
 /* ── Exchange ── */
 .egrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
-.ecard{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px;}
-.ecard .eicon{font-size:28px;margin-bottom:6px;}
-.ecard .ename{font-size:13px;font-weight:500;margin-bottom:3px;}
-.ecard .epts{font-size:12px;color:var(--green);font-weight:500;}
+.ecard{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;}
+.ecard .eicon{font-size:32px;margin-bottom:8px;}
+.ecard .ename{font-size:15px;font-weight:600;margin-bottom:4px;}
+.ecard .epts{font-size:14px;color:var(--green);font-weight:600;}
+
+/* ── 积分细则 ── */
+.rules-cat{margin-bottom:16px;}
+.rules-cat-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.rule-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:15px;}
+.rule-item:last-child{border-bottom:none;}
+.rule-name{color:var(--text);flex:1;}
+.rule-verify{font-size:12px;color:var(--text3);margin-top:2px;}
+.rule-pts{font-weight:700;font-size:16px;flex-shrink:0;}
 .ecard .estock{font-size:11px;color:var(--text3);margin-top:2px;}
 .ebtn{margin-top:8px;width:100%;padding:6px;border-radius:var(--radius-sm);border:1px solid var(--green-light);background:var(--green-bg);color:var(--green-dark);font-size:12px;cursor:pointer;}
 .ebtn:disabled{opacity:.5;cursor:not-allowed;}
@@ -223,12 +233,8 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 
 <!-- ============ LOGIN ============ -->
 <div id="loginScreen" class="login-screen">
-  <!-- 背景装饰层 -->
   <div class="login-bg-deco"></div>
-
-  <!-- 顶部标题区 -->
   <div class="login-header">
-    <!-- 圆形徽标：金色稻田+绿色山林背景，书法"罗峪" -->
     <div class="login-logo-wrap">
       <svg viewBox="0 0 100 100" width="96" height="96" xmlns="http://www.w3.org/2000/svg">
         <defs>
@@ -284,25 +290,28 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
     <div class="login-motto">积分明德行，善治兴乡村</div>
   </div>
 
-  <!-- 主要操作：积分查询 -->
-  <div class="login-main-action">
-    <button class="query-main-btn" onclick="showQueryScreen()">
-      <i class="ti ti-search"></i>
-      <span>村民积分查询</span>
-    </button>
-    <div class="query-main-hint">输入姓名与身份证后4位即可查询</div>
+  <!-- 村民登录（主入口） -->
+  <div class="login-main-action" style="width:100%;max-width:340px;">
+    <div class="login-card" style="width:100%;background:white;border-radius:14px;padding:20px;">
+      <div class="field" style="margin-bottom:14px;">
+        <label style="font-size:15px;display:block;margin-bottom:6px;color:#444;font-weight:500;">姓名</label>
+        <input type="text" id="vLoginName" placeholder="请输入您的姓名" style="width:100%;padding:12px 14px;border:1px solid #ddd;border-radius:10px;font-size:16px;outline:none;">
+      </div>
+      <div class="field" style="margin-bottom:16px;">
+        <label style="font-size:15px;display:block;margin-bottom:6px;color:#444;font-weight:500;">身份证后4位</label>
+        <input type="text" id="vLoginId4" placeholder="请输入身份证后4位" maxlength="4" inputmode="numeric" style="width:100%;padding:12px 14px;border:1px solid #ddd;border-radius:10px;font-size:16px;outline:none;">
+      </div>
+      <button onclick="doVillagerLogin()" id="vLoginBtn" style="width:100%;padding:14px;background:#3B6D11;border:none;border-radius:10px;color:white;font-size:17px;font-weight:600;cursor:pointer;">进入积分系统</button>
+      <div id="vLoginErr" style="color:#E24B4A;font-size:13px;text-align:center;margin-top:8px;min-height:16px;"></div>
+    </div>
   </div>
 
-  <!-- 隐藏的管理员入口 -->
+  <!-- 管理员入口（隐藏） -->
   <div class="admin-entry-wrap">
     <div class="admin-entry-toggle" onclick="toggleAdminLogin()">管理员登录</div>
     <div class="admin-login-box" id="adminLoginBox" style="display:none;">
-      <div class="field">
-        <input type="text" id="loginUser" placeholder="账号" autocomplete="username">
-      </div>
-      <div class="field">
-        <input type="password" id="loginPass" placeholder="密码" autocomplete="current-password">
-      </div>
+      <div class="field"><input type="text" id="loginUser" placeholder="账号" autocomplete="username"></div>
+      <div class="field"><input type="password" id="loginPass" placeholder="密码" autocomplete="current-password"></div>
       <button class="admin-login-btn" id="loginBtn" onclick="doLogin()">登录</button>
       <div class="login-err" id="loginErr"></div>
     </div>
@@ -340,13 +349,9 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
     <div class="header-top">
       <div>
         <h1 id="headerTitle">罗峪村村民积分</h1>
-        <div class="sub" id="headerSub">湖南体育职业学院驻村工作队</div>
+        <div class="sub" id="headerSub"></div>
       </div>
       <button class="logout-btn" onclick="doLogout()">退出登录</button>
-    </div>
-    <div class="role-tabs" id="roleTabs">
-      <button class="role-tab active" onclick="setRole('villager')">村民视图</button>
-      <button class="role-tab" onclick="setRole('admin')">管理员</button>
     </div>
   </div>
 
@@ -380,6 +385,13 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
   <!-- 兑换 -->
   <div class="screen" id="sv-exchange">
     <div class="scroll" id="exchangeScroll">
+      <div class="loading"><i class="ti ti-loader"></i>加载中…</div>
+    </div>
+  </div>
+
+  <!-- 积分细则 -->
+  <div class="screen" id="sv-rules">
+    <div class="scroll" id="rulesScroll">
       <div class="loading"><i class="ti ti-loader"></i>加载中…</div>
     </div>
   </div>
@@ -488,7 +500,7 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
     <button class="nav-item active" onclick="vTab('home')" data-t="home"><i class="ti ti-home"></i><span>首页</span></button>
     <button class="nav-item" onclick="vTab('log')" data-t="log"><i class="ti ti-list-details"></i><span>明细</span></button>
     <button class="nav-item" onclick="vTab('rank')" data-t="rank"><i class="ti ti-trophy"></i><span>排行</span></button>
-    <button class="nav-item" onclick="vTab('exchange')" data-t="exchange"><i class="ti ti-gift"></i><span>兑换</span></button>
+    <button class="nav-item" onclick="vTab('rules')" data-t="rules"><i class="ti ti-clipboard-text"></i><span>细则</span></button>
     <button class="nav-item" onclick="vTab('notice')" data-t="notice"><i class="ti ti-bell"></i><span>公告</span></button>
   </nav>
 
@@ -530,7 +542,44 @@ async function apiForm(path, form) {
   return r.json();
 }
 
-// ── Login ──
+// ── 村民登录 ──
+let villagerInfo = JSON.parse(localStorage.getItem('luoyu_villager') || 'null');
+
+async function doVillagerLogin() {
+  const name = document.getElementById('vLoginName').value.trim();
+  const id4  = document.getElementById('vLoginId4').value.trim();
+  const err  = document.getElementById('vLoginErr');
+  const btn  = document.getElementById('vLoginBtn');
+  if (!name) { err.textContent = '请输入姓名'; return; }
+  if (!/^\d{4}$/.test(id4)) { err.textContent = '身份证后4位须为4位数字'; return; }
+  err.textContent = '';
+  btn.disabled = true; btn.textContent = '登录中…';
+  try {
+    const res = await fetch(BASE + '/api/villagers/login', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ name, id_last4: id4 })
+    }).then(r=>r.json());
+    if (res.code === 0) {
+      villagerInfo = res.data.villager;
+      localStorage.setItem('luoyu_villager', JSON.stringify(villagerInfo));
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('mainApp').style.display = 'block';
+      initVillagerApp();
+    } else {
+      err.textContent = res.message || '登录失败';
+    }
+  } catch(e) { err.textContent = '网络连接失败'; }
+  btn.disabled = false; btn.textContent = '进入积分系统';
+}
+
+function initVillagerApp() {
+  document.getElementById('vNav').style.display = 'flex';
+  document.getElementById('aNav').style.display = 'none';
+  document.getElementById('headerSub').textContent = (villagerInfo.group_no||'').replace('罗峪村','') + ' · ' + villagerInfo.name;
+  vTab('home');
+}
+
+// ── Login（管理员） ──
 async function doLogin() {
   const u = document.getElementById('loginUser').value.trim();
   const p = document.getElementById('loginPass').value;
@@ -559,19 +608,28 @@ async function doLogin() {
 document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
   document.getElementById('queryId4').addEventListener('keydown', e => { if(e.key==='Enter') doQuery(); });
+  document.getElementById('vLoginId4').addEventListener('keydown', e => { if(e.key==='Enter') doVillagerLogin(); });
 
-  // ── Auto login if token exists ──
+  // 恢复管理员会话
   if (token && adminInfo) {
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('mainApp').style.display='block';
     initApp();
+    return;
+  }
+  // 恢复村民会话
+  if (villagerInfo) {
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('mainApp').style.display='block';
+    initVillagerApp();
   }
 });
 
 function doLogout() {
-  token = ''; adminInfo = null;
+  token = ''; adminInfo = null; villagerInfo = null;
   localStorage.removeItem('luoyu_token');
   localStorage.removeItem('luoyu_admin');
+  localStorage.removeItem('luoyu_villager');
   document.getElementById('mainApp').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('loginUser').value = '';
@@ -664,12 +722,15 @@ function toggleAdminLogin() {
   box.style.display = box.style.display === 'none' ? 'block' : 'none';
 }
 
-// ── Init ──
+// ── Init（管理员） ──
 function initApp() {
   document.getElementById('headerSub').textContent = adminInfo.name + ' · ' + roleLabel(adminInfo.role);
   loadEvents();
-  loadVillagersAll();
-  setRole('villager');
+  // 管理员直接进管理员视图，不显示村民视图切换
+  document.getElementById('vNav').style.display = 'none';
+  document.getElementById('aNav').style.display = 'flex';
+  document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.style.display='none';});
+  aTab('home');
 }
 
 function roleLabel(r) {
@@ -694,6 +755,7 @@ function vTab(t) {
   if (t==='home') loadHome();
   else if (t==='log') loadLog();
   else if (t==='rank') loadRank();
+  else if (t==='rules') loadRules();
   else if (t==='exchange') loadExchange();
   else if (t==='notice') loadNotice();
 }
@@ -713,14 +775,23 @@ async function loadHome() {
   const el = document.getElementById('homeScroll');
   el.innerHTML = '<div class="loading"><i class="ti ti-loader"></i>加载中…</div>';
   try {
-    const statsRes = await api('GET', '/api/scores/stats');
+    // 村民登录：直接用村民信息
+    const v = villagerInfo ? {
+      name: villagerInfo.name,
+      group_no: villagerInfo.group_no||'',
+      gender: villagerInfo.gender||'',
+      id_last4: villagerInfo.id_last4||'----',
+      total_score: villagerInfo.total_score||0,
+      month_score: 0,
+      group_rank: villagerInfo.group_rank||'-'
+    } : (() => {
+      // 管理员登录显示村民视图时用stats
+      return {name: adminInfo.name, group_no: adminInfo.group_no||'--', gender:'', id_last4:'----', total_score:0, month_score:0, group_rank:'-'};
+    })();
 
-    const s = statsRes.data?.summary || {};
-
-    const v = {name: adminInfo.name, group_no: adminInfo.group_no||'--', gender:'', id_last4:'----', total_score: s.total_score||0, month_score: s.month_score||0, group_rank:'-'};
     el.innerHTML = `
       <div class="hero">
-        <div class="uname">${v.group_no||'--'} · ${v.name||adminInfo.name} &nbsp;<span style="font-size:11px;opacity:.7;">${v.gender||''} · ****${v.id_last4||'----'}</span></div>
+        <div class="uname">${(v.group_no||'').replace('罗峪村','')||'--'} · ${v.name} &nbsp;<span style="font-size:12px;opacity:.7;">${v.gender||''} · ****${v.id_last4||'----'}</span></div>
         <div class="srow"><div class="snum">${v.total_score||0}</div><div class="slbl">积分</div></div>
         <div class="chg">本月 +${v.month_score||0}分</div>
         <div class="rpill">组内第 ${v.group_rank||'-'} 名</div>
@@ -729,18 +800,59 @@ async function loadHome() {
         <div class="sec-title">快捷功能</div>
         <div class="qgrid">
           <button class="qbtn cg" onclick="vTab('log')"><i class="ti ti-clipboard-list"></i><span class="lbl">积分明细</span></button>
-          <button class="qbtn ct" onclick="vTab('rank')"><i class="ti ti-trophy"></i><span class="lbl">组内排行</span></button>
+          <button class="qbtn ct" onclick="vTab('rank')"><i class="ti ti-trophy"></i><span class="lbl">积分排行</span></button>
           <button class="qbtn ca" onclick="vTab('exchange')"><i class="ti ti-gift"></i><span class="lbl">积分兑换</span></button>
-          <button class="qbtn cb" onclick="vTab('notice')"><i class="ti ti-bell"></i><span class="lbl">村务公告</span></button>
+          <button class="qbtn cp" onclick="vTab('rules')"><i class="ti ti-clipboard-text"></i><span class="lbl">积分细则</span></button>
+          <button class="qbtn cb" onclick="vTab('notice')" style="grid-column:1/-1;"><i class="ti ti-bell"></i><span class="lbl">村务公告</span></button>
         </div>
       </div>`;
     loadRecentLog(el);
   } catch(e) { el.innerHTML = '<div class="empty"><i class="ti ti-wifi-off"></i>加载失败，请检查网络</div>'; }
 }
 
+// ── Load rules（积分细则） ──
+async function loadRules() {
+  const el = document.getElementById('rulesScroll');
+  el.innerHTML = '<div class="loading"><i class="ti ti-loader"></i>加载中…</div>';
+  try {
+    const res = await fetch(BASE + '/api/scores/events/public').then(r=>r.json());
+    if (!res.data || !res.data.length) {
+      el.innerHTML = '<div class="empty"><i class="ti ti-clipboard-x"></i>暂无积分细则</div>'; return;
+    }
+    const cats = {};
+    res.data.forEach(e => {
+      if (!cats[e.category]) cats[e.category] = [];
+      cats[e.category].push(e);
+    });
+    const catIcons = {'党建引领':'ti-flag','体育特色':'ti-ball-football','生态保护':'ti-leaf','公共参与':'ti-users','互帮互助':'ti-heart-handshake','特殊贡献':'ti-award','扣分项目':'ti-minus-circle'};
+    const catColors = {'党建引领':'var(--red)','体育特色':'var(--green)','生态保护':'var(--teal)','公共参与':'var(--blue)','互帮互助':'var(--amber)','特殊贡献':'#8b5cf6','扣分项目':'var(--red)'};
+    let html = '<div class="card" style="margin-bottom:10px;"><div style="font-size:13px;color:var(--text2);line-height:1.6;">以下为罗峪村村民积分制度规定的加分与扣分项目，积分由村干部审核确认后生效。</div></div>';
+    for (const [cat, items] of Object.entries(cats)) {
+      const icon = catIcons[cat]||'ti-star';
+      const color = catColors[cat]||'var(--green)';
+      html += `<div class="card rules-cat">
+        <div class="rules-cat-title"><i class="ti ${icon}" style="color:${color};font-size:18px;"></i>${cat}</div>
+        ${items.map(e=>`
+          <div class="rule-item">
+            <div>
+              <div class="rule-name">${e.name}</div>
+              ${e.verify_method?`<div class="rule-verify">${e.verify_method}</div>`:''}
+            </div>
+            <div class="rule-pts" style="color:${e.points>0?'var(--green)':'var(--red)'};">${e.points>0?'+':''}${e.points}分</div>
+          </div>`).join('')}
+      </div>`;
+    }
+    el.innerHTML = html;
+  } catch(e) { el.innerHTML = '<div class="empty"><i class="ti ti-wifi-off"></i>加载失败</div>'; }
+}
+
 async function loadRecentLog(container) {
   try {
-    const res = await api('GET', '/api/scores?limit=3');
+    // 村民登录看全村近期动态，管理员看本组提交记录
+    const url = villagerInfo
+      ? '/api/scores/public?limit=5&status=approved'
+      : '/api/scores?limit=3';
+    const res = await fetch(BASE + url, villagerInfo ? {} : {headers:{'Authorization':'Bearer '+token}}).then(r=>r.json());
     if (!res.data || !res.data.length) return;
     const card = document.createElement('div');
     card.className = 'card';
@@ -754,7 +866,13 @@ async function loadLog() {
   const el = document.getElementById('logScroll');
   el.innerHTML = '<div class="loading"><i class="ti ti-loader"></i>加载中…</div>';
   try {
-    const res = await api('GET', '/api/scores?limit=50');
+    let res;
+    if (villagerInfo) {
+      // 村民看全村已审核记录
+      res = await fetch(BASE + '/api/scores/public?limit=100&status=approved').then(r=>r.json());
+    } else {
+      res = await api('GET', '/api/scores?limit=50');
+    }
     if (!res.data || !res.data.length) {
       el.innerHTML = '<div class="empty"><i class="ti ti-clipboard-x"></i>暂无积分记录</div>'; return;
     }
