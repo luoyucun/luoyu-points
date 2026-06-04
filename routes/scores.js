@@ -90,7 +90,8 @@ router.get('/events/public', async (req, res) => {
 
 // PATCH /api/scores/:id/review — 审核积分
 router.patch('/:id/review', authMiddleware, requireVillageAdmin, async (req, res) => {
-  const { approved } = req.body;
+  // 兼容布尔值 true/false 和字符串 "true"/"false"
+  const approved = req.body.approved === true || req.body.approved === 'true';
   const status = approved ? 'approved' : 'rejected';
   const [rows] = await db.execute('SELECT * FROM score_records WHERE id=?', [req.params.id]);
   if (!rows.length) return res.status(404).json({ code: 404, message: '记录不存在' });

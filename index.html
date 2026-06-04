@@ -77,8 +77,8 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 
 /* ── Bottom Nav ── */
 .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:white;border-top:1px solid var(--border);display:flex;z-index:100;}
-.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px 10px;cursor:pointer;border:none;background:none;color:var(--text3);font-size:12px;}
-.nav-item i{font-size:24px;}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px 10px;cursor:pointer;border:none;background:none;color:var(--text3);font-size:15px;}
+.nav-item i{font-size:26px;}
 .nav-item.active{color:var(--green);}
 
 /* ── Screens ── */
@@ -88,22 +88,22 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 
 /* ── Cards ── */
 .card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:14px 16px;}
-.sec-title{font-size:14px;color:var(--text2);font-weight:600;margin-bottom:10px;}
+.sec-title{font-size:16px;color:var(--text2);font-weight:600;margin-bottom:10px;}
 
 /* ── Hero Score ── */
 .hero{background:var(--green);border-radius:var(--radius);padding:16px;color:white;}
-.hero .uname{font-size:15px;opacity:.85;margin-bottom:4px;}
+.hero .uname{font-size:17px;opacity:.85;margin-bottom:4px;}
 .hero .srow{display:flex;align-items:baseline;gap:6px;}
 .hero .snum{font-size:52px;font-weight:700;line-height:1;color:white;}
-.hero .slbl{font-size:16px;opacity:.8;}
-.hero .chg{font-size:14px;opacity:.8;margin-top:5px;}
-.hero .rpill{display:inline-block;background:rgba(255,255,255,.2);border-radius:20px;padding:3px 12px;font-size:13px;margin-top:8px;}
+.hero .slbl{font-size:18px;opacity:.8;}
+.hero .chg{font-size:16px;opacity:.8;margin-top:5px;}
+.hero .rpill{display:inline-block;background:rgba(255,255,255,.2);border-radius:20px;padding:3px 12px;font-size:15px;margin-top:8px;}
 
 /* ── Quick Grid ── */
 .qgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
 .qbtn{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;}
 .qbtn i{font-size:28px;}
-.qbtn .lbl{font-size:15px;color:var(--text2);font-weight:500;}
+.qbtn .lbl{font-size:17px;color:var(--text2);font-weight:500;}
 .qbtn.cg i{color:var(--green);}
 .qbtn.ct i{color:var(--teal);}
 .qbtn.ca i{color:var(--amber);}
@@ -117,10 +117,10 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 .log-icon.add{background:var(--green-bg);color:var(--green);}
 .log-icon.sub{background:var(--red-bg);color:var(--red);}
 .log-info{flex:1;min-width:0;}
-.log-evt{font-size:16px;color:var(--text);}
+.log-evt{font-size:18px;color:var(--text);}
 .log-desc{font-size:13px;color:var(--text2);margin-top:3px;line-height:1.4;}
 .log-meta{font-size:12px;color:var(--text3);margin-top:4px;display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
-.log-pts{font-size:18px;font-weight:700;flex-shrink:0;}
+.log-pts{font-size:20px;font-weight:700;flex-shrink:0;}
 .log-pts.add{color:var(--green);}
 .log-pts.sub{color:var(--red);}
 .tag{display:inline-block;font-size:11px;padding:2px 7px;border-radius:8px;}
@@ -134,9 +134,9 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 .lb-item:last-child{border-bottom:none;}
 .lb-rank{width:28px;text-align:center;font-size:16px;font-weight:700;color:var(--text2);flex-shrink:0;}
 .lb-av{width:40px;height:40px;border-radius:50%;background:var(--green-bg);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:var(--green-dark);flex-shrink:0;}
-.lb-name{flex:1;font-size:16px;font-weight:500;}
+.lb-name{flex:1;font-size:18px;font-weight:500;}
 .lb-grp{font-size:12px;color:var(--text3);}
-.lb-score{font-size:18px;font-weight:700;color:var(--green);}
+.lb-score{font-size:20px;font-weight:700;color:var(--green);}
 
 /* ── Exchange ── */
 .egrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
@@ -158,11 +158,23 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 .ebtn:disabled{opacity:.5;cursor:not-allowed;}
 
 /* ── Notice ── */
-.ni{padding:10px 0;border-bottom:1px solid var(--border);}
+.ni{padding:14px 0;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:10px;}
 .ni:last-child{border-bottom:none;}
-.ni-title{font-size:14px;font-weight:500;margin:4px 0;}
-.ni-body{font-size:12px;color:var(--text2);line-height:1.5;}
-.ni-date{font-size:11px;color:var(--text3);margin-top:4px;}
+.ni:active{opacity:.7;}
+.ni-left{flex:1;min-width:0;}
+.ni-title{font-size:17px;font-weight:600;margin:5px 0 3px;color:var(--text);}
+.ni-meta{font-size:13px;color:var(--text3);}
+.ni-arrow{font-size:20px;color:var(--text3);flex-shrink:0;}
+.notice-detail{position:fixed;inset:0;background:var(--bg);z-index:200;display:none;flex-direction:column;max-width:480px;margin:0 auto;}
+.notice-detail.open{display:flex;}
+.nd-header{background:var(--green);color:white;padding:14px 16px;display:flex;align-items:center;gap:12px;}
+.nd-back{background:none;border:none;color:white;font-size:24px;cursor:pointer;padding:0;line-height:1;}
+.nd-header-title{font-size:17px;font-weight:600;flex:1;}
+.nd-body{flex:1;overflow-y:auto;padding:20px 16px;}
+.nd-tag{margin-bottom:12px;}
+.nd-title{font-size:22px;font-weight:700;color:var(--text);line-height:1.4;margin-bottom:8px;}
+.nd-date{font-size:14px;color:var(--text3);margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+.nd-content{font-size:18px;color:var(--text);line-height:1.9;white-space:pre-wrap;}
 
 /* ── Admin Stats ── */
 .sgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
@@ -401,6 +413,15 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
     <div class="scroll" id="noticeScroll">
       <div class="loading"><i class="ti ti-loader"></i>加载中…</div>
     </div>
+  </div>
+
+  <!-- 公告详情层 -->
+  <div class="notice-detail" id="noticeDetail">
+    <div class="nd-header">
+      <button class="nd-back" onclick="closeNoticeDetail()"><i class="ti ti-arrow-left"></i></button>
+      <div class="nd-header-title">村务公告</div>
+    </div>
+    <div class="nd-body" id="noticeDetailBody"></div>
   </div>
 
   <!-- ===== ADMIN SCREENS ===== -->
@@ -975,22 +996,42 @@ async function doExchange(gid, name, pts) {
 }
 
 // ── Load notice ──
+let noticesCache = [];
 async function loadNotice() {
   const el = document.getElementById('noticeScroll');
   el.innerHTML = '<div class="loading"><i class="ti ti-loader"></i>加载中…</div>';
   try {
-    const res = await api('GET', '/api/announcements');
+    const res = await fetch(BASE + '/api/announcements').then(r=>r.json());
     if (!res.data || !res.data.length) { el.innerHTML = '<div class="empty"><i class="ti ti-bell-off"></i>暂无公告</div>'; return; }
-    const tagColors = {'活动通知':'tt','体育活动':'tg','政策宣传':'tb','全村告示':'ta'};
-    const items = res.data.map(n=>`
-      <div class="ni">
-        <span class="tag ${tagColors[n.tag_type]||'tg'}">${n.tag_type}</span>
-        <div class="ni-title">${n.title}</div>
-        <div class="ni-body">${n.content}</div>
-        <div class="ni-date">${n.created_at?n.created_at.slice(0,10):''}</div>
+    noticesCache = res.data;
+    const tagColors = {'活动通知':'tt','体育活动':'tg','政策宣传':'tb','全村告示':'ta','积分通知':'tg','兑换通知':'ta','活动公告':'tb'};
+    const items = res.data.map((n,i)=>`
+      <div class="ni" onclick="openNoticeDetail(${i})">
+        <div class="ni-left">
+          <span class="tag ${tagColors[n.tag_type]||'tg'}">${n.tag_type}</span>
+          <div class="ni-title">${n.title}</div>
+          <div class="ni-meta">${n.created_at?n.created_at.slice(0,10):''}</div>
+        </div>
+        <div class="ni-arrow"><i class="ti ti-chevron-right"></i></div>
       </div>`).join('');
     el.innerHTML = `<div class="card">${items}</div>`;
   } catch(e) { el.innerHTML = '<div class="empty"><i class="ti ti-wifi-off"></i>加载失败</div>'; }
+}
+
+function openNoticeDetail(idx) {
+  const n = noticesCache[idx];
+  if (!n) return;
+  const tagColors = {'活动通知':'tt','体育活动':'tg','政策宣传':'tb','全村告示':'ta','积分通知':'tg','兑换通知':'ta','活动公告':'tb'};
+  document.getElementById('noticeDetailBody').innerHTML = `
+    <div class="nd-tag"><span class="tag ${tagColors[n.tag_type]||'tg'}">${n.tag_type}</span></div>
+    <div class="nd-title">${n.title}</div>
+    <div class="nd-date"><i class="ti ti-calendar" style="font-size:14px;"></i> ${n.created_at?n.created_at.slice(0,10):''}</div>
+    <div class="nd-content">${n.content}</div>`;
+  document.getElementById('noticeDetail').classList.add('open');
+}
+
+function closeNoticeDetail() {
+  document.getElementById('noticeDetail').classList.remove('open');
 }
 
 // ── Admin home ──
