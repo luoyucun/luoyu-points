@@ -14,7 +14,12 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname) || '.jpg';
-    cb(null, `score_${Date.now()}_${Math.random().toString(36).slice(2,8)}${ext}`);
+    const vid = (req.body.villager_id || 'v0').toString().slice(0, 8);
+    const evtRaw = req.body.custom === 'true'
+      ? (req.body.custom_name || '自定义')
+      : (req.body.event_name || req.body.custom_name || '事务');
+    const evtSlug = evtRaw.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '').slice(0, 10) || 'score';
+    cb(null, `v${vid}_${evtSlug}_${Date.now()}${ext}`);
   }
 });
 const upload = multer({
@@ -48,7 +53,8 @@ router.get('/', authMiddleware, async (req, res) => {
   sql += ' ORDER BY sr.created_at DESC LIMIT ? OFFSET ?';
   params.push(parseInt(limit), (parseInt(page)-1)*parseInt(limit));
   const [rows] = await db.execute(sql, params);
-  rows.forEach(r => { if (r.image_urls) r.image_urls = JSON.parse(r.image_urls); });
+  rows.forEach(r => { if (r.image_urls) { try { r.image_urls = JSON.parse(r.image_urls); } catch(e) { r.image_urls = [r.image_urls]; } } });
+  rows.forEach(r => { if (r.image_urls) { try { r.image_urls = JSON.parse(r.image_urls); } catch(e) { r.image_urls = [r.image_urls]; } } });
   res.json({ code: 0, data: rows });
 });
 
@@ -57,12 +63,13 @@ router.get('/public', async (req, res) => {
   const { limit = 50, status = 'approved' } = req.query;
   const [rows] = await db.execute(`
     SELECT sr.id, v.name AS villager_name, v.group_no,
-           sr.event_name, sr.points, sr.description, sr.created_at
+           sr.event_name, sr.points, sr.description, sr.image_urls, sr.status, sr.is_revoked, sr.created_at
     FROM score_records sr
     JOIN villagers v ON v.id = sr.villager_id
     WHERE sr.status = 'approved' AND sr.is_revoked = 0
     ORDER BY sr.created_at DESC LIMIT ?
   `, [parseInt(limit)]);
+  rows.forEach(r => { if (r.image_urls) { try { r.image_urls = JSON.parse(r.image_urls); } catch(e) { r.image_urls = [r.image_urls]; } } });
   res.json({ code: 0, data: rows });
 });
 
@@ -79,12 +86,14 @@ router.get('/stats', authMiddleware, async (req, res) => {
 // GET /api/scores/events — 积分事件列表
 router.get('/events', authMiddleware, async (req, res) => {
   const [rows] = await db.execute('SELECT * FROM score_events WHERE is_active=1 ORDER BY category, sort_order');
+  rows.forEach(r => { if (r.image_urls) { try { r.image_urls = JSON.parse(r.image_urls); } catch(e) { r.image_urls = [r.image_urls]; } } });
   res.json({ code: 0, data: rows });
 });
 
 // GET /api/scores/events/public — 积分细则（无需登录）
 router.get('/events/public', async (req, res) => {
   const [rows] = await db.execute('SELECT id,name,category,points,verify_method FROM score_events WHERE is_active=1 ORDER BY category, sort_order');
+  rows.forEach(r => { if (r.image_urls) { try { r.image_urls = JSON.parse(r.image_urls); } catch(e) { r.image_urls = [r.image_urls]; } } });
   res.json({ code: 0, data: rows });
 });
 

@@ -877,10 +877,14 @@ async function loadRecentLog(container) {
     if (!res.data || !res.data.length) return;
     const card = document.createElement('div');
     card.className = 'card';
+    res.data.forEach(r=>_scoreMap.set(r.id,r));
     card.innerHTML = '<div class="sec-title">近期动态</div>' + res.data.map(r=>logItemHtml(r)).join('');
     container.appendChild(card);
   } catch(e) {}
 }
+
+// 积分记录全局缓存，避免HTML属性传参问题
+const _scoreMap = new Map();
 
 // ── Load log ──
 async function loadLog() {
@@ -897,15 +901,15 @@ async function loadLog() {
     if (!res.data || !res.data.length) {
       el.innerHTML = '<div class="empty"><i class="ti ti-clipboard-x"></i>暂无积分记录</div>'; return;
     }
+    res.data.forEach(r=>_scoreMap.set(r.id,r));
     el.innerHTML = `<div class="card">${res.data.map(r=>logItemHtml(r)).join('')}</div>`;
   } catch(e) { el.innerHTML = '<div class="empty"><i class="ti ti-wifi-off"></i>加载失败</div>'; }
 }
 
 function logItemHtml(r) {
   const add = r.points > 0;
-  const catColor = {'党建引领':'ta','体育特色':'tg','生态保护':'tt','公共参与':'tb','互帮互助':'tt','特殊贡献':'ta','扣分项目':''}[r.category]||'tg';
   const hasImg = r.image_urls && r.image_urls.length > 0;
-  return `<div class="log-item">
+  return `<div class="log-item" onclick="showScoreDetail(_scoreMap.get(${r.id}))" style="cursor:pointer;">
     <div class="log-icon ${add?'add':'sub'}"><i class="ti ${add?'ti-plus':'ti-minus'}" style="font-size:14px;"></i></div>
     <div class="log-info">
       <div class="log-evt">${r.villager_name?`<span style="font-weight:600;color:var(--text1);">${r.villager_name}</span> · `:''}${r.event_name}</div>
@@ -914,9 +918,13 @@ function logItemHtml(r) {
         <span>${r.created_at?r.created_at.slice(0,10):''}</span>
         ${hasImg?'<span style="background:var(--blue-bg);color:var(--blue);padding:1px 5px;border-radius:6px;font-size:10px;"><i class="ti ti-photo" style="font-size:10px;"></i> 有图片</span>':''}
         ${r.status==='pending'?'<span style="background:var(--amber-bg);color:var(--amber);padding:1px 5px;border-radius:6px;font-size:10px;">待审核</span>':''}
+        ${r.is_revoked?'<span style="background:var(--red-bg);color:var(--red);padding:1px 5px;border-radius:6px;font-size:10px;">已撤回</span>':''}
       </div>
     </div>
-    <div class="log-pts ${add?'add':'sub'}">${add?'+':''}${r.points}</div>
+    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+      <div class="log-pts ${add?'add':'sub'}">${add?'+':''}${r.points}</div>
+      <i class="ti ti-chevron-right" style="font-size:14px;color:var(--text3);"></i>
+    </div>
   </div>`;
 }
 
@@ -1240,13 +1248,51 @@ function updateSteps() {
 }
 
 function handleFiles(input) {
-  Array.from(input.files).forEach(file=>{
-    if (file.size > 5*1024*1024) { showToast('图片超过5MB，请压缩后上传'); return; }
-    const reader = new FileReader();
-    reader.onload = e => { uploadedPhotos.push({data:e.target.result, file}); renderThumbs(); };
-    reader.readAsDataURL(file);
-  });
+  const files = Array.from(input.files);
   input.value='';
+  files.forEach(file=>{
+    if (!file.type.startsWith('image/')) { showToast('请选择图片文件'); return; }
+    compressImage(file, 1*1024*1024).then(compressed=>{
+      const reader = new FileReader();
+      reader.onload = e => { uploadedPhotos.push({data:e.target.result, file:compressed}); renderThumbs(); };
+      reader.readAsDataURL(compressed);
+    }).catch(()=>{ showToast('图片处理失败，请重试'); });
+  });
+}
+
+function compressImage(file, maxBytes) {
+  return new Promise((resolve, reject) => {
+    if (file.size <= maxBytes) { resolve(file); return; }
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let w = img.width, h = img.height;
+      const maxPx = 1920;
+      if (w > maxPx || h > maxPx) {
+        const ratio = Math.min(maxPx/w, maxPx/h);
+        w = Math.round(w * ratio);
+        h = Math.round(h * ratio);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const tryCompress = (q) => {
+        if (q < 0.2) { q = 0.2; }
+        canvas.toBlob(blob => {
+          if (!blob) { reject(new Error('压缩失败')); return; }
+          if (blob.size <= maxBytes || q <= 0.2) {
+            resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {type:'image/jpeg'}));
+          } else {
+            tryCompress(Math.round((q - 0.1) * 10) / 10);
+          }
+        }, 'image/jpeg', q);
+      };
+      tryCompress(0.85);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('图片加载失败')); };
+    img.src = url;
+  });
 }
 
 function renderThumbs() {
@@ -1328,7 +1374,101 @@ async function submitScore() {
   btn.innerHTML='<i class="ti ti-check" style="vertical-align:-2px;margin-right:4px;"></i>提交积分';
 }
 
-// ── Toast ──
+function showScoreDetail(r) {
+  const add = r.points > 0;
+  const statusMap = {approved:'✅ 已通过', pending:'⏳ 待审核', rejected:'❌ 已拒绝'};
+  const statusText = r.is_revoked ? '↩️ 已撤回' : (statusMap[r.status]||r.status);
+  const hasImg = r.image_urls && r.image_urls.length > 0;
+
+  const mask = document.createElement('div');
+  mask.style.cssText = 'position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.45);';
+  mask.addEventListener('click', e => { if(e.target===mask) window.closeScoreDetail(); });
+
+  const sheet = document.createElement('div');
+  sheet.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:1001;background:var(--card);border-radius:18px 18px 0 0;padding:0 0 env(safe-area-inset-bottom,16px);max-height:88vh;overflow-y:auto;box-shadow:0 -4px 32px rgba(0,0,0,0.18);transform:translateY(100%);transition:transform .28s cubic-bezier(.32,1,.46,1);';
+
+  const imgBlock = hasImg ? `
+    <div style="padding:12px 16px 8px;">
+      <div style="color:var(--text3);font-size:13px;margin-bottom:8px;">凭证图片（${r.image_urls.length}张）</div>
+      <div id="sdImgWrap" style="position:relative;">
+        <img id="sdImg" src="${r.image_urls[0]}" style="width:100%;border-radius:10px;object-fit:cover;max-height:260px;display:block;cursor:zoom-in;" onclick="sdZoom()">
+        ${r.image_urls.length>1 ? `
+        <button onclick="sdPrev()" style="position:absolute;left:6px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.4);border:none;color:#fff;font-size:20px;width:32px;height:32px;border-radius:50%;cursor:pointer;">‹</button>
+        <button onclick="sdNext()" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.4);border:none;color:#fff;font-size:20px;width:32px;height:32px;border-radius:50%;cursor:pointer;">›</button>
+        <div id="sdDot" style="text-align:center;margin-top:6px;font-size:12px;color:var(--text3);">1 / ${r.image_urls.length}</div>` : ''}
+      </div>
+    </div>` : '';
+
+  sheet.innerHTML = `
+    <div style="padding:12px 16px 0;text-align:center;">
+      <div style="width:36px;height:4px;background:var(--border);border-radius:2px;display:inline-block;"></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px 0;">
+      <span style="font-size:16px;font-weight:700;color:var(--text1);">积分详情</span>
+      <button onclick="closeScoreDetail()" style="background:none;border:none;font-size:24px;color:var(--text3);cursor:pointer;line-height:1;">×</button>
+    </div>
+    <div style="margin:12px 16px;padding:14px 16px;background:${add?'var(--green-bg)':'var(--red-bg)'};border-radius:12px;display:flex;align-items:center;gap:12px;">
+      <div style="width:44px;height:44px;border-radius:50%;background:${add?'var(--green)':'var(--red)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i class="ti ${add?'ti-plus':'ti-minus'}" style="font-size:20px;color:#fff;"></i>
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:24px;font-weight:800;color:${add?'var(--green)':'var(--red)'};">${add?'+':''}${r.points} 分</div>
+        <div style="font-size:13px;color:var(--text2);margin-top:2px;">${r.event_name}</div>
+      </div>
+      <div style="font-size:12px;color:var(--text3);">${statusText}</div>
+    </div>
+    <div style="padding:0 16px;">
+      ${r.villager_name?`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);"><span style="color:var(--text3);font-size:13px;">村民</span><span style="color:var(--text1);font-size:13px;font-weight:600;">${r.villager_name}${r.group_no?' · '+r.group_no:''}</span></div>`:''}
+      <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);"><span style="color:var(--text3);font-size:13px;">时间</span><span style="color:var(--text1);font-size:13px;">${r.created_at?r.created_at.slice(0,16).replace('T',' '):''}</span></div>
+      ${r.submitted_by_name?`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);"><span style="color:var(--text3);font-size:13px;">录入人</span><span style="color:var(--text1);font-size:13px;">${r.submitted_by_name}</span></div>`:''}
+      ${r.description?`<div style="padding:10px 0;border-bottom:1px solid var(--border);"><div style="color:var(--text3);font-size:13px;margin-bottom:6px;">情况说明</div><div style="color:var(--text1);font-size:14px;line-height:1.6;">${r.description}</div></div>`:''}
+    </div>
+    ${imgBlock}
+    <div style="height:16px;"></div>
+  `;
+
+  window._sdUrls = r.image_urls || [];
+  window._sdIdx = 0;
+  window.closeScoreDetail = () => {
+    sheet.style.transform = 'translateY(100%)';
+    setTimeout(() => { mask.remove(); sheet.remove(); }, 280);
+  };
+  window.sdPrev = () => {
+    if(window._sdIdx > 0){ window._sdIdx--; document.getElementById('sdImg').src=window._sdUrls[window._sdIdx]; if(document.getElementById('sdDot')) document.getElementById('sdDot').textContent=`${window._sdIdx+1} / ${window._sdUrls.length}`; }
+  };
+  window.sdNext = () => {
+    if(window._sdIdx < window._sdUrls.length-1){ window._sdIdx++; document.getElementById('sdImg').src=window._sdUrls[window._sdIdx]; if(document.getElementById('sdDot')) document.getElementById('sdDot').textContent=`${window._sdIdx+1} / ${window._sdUrls.length}`; }
+  };
+  window.sdZoom = () => showImgLightbox(window._sdUrls, window._sdIdx);
+
+  document.body.appendChild(mask);
+  document.body.appendChild(sheet);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ sheet.style.transform='translateY(0)'; }));
+}
+
+function showImgLightbox(urls, startIdx) {
+  let idx = startIdx || 0;
+  const overlay = document.createElement('div');
+  overlay.id = 'imgLightbox';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;';
+  const render = () => {
+    overlay.innerHTML = `
+      <div style="position:relative;max-width:92vw;max-height:82vh;">
+        <img src="${urls[idx]}" style="max-width:92vw;max-height:78vh;border-radius:8px;object-fit:contain;display:block;">
+        ${urls.length>1?`<div style="position:absolute;bottom:-28px;left:50%;transform:translateX(-50%);color:#fff;font-size:13px;">${idx+1} / ${urls.length}</div>`:''}
+      </div>
+      ${urls.length>1&&idx>0?`<button onclick="event.stopPropagation();lbPrev()" style="position:fixed;left:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:28px;padding:8px 14px;border-radius:8px;cursor:pointer;">‹</button>`:''}
+      ${urls.length>1&&idx<urls.length-1?`<button onclick="event.stopPropagation();lbNext()" style="position:fixed;right:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:28px;padding:8px 14px;border-radius:8px;cursor:pointer;">›</button>`:''}
+      <button onclick="document.getElementById('imgLightbox').remove()" style="position:fixed;top:16px;right:16px;background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:22px;width:36px;height:36px;border-radius:50%;cursor:pointer;">×</button>
+    `;
+  };
+  window.lbPrev = () => { if(idx>0){idx--;render();} };
+  window.lbNext = () => { if(idx<urls.length-1){idx++;render();} };
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+  render();
+}
+
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
