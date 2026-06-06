@@ -270,12 +270,13 @@ tr:last-child td{border-bottom:none;}
           <select class="filter-sel" id="vGroup" onchange="loadVillagers()">
             <option value="">全部组别</option>
           </select>
+          <button class="btn btn-primary btn-sm" onclick="openAddVillager()"><i class="ti ti-user-plus"></i>新增村民</button>
         </div>
       </div>
       <div class="card-body" style="padding:0;">
         <div class="tbl-wrap">
           <table>
-            <thead><tr><th>姓名</th><th>性别</th><th>所属组</th><th>身份证后4位</th><th>当前积分</th><th>操作</th></tr></thead>
+            <thead><tr><th>姓名</th><th>性别</th><th>所属组</th><th>身份证后4位</th><th>兑换积分</th><th>荣誉积分</th><th>操作</th></tr></thead>
             <tbody id="villagersTbody"></tbody>
           </table>
         </div>
@@ -366,7 +367,7 @@ tr:last-child td{border-bottom:none;}
           <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="exportVillagers()">
             <i class="ti ti-download"></i>导出 Excel
           </button>
-          <div style="font-size:12px;color:var(--text3);margin-top:10px;">导出字段：姓名、性别、所属组、身份证后4位、当前积分、本月积分、积分记录数</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:10px;">导出字段：姓名、性别、所属组、身份证后4位、兑换积分、荣誉积分、本月积分、积分记录数</div>
         </div>
       </div>
       <div class="card">
@@ -388,17 +389,31 @@ tr:last-child td{border-bottom:none;}
 
   <!-- 公告管理 -->
   <div class="page" id="page-notices">
-    <div class="card">
-      <div class="card-hd"><i class="ti ti-bell"></i>公告管理
-        <div class="actions"><button class="btn btn-primary btn-sm" onclick="openAddNotice()"><i class="ti ti-plus"></i>发布公告</button></div>
-      </div>
-      <div class="card-body" style="padding:0;">
-        <div class="tbl-wrap">
-          <table>
-            <thead><tr><th>标题</th><th>类型</th><th>状态</th><th>发布时间</th><th>操作</th></tr></thead>
-            <tbody id="noticesTbody"></tbody>
-          </table>
+    <!-- 公告列表 -->
+    <div id="noticeListView">
+      <div class="card">
+        <div class="card-hd"><i class="ti ti-bell"></i>公告管理
+          <div class="actions"><button class="btn btn-primary btn-sm" onclick="openAddNotice()"><i class="ti ti-plus"></i>发布公告</button></div>
         </div>
+        <div class="card-body" style="padding:0;">
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>标题</th><th>类型</th><th>状态</th><th>发布时间</th><th>操作</th></tr></thead>
+              <tbody id="noticesTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 公告详情页 -->
+    <div id="noticeDetailView" style="display:none;">
+      <div class="card">
+        <div class="card-hd">
+          <button class="btn btn-outline btn-sm" onclick="showNoticeList()" style="margin-right:8px;"><i class="ti ti-arrow-left"></i>返回列表</button>
+          <span id="noticeDetailHeadTitle">公告详情</span>
+        </div>
+        <div class="card-body" id="noticeDetailContent" style="padding:20px;"></div>
       </div>
     </div>
   </div>
@@ -489,6 +504,65 @@ tr:last-child td{border-bottom:none;}
   </div>
 </div>
 
+<!-- 新增/编辑村民弹窗 -->
+<div class="modal-overlay" id="editVillagerModal">
+  <div class="modal" style="width:420px;">
+    <div class="modal-hd"><span id="editVillagerTitle">新增村民</span><span class="modal-close" onclick="closeModal('editVillagerModal')">×</span></div>
+    <div class="modal-bd">
+      <input type="hidden" id="editVillagerId" value="">
+      <div class="form-row">
+        <label class="form-label">姓名 <span style="color:var(--red)">*</span></label>
+        <input class="form-input" id="editVillagerName" placeholder="请输入姓名">
+      </div>
+      <div class="form-row">
+        <label class="form-label">性别 <span style="color:var(--red)">*</span></label>
+        <select class="form-input" id="editVillagerGender">
+          <option value="男">男</option>
+          <option value="女">女</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">所属组 <span style="color:var(--red)">*</span></label>
+        <select class="form-input" id="editVillagerGroup">
+          <option value="">请选择组别</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">身份证后4位 <span style="color:var(--red)">*</span></label>
+        <input class="form-input" id="editVillagerIdLast4" placeholder="4位数字" maxlength="4">
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal('editVillagerModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveVillager()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 注销确认弹窗 -->
+<div class="modal-overlay" id="deactivateModal">
+  <div class="modal" style="width:380px;">
+    <div class="modal-hd">注销村民<span class="modal-close" onclick="closeModal('deactivateModal')">×</span></div>
+    <div class="modal-bd">
+      <div id="deactivateInfo" style="margin-bottom:14px;padding:12px;background:var(--red-bg);border-radius:8px;color:var(--red);font-size:14px;"></div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.6;">注销后该村民将从系统中隐藏，积分记录保留不删除。适用于村民迁出、死亡等情况。<br>此操作可联系超级管理员恢复。</div>
+      <div class="form-row" style="margin-top:14px;">
+        <label class="form-label">注销原因 <span style="color:var(--red)">*</span></label>
+        <select class="form-input" id="deactivateReason">
+          <option value="">请选择原因</option>
+          <option value="迁出">迁出</option>
+          <option value="死亡">死亡</option>
+          <option value="其他">其他</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal('deactivateModal')">取消</button>
+      <button class="btn btn-danger" onclick="confirmDeactivate()">确认注销</button>
+    </div>
+  </div>
+</div>
+
 <!-- 重置密码模态框 -->
 <div class="modal-overlay" id="resetPwdModal">
   <div class="modal">
@@ -539,10 +613,10 @@ tr:last-child td{border-bottom:none;}
 
 <!-- 新增公告模态框 -->
 <div class="modal-overlay" id="addNoticeModal">
-  <div class="modal">
+  <div class="modal" style="width:520px;max-height:90vh;display:flex;flex-direction:column;">
     <div class="modal-hd">发布公告<span class="modal-close" onclick="closeModal('addNoticeModal')">×</span></div>
-    <div class="modal-bd">
-      <div class="form-row"><label>标题</label><input type="text" id="noticeTitle" placeholder="公告标题"></div>
+    <div class="modal-bd" style="overflow-y:auto;flex:1;">
+      <div class="form-row"><label>标题 <span style="color:var(--red)">*</span></label><input type="text" id="noticeTitle" placeholder="公告标题"></div>
       <div class="form-row"><label>类型</label>
         <select id="noticeTag">
           <option value="全村告示">全村告示</option>
@@ -551,11 +625,47 @@ tr:last-child td{border-bottom:none;}
           <option value="活动公告">活动公告</option>
         </select>
       </div>
-      <div class="form-row"><label>内容</label><textarea id="noticeContent" rows="5" placeholder="公告内容…"></textarea></div>
+      <div class="form-row"><label>内容 <span style="color:var(--red)">*</span></label><textarea id="noticeContent" rows="4" placeholder="公告内容…"></textarea></div>
+
+      <!-- 图片上传，最多9张 -->
+      <div class="form-row">
+        <label>图片附件 <span style="font-size:11px;color:var(--text3);">最多9张</span></label>
+        <div id="noticeImgPreview" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
+        <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:7px 14px;border:1px dashed var(--border);border-radius:8px;font-size:13px;color:var(--text2);">
+          <i class="ti ti-photo-plus"></i> 添加图片
+          <input type="file" id="noticeImgs" accept="image/*" multiple style="display:none;" onchange="previewNoticeImgs(this)">
+        </label>
+      </div>
+
+      <!-- 语音选项 -->
+      <div class="form-row">
+        <label>语音播报</label>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <button type="button" class="btn btn-outline btn-sm" id="audioOptNone" onclick="setAudioOpt('none')" style="flex:1;">无语音</button>
+          <button type="button" class="btn btn-outline btn-sm" id="audioOptTts" onclick="setAudioOpt('tts')" style="flex:1;"><i class="ti ti-speakerphone"></i> 普通话TTS</button>
+          <button type="button" class="btn btn-outline btn-sm" id="audioOptRecord" onclick="setAudioOpt('record')" style="flex:1;"><i class="ti ti-microphone"></i> 录音上传</button>
+        </div>
+        <!-- TTS提示 -->
+        <div id="audioTtsHint" style="display:none;padding:8px 12px;background:var(--green-bg);border-radius:8px;font-size:12px;color:var(--green);">
+          <i class="ti ti-info-circle"></i> 村民点击播放时，系统将自动朗读公告内容（普通话）
+        </div>
+        <!-- 录音上传 -->
+        <div id="audioRecordArea" style="display:none;">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <button type="button" class="btn btn-outline btn-sm" id="recordBtn" onclick="toggleRecord()"><i class="ti ti-microphone"></i> 开始录音</button>
+            <span id="recordTimer" style="font-size:13px;color:var(--text2);display:none;">⏺ 0:00</span>
+            <span id="recordStatus" style="font-size:12px;color:var(--text3);"></span>
+          </div>
+          <audio id="recordPreview" controls style="display:none;width:100%;margin-top:8px;height:36px;"></audio>
+          <div style="margin-top:6px;font-size:11px;color:var(--text3);">或直接上传音频文件：
+            <input type="file" id="audioFileInput" accept="audio/*" onchange="loadAudioFile(this)" style="font-size:11px;">
+          </div>
+        </div>
+      </div>
     </div>
     <div class="modal-ft">
       <button class="btn btn-outline" onclick="closeModal('addNoticeModal')">取消</button>
-      <button class="btn btn-primary" onclick="confirmAddNotice()">发布</button>
+      <button class="btn btn-primary" id="noticeSubmitBtn" onclick="confirmAddNotice()"><i class="ti ti-send"></i> 发布</button>
     </div>
   </div>
 </div>
@@ -721,8 +831,97 @@ async function loadVillagers() {
       <td><span class="tag tag-green">${v.group_no.replace('罗峪村','')}</span></td>
       <td style="color:var(--text3);">****${v.id_last4}</td>
       <td><strong style="color:var(--green);">${v.total_score}</strong> 分</td>
-      <td><button class="btn btn-outline btn-sm" onclick="viewVillager(${v.id},'${v.name}')"><i class="ti ti-eye"></i>详情</button></td>
+      <td><strong style="color:#c8a84b;">${v.honor_score||0}</strong> 分</td>
+      <td style="display:flex;gap:4px;flex-wrap:wrap;">
+        <button class="btn btn-outline btn-sm" onclick="viewVillager(${v.id},'${v.name}')"><i class="ti ti-eye"></i>详情</button>
+        <button class="btn btn-outline btn-sm" onclick="openEditVillager(${v.id},'${v.name}','${v.gender}','${v.group_no}','${v.id_last4}')"><i class="ti ti-pencil"></i>编辑</button>
+        <button class="btn btn-outline btn-sm" onclick="openDeactivate(${v.id},'${v.name}')" style="color:var(--red);"><i class="ti ti-user-off"></i>注销</button>
+      </td>
     </tr>`).join('');
+}
+
+// ── 村民新增 / 编辑 / 注销 ──
+let deactivateVillagerId = null;
+
+async function openAddVillager() {
+  document.getElementById('editVillagerId').value = '';
+  document.getElementById('editVillagerTitle').textContent = '新增村民';
+  document.getElementById('editVillagerName').value = '';
+  document.getElementById('editVillagerGender').value = '男';
+  document.getElementById('editVillagerIdLast4').value = '';
+  // 填充组别选项
+  await _fillGroupSelect('editVillagerGroup', '');
+  openModal('editVillagerModal');
+}
+
+async function openEditVillager(id, name, gender, group_no, id_last4) {
+  document.getElementById('editVillagerId').value = id;
+  document.getElementById('editVillagerTitle').textContent = '编辑村民信息';
+  document.getElementById('editVillagerName').value = name;
+  document.getElementById('editVillagerGender').value = gender;
+  document.getElementById('editVillagerIdLast4').value = id_last4;
+  await _fillGroupSelect('editVillagerGroup', group_no);
+  openModal('editVillagerModal');
+}
+
+async function _fillGroupSelect(selectId, selected) {
+  const sel = document.getElementById(selectId);
+  // 保留第一个占位option，其余清空
+  while (sel.options.length > 1) sel.remove(1);
+  const res = await api('GET', '/api/admin/groups');
+  if (res && res.data) {
+    res.data.forEach(g => {
+      const opt = document.createElement('option');
+      opt.value = g; opt.textContent = g;
+      if (g === selected) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+}
+
+async function saveVillager() {
+  const id       = document.getElementById('editVillagerId').value;
+  const name     = document.getElementById('editVillagerName').value.trim();
+  const gender   = document.getElementById('editVillagerGender').value;
+  const group_no = document.getElementById('editVillagerGroup').value;
+  const id_last4 = document.getElementById('editVillagerIdLast4').value.trim();
+  if (!name || !gender || !group_no || !id_last4) { showToast('请填写完整信息', true); return; }
+  if (!/^\d{4}$/.test(id_last4)) { showToast('身份证后4位须为4位数字', true); return; }
+  let res;
+  if (id) {
+    res = await api('PUT', `/api/villagers/${id}`, { name, gender, group_no, id_last4 });
+  } else {
+    res = await api('POST', '/api/villagers', { name, gender, group_no, id_last4 });
+  }
+  if (res && res.code === 0) {
+    showToast(id ? '村民信息已更新' : '村民添加成功');
+    closeModal('editVillagerModal');
+    loadVillagers();
+  } else {
+    showToast(res?.message || '操作失败', true);
+  }
+}
+
+function openDeactivate(id, name) {
+  deactivateVillagerId = id;
+  document.getElementById('deactivateInfo').innerHTML =
+    `<i class="ti ti-alert-triangle"></i> 确认注销村民：<strong>${name}</strong>`;
+  document.getElementById('deactivateReason').value = '';
+  openModal('deactivateModal');
+}
+
+async function confirmDeactivate() {
+  const reason = document.getElementById('deactivateReason').value;
+  if (!reason) { showToast('请选择注销原因', true); return; }
+  const res = await api('PATCH', `/api/villagers/${deactivateVillagerId}/deactivate`, { reason });
+  if (res && res.code === 0) {
+    showToast('村民已注销');
+    closeModal('deactivateModal');
+    loadVillagers();
+    loadDashboard();
+  } else {
+    showToast(res?.message || '操作失败', true);
+  }
 }
 
 async function viewVillager(id, name) {
@@ -787,9 +986,10 @@ async function loadScores() {
 }
 
 async function approveScore(id, approve) {
-  const isApprove = (approve === 1);
-  const res = await api('PATCH', `/api/scores/${id}/review`, { approved: isApprove });
-  if (res && res.code===0) { showToast(isApprove?'已通过审核':'已拒绝'); loadScores(); loadDashboard(); }
+  const isApprove = (approve === 1 || approve === true || approve === 'true');
+  // 传字符串，兼容所有body解析方式
+  const res = await api('PATCH', `/api/scores/${id}/review`, { approved: isApprove ? 'true' : 'false' });
+  if (res && res.code===0) { showToast(isApprove?'✅ 已通过审核':'❌ 已拒绝'); loadScores(); loadDashboard(); }
   else showToast(res?.message||'操作失败', true);
 }
 
@@ -950,8 +1150,8 @@ async function exportVillagers() {
   showToast('正在生成，请稍候…');
   const res = await api('GET', url);
   if (!res || res.code!==0) { showToast('导出失败', true); return; }
-  const headers = ['姓名','性别','所属组','身份证后4位','当前积分','本月积分','记录数'];
-  const rows = res.data.map(v=>[v.name,v.gender,v.group_no,v.id_last4,v.total_score,v.month_score,v.record_count]);
+  const headers = ['姓名','性别','所属组','身份证后4位','兑换积分','荣誉积分','本月积分','记录数'];
+  const rows = res.data.map(v=>[v.name,v.gender,v.group_no,v.id_last4,v.exchange_score||v.total_score,v.honor_score||0,v.month_score,v.record_count]);
   const date = new Date().toISOString().slice(0,10);
   downloadCSV(`罗峪村村民积分_${date}.csv`, toCSV(headers, rows));
   showToast(`导出成功，共 ${rows.length} 条`);
@@ -1004,23 +1204,44 @@ async function viewScoreDetail(id) {
 }
 
 // ── 公告管理 ──
+let _noticesData = [];
 async function loadNotices() {
+  _noticesData = [];
   const res = await api('GET', '/api/admin/announcements');
   if (!res || res.code !== 0) return;
-  document.getElementById('noticesTbody').innerHTML = res.data.map(n=>`
-    <tr>
-      <td><strong>${n.title}</strong></td>
-      <td><span class="tag tag-blue">${n.tag_type}</span></td>
-      <td><span class="tag ${n.is_active?'tag-green':'tag-gray'}">${n.is_active?'已发布':'已撤回'}</span></td>
-      <td style="color:var(--text3);">${fmtDate(n.created_at)}</td>
-      <td>${n.is_active?`<button class="btn btn-danger btn-sm" onclick="revokeNotice(${n.id})"><i class="ti ti-trash"></i>撤回</button>`:'-'}</td>
-    </tr>`).join('') || `<tr><td colspan="5"><div class="empty-state"><i class="ti ti-bell-off"></i>暂无公告</div></td></tr>`;
+  _noticesData = res.data;
+  document.getElementById('noticesTbody').innerHTML = res.data.map(n=>{
+    const mediaTag = [
+      (n.image_urls&&n.image_urls.length) ? '<span style="font-size:11px;color:var(--text3);margin-left:4px;"><i class="ti ti-photo"></i>'+n.image_urls.length+'张</span>' : '',
+      n.audio_type==='tts' ? '<span style="font-size:11px;color:var(--green);margin-left:4px;"><i class="ti ti-speakerphone"></i>TTS</span>' : '',
+      n.audio_type==='record' ? '<span style="font-size:11px;color:var(--green);margin-left:4px;"><i class="ti ti-microphone"></i>录音</span>' : ''
+    ].join('');
+    const viewBtn = '<button class="btn btn-outline btn-sm" onclick="viewNotice('+n.id+')"><i class="ti ti-eye"></i>查看</button>';
+    const revokeBtn = n.is_active
+      ? '<button class="btn btn-danger btn-sm" onclick="revokeNotice('+n.id+')"><i class="ti ti-trash"></i><i class="ti ti-trash"></i>撤回</button>'
+      : '-';
+    return '<tr>'
+      + '<td><strong>'+n.title+'</strong><div style="display:flex;flex-wrap:wrap;">'+mediaTag+'</div></td>'
+      + '<td><span class="tag tag-blue">'+n.tag_type+'</span></td>'
+      + '<td><span class="tag '+(n.is_active?'tag-green':'tag-gray')+'">'+(n.is_active?'已发布':'已撤回')+'</span></td>'
+      + '<td style="color:var(--text3);">'+(n.created_at?n.created_at.slice(0,10):'')+'</td>'
+      + '<td style="display:flex;gap:4px;">'+viewBtn+revokeBtn+'</td>'
+      + '</tr>';
+  }).join('') || '<tr><td colspan="5"><div class="empty-state"><i class="ti ti-bell-off"></i>暂无公告</div></td></tr>';
 }
 
 function openAddNotice() {
   document.getElementById('noticeTitle').value = '';
   document.getElementById('noticeContent').value = '';
   document.getElementById('noticeTag').value = '全村告示';
+  document.getElementById('noticeImgPreview').innerHTML = '';
+  document.getElementById('noticeImgs').value = '';
+  document.getElementById('recordPreview').style.display = 'none';
+  document.getElementById('recordPreview').src = '';
+  document.getElementById('recordStatus').textContent = '';
+  document.getElementById('audioFileInput').value = '';
+  setAudioOpt('none');
+  _noticeRecordedBlob = null;
   openModal('addNoticeModal');
 }
 
@@ -1029,9 +1250,88 @@ async function confirmAddNotice() {
   const content = document.getElementById('noticeContent').value.trim();
   const tag_type = document.getElementById('noticeTag').value;
   if (!title || !content) { showToast('标题和内容不能为空', true); return; }
-  const res = await api('POST', '/api/announcements', { title, content, tag_type });
-  if (res && res.code===0) { showToast('公告已发布'); closeModal('addNoticeModal'); loadNotices(); }
-  else showToast(res?.message||'发布失败', true);
+
+  const btn = document.getElementById('noticeSubmitBtn');
+  btn.disabled = true; btn.textContent = '发布中…';
+
+  const fd = new FormData();
+  fd.append('title', title);
+  fd.append('content', content);
+  fd.append('tag_type', tag_type);
+
+  // 图片
+  const imgInput = document.getElementById('noticeImgs');
+  if (imgInput.files.length) {
+    Array.from(imgInput.files).slice(0,9).forEach(f => fd.append('images', f));
+  }
+
+  // 音频
+  const audioOpt = document.querySelector('.audio-opt-active')?.dataset.opt || 'none';
+  if (audioOpt === 'tts') {
+    fd.append('audio_type', 'tts');
+  } else if (audioOpt === 'record') {
+    const audioFile = document.getElementById('audioFileInput').files[0];
+    if (_noticeRecordedBlob) {
+      fd.append('audio', _noticeRecordedBlob, 'recording.webm');
+    } else if (audioFile) {
+      fd.append('audio', audioFile);
+    }
+  }
+
+  try {
+    const r = await fetch(BASE + '/api/announcements', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token },
+      body: fd
+    });
+    const res = await r.json();
+    btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> 发布';
+    if (res && res.code===0) { showToast('公告已发布'); closeModal('addNoticeModal'); loadNotices(); }
+    else showToast(res?.message||'发布失败', true);
+  } catch(e) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> 发布'; showToast('网络错误', true); }
+}
+
+// 查看公告详情
+async function viewNotice(id) {
+  let n = _noticesData.find(x => x.id == id);
+  if (!n) {
+    const res = await fetch(BASE + '/api/announcements').then(r=>r.json());
+    if (res && res.data) { n = res.data.find(x => x.id == id); }
+  }
+  if (!n) { showToast('公告不存在', true); return; }
+
+  const tagColors = {'活动通知':'tt','体育活动':'tg','政策宣传':'tb','全村告示':'ta','积分通知':'tg','兑换通知':'ta','活动公告':'tb'};
+
+  // 图片九宫格
+  let imgHtml = '';
+  if (n.image_urls && n.image_urls.length) {
+    const cnt = Math.min(n.image_urls.length, 9);
+    const cols = cnt === 1 ? '1fr' : cnt === 2 ? '1fr 1fr' : '1fr 1fr 1fr';
+    imgHtml = '<div style="display:grid;grid-template-columns:'+cols+';gap:4px;margin:12px 0;">'
+      + n.image_urls.slice(0,9).map(url =>
+        '<img src="'+url+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="window.open(this.src,\'_blank\')">'  
+      ).join('') + '</div>';
+  }
+
+  // 音频
+  let audioHtml = '';
+  if (n.audio_type === 'tts') {
+    audioHtml = '<div style="padding:10px 14px;background:var(--green-bg);border-radius:8px;margin:10px 0;font-size:13px;color:var(--green);"><i class="ti ti-speakerphone"></i> 已设置普通话TTS语音播报</div>';
+  } else if (n.audio_type === 'record' && n.audio_url) {
+    audioHtml = '<div style="margin:10px 0;"><div style="font-size:12px;color:var(--text3);margin-bottom:4px;">语音公告</div><audio controls src="'+n.audio_url+'" style="width:100%;height:36px;"></audio></div>';
+  }
+
+  document.getElementById('noticeDetailHeadTitle').textContent = n.title;
+  document.getElementById('noticeDetailContent').innerHTML =
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">'
+    + '<span class="tag '+(tagColors[n.tag_type]||'tg')+'">'+n.tag_type+'</span>'
+    + '<span style="font-size:13px;color:var(--text3);">'+(n.created_at?n.created_at.slice(0,10):'')+'</span>'
+    + '</div>'
+    + audioHtml
+    + '<div style="font-size:15px;line-height:1.9;color:var(--text1);white-space:pre-wrap;padding:4px 0;">'+n.content+'</div>'
+    + imgHtml;
+  document.getElementById('noticeListView').style.display = 'none';
+  document.getElementById('noticeDetailView').style.display = '';
 }
 
 async function revokeNotice(id) {
@@ -1103,6 +1403,88 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
   if (token && adminInfo && ['super','village_admin'].includes(adminInfo.role)) initApp();
 });
+
+// ── 公告富媒体函数 ──
+function previewNoticeImgs(input) {
+  const preview = document.getElementById('noticeImgPreview');
+  const files = Array.from(input.files).slice(0,9);
+  preview.innerHTML = files.map((f,i) => {
+    const url = URL.createObjectURL(f);
+    return '<div style="position:relative;width:64px;height:64px;">'
+      + '<img src="'+url+'" style="width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--border);">'
+      + '<button type="button" onclick="removeNoticeImg('+i+')" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--red);color:white;border:none;cursor:pointer;font-size:10px;line-height:16px;text-align:center;">×</button>'
+      + '</div>';
+  }).join('');
+}
+
+function removeNoticeImg(idx) {
+  const input = document.getElementById('noticeImgs');
+  const dt = new DataTransfer();
+  Array.from(input.files).forEach((f,i) => { if(i!==idx) dt.items.add(f); });
+  input.files = dt.files;
+  previewNoticeImgs(input);
+}
+
+function setAudioOpt(opt) {
+  ['none','tts','record'].forEach(o => {
+    const id = 'audioOpt' + o.charAt(0).toUpperCase() + o.slice(1);
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.classList.toggle('btn-primary', o===opt);
+    btn.classList.toggle('btn-outline', o!==opt);
+    if (o===opt) { btn.classList.add('audio-opt-active'); btn.dataset.opt = o; }
+    else btn.classList.remove('audio-opt-active');
+  });
+  document.getElementById('audioTtsHint').style.display = opt==='tts' ? 'block' : 'none';
+  document.getElementById('audioRecordArea').style.display = opt==='record' ? 'block' : 'none';
+}
+
+let _noticeMediaRecorder = null, _noticeRecordedBlob = null, _noticeRecordChunks = [], _noticeRecordTimer = null, _noticeRecordSec = 0;
+
+async function toggleRecord() {
+  const btn = document.getElementById('recordBtn');
+  if (_noticeMediaRecorder && _noticeMediaRecorder.state === 'recording') {
+    _noticeMediaRecorder.stop();
+    clearInterval(_noticeRecordTimer);
+    btn.innerHTML = '<i class="ti ti-microphone"></i> 开始录音';
+    document.getElementById('recordTimer').style.display = 'none';
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    _noticeRecordChunks = []; _noticeRecordSec = 0;
+    _noticeMediaRecorder = new MediaRecorder(stream);
+    _noticeMediaRecorder.ondataavailable = e => { if(e.data.size>0) _noticeRecordChunks.push(e.data); };
+    _noticeMediaRecorder.onstop = () => {
+      _noticeRecordedBlob = new Blob(_noticeRecordChunks, { type: 'audio/webm' });
+      const url = URL.createObjectURL(_noticeRecordedBlob);
+      const preview = document.getElementById('recordPreview');
+      preview.src = url; preview.style.display = 'block';
+      document.getElementById('recordStatus').textContent = '录音完成，可试听';
+      stream.getTracks().forEach(t => t.stop());
+    };
+    _noticeMediaRecorder.start();
+    btn.innerHTML = '<i class="ti ti-player-stop"></i> 停止录音';
+    const timerEl = document.getElementById('recordTimer');
+    timerEl.style.display = 'inline';
+    _noticeRecordTimer = setInterval(() => {
+      _noticeRecordSec++;
+      const m = Math.floor(_noticeRecordSec/60), s = _noticeRecordSec%60;
+      timerEl.textContent = '⏺ ' + m + ':' + s.toString().padStart(2,'0');
+    }, 1000);
+    document.getElementById('recordStatus').textContent = '录音中…';
+  } catch(e) { showToast('无法访问麦克风，请检查权限', true); }
+}
+
+function loadAudioFile(input) {
+  if (!input.files[0]) return;
+  _noticeRecordedBlob = null;
+  const url = URL.createObjectURL(input.files[0]);
+  const preview = document.getElementById('recordPreview');
+  preview.src = url; preview.style.display = 'block';
+  document.getElementById('recordStatus').textContent = '已选择：' + input.files[0].name;
+}
+
 </script>
 </body>
 </html>

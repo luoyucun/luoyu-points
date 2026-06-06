@@ -6,7 +6,6 @@ const fs = require('fs');
 const db = require('../config/db');
 const { authMiddleware, requireVillageAdmin } = require('../middleware/auth');
 
-// 本地存储配置
 const UPLOAD_DIR = path.join(__dirname, '../uploads');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
@@ -14,24 +13,19 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname) || '.jpg';
-    const vid = (req.body.villager_id || 'v0').toString().slice(0, 8);
-    const evtRaw = req.body.custom === 'true'
-      ? (req.body.custom_name || '自定义')
-      : (req.body.event_name || req.body.custom_name || '事务');
-    const evtSlug = evtRaw.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '').slice(0, 10) || 'score';
-    cb(null, `v${vid}_${evtSlug}_${Date.now()}${ext}`);
+    cb(null, `tmp_${Date.now()}_${Math.random().toString(36).slice(2,6)}${ext}`);
   }
 });
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 前端已压缩，后端放宽到10M
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = ['image/jpeg','image/png','image/webp','image/gif'];
     cb(null, allowed.includes(file.mimetype));
   }
 });
 
-// GET /api/scores — 积分记录列表
+// GET /api/scores
 router.get('/', authMiddleware, async (req, res) => {
   const { villager_id, status, page = 1, limit = 50 } = req.query;
   let sql = `
@@ -54,13 +48,12 @@ router.get('/', authMiddleware, async (req, res) => {
   params.push(parseInt(limit), (parseInt(page)-1)*parseInt(limit));
   const [rows] = await db.execute(sql, params);
   rows.forEach(r => { if (r.image_urls) { try { r.image_urls = JSON.parse(r.image_urls); } catch(e) { r.image_urls = [r.image_urls]; } } });
-  rows.forEach(r => { if (r.image_urls) { try { r.image_urls = JSON.parse(r.image_urls); } catch(e) { r.image_urls = [r.image_urls]; } } });
   res.json({ code: 0, data: rows });
 });
 
-// GET /api/scores/public — 公开积分记录（无需登录，村民查看全村动态）
+// GET /api/scores/public
 router.get('/public', async (req, res) => {
-  const { limit = 50, status = 'approved' } = req.query;
+  const { limit = 50 } = req.query;
   const [rows] = await db.execute(`
     SELECT sr.id, v.name AS villager_name, v.group_no,
            sr.event_name, sr.points, sr.description, sr.image_urls, sr.status, sr.is_revoked, sr.created_at
@@ -73,7 +66,7 @@ router.get('/public', async (req, res) => {
   res.json({ code: 0, data: rows });
 });
 
-// GET /api/scores/stats — 当前登录者积分统计
+// GET /api/scores/stats
 router.get('/stats', authMiddleware, async (req, res) => {
   const [rows] = await db.execute(`
     SELECT COALESCE(SUM(points),0) AS total_score,
@@ -83,23 +76,21 @@ router.get('/stats', authMiddleware, async (req, res) => {
   res.json({ code: 0, data: { summary: rows[0] } });
 });
 
-// GET /api/scores/events — 积分事件列表
+// GET /api/scores/events
 router.get('/events', authMiddleware, async (req, res) => {
   const [rows] = await db.execute('SELECT * FROM score_events WHERE is_active=1 ORDER BY category, sort_order');
   rows.forEach(r => { if (r.image_urls) { try { r.image_urls = JSON.parse(r.image_urls); } catch(e) { r.image_urls = [r.image_urls]; } } });
   res.json({ code: 0, data: rows });
 });
 
-// GET /api/scores/events/public — 积分细则（无需登录）
+// GET /api/scores/events/public
 router.get('/events/public', async (req, res) => {
   const [rows] = await db.execute('SELECT id,name,category,points,verify_method FROM score_events WHERE is_active=1 ORDER BY category, sort_order');
-  rows.forEach(r => { if (r.image_urls) { try { r.image_urls = JSON.parse(r.image_urls); } catch(e) { r.image_urls = [r.image_urls]; } } });
   res.json({ code: 0, data: rows });
 });
 
-// PATCH /api/scores/:id/review — 审核积分
+// PATCH /api/scores/:id/review — 审核（同步更新双积分）
 router.patch('/:id/review', authMiddleware, requireVillageAdmin, async (req, res) => {
-  // 兼容布尔值 true/false 和字符串 "true"/"false"
   const approved = req.body.approved === true || req.body.approved === 'true';
   const status = approved ? 'approved' : 'rejected';
   const [rows] = await db.execute('SELECT * FROM score_records WHERE id=?', [req.params.id]);
@@ -111,7 +102,11 @@ router.patch('/:id/review', authMiddleware, requireVillageAdmin, async (req, res
     await conn.beginTransaction();
     await conn.execute('UPDATE score_records SET status=? WHERE id=?', [status, req.params.id]);
     if (approved) {
-      await conn.execute('UPDATE villagers SET total_score=total_score+? WHERE id=?', [rec.points, rec.villager_id]);
+      // 同时更新兑换积分和荣誉积分
+      await conn.execute(
+        'UPDATE villagers SET total_score=total_score+?, honor_score=honor_score+? WHERE id=?',
+        [rec.points, rec.points, rec.villager_id]
+      );
     }
     await conn.commit();
     res.json({ code: 0, message: approved ? '审核通过' : '已拒绝' });
@@ -119,7 +114,7 @@ router.patch('/:id/review', authMiddleware, requireVillageAdmin, async (req, res
   finally { conn.release(); }
 });
 
-// POST /api/scores — 提交积分
+// POST /api/scores — 提交积分（同步更新双积分）
 router.post('/', authMiddleware, upload.array('images', 4), async (req, res) => {
   const { villager_id, event_id, description, custom, custom_points, custom_name } = req.body;
   if (!villager_id) return res.status(400).json({ code: 400, message: 'villager_id 必填' });
@@ -142,17 +137,26 @@ router.post('/', authMiddleware, upload.array('images', 4), async (req, res) => 
     evt = evRows[0];
   }
 
-  // 保存图片路径
-  let imageUrls = [];
-  if (req.files && req.files.length) {
-    imageUrls = req.files.map(f => `/uploads/${f.filename}`);
-  }
-
   const finalPoints  = isCustom ? parseInt(custom_points) : evt.points;
   const finalName    = isCustom ? custom_name.trim() : evt.name;
   const finalEventId = isCustom ? null : event_id;
   const finalDesc    = isCustom ? null : (description || null);
   const status = (!isCustom && ['super','village_admin'].includes(req.admin.role)) ? 'approved' : 'pending';
+
+  let imageUrls = [];
+  if (req.files && req.files.length) {
+    const vid = villager_id.toString().slice(0, 8);
+    const evtSlug = finalName.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '').slice(0, 10) || 'score';
+    const renamedFiles = req.files.map(f => {
+      const ext = path.extname(f.filename);
+      const newName = `v${vid}_${evtSlug}_${Date.now()}_${Math.random().toString(36).slice(2,4)}${ext}`;
+      const oldPath = path.join(UPLOAD_DIR, f.filename);
+      const newPath = path.join(UPLOAD_DIR, newName);
+      try { fs.renameSync(oldPath, newPath); } catch(e) {}
+      return fs.existsSync(newPath) ? newName : f.filename;
+    });
+    imageUrls = renamedFiles.map(name => `/uploads/${name}`);
+  }
 
   const conn = await db.getConnection();
   try {
@@ -164,7 +168,11 @@ router.post('/', authMiddleware, upload.array('images', 4), async (req, res) => 
        imageUrls.length ? JSON.stringify(imageUrls) : null, req.admin.id, status]
     );
     if (status === 'approved') {
-      await conn.execute('UPDATE villagers SET total_score=total_score+? WHERE id=?', [finalPoints, villager_id]);
+      // 同时更新兑换积分和荣誉积分
+      await conn.execute(
+        'UPDATE villagers SET total_score=total_score+?, honor_score=honor_score+? WHERE id=?',
+        [finalPoints, finalPoints, villager_id]
+      );
     }
     await conn.commit();
     res.json({ code: 0, message: status==='approved'?'录入成功，积分已生效':'提交成功，等待审核', data: { id: ins.insertId, status } });

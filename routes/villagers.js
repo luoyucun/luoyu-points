@@ -14,7 +14,7 @@ router.post('/login', async (req, res) => {
     return res.status(400).json({ code: 400, message: '身份证后4位须为4位数字' });
 
   const [rows] = await db.execute(
-    'SELECT id,name,gender,group_no,id_last4,total_score FROM villagers WHERE name=? AND id_last4=? AND is_active=1',
+    'SELECT id,name,gender,group_no,id_last4,total_score,honor_score FROM villagers WHERE name=? AND id_last4=? AND is_active=1',
     [name.trim(), id_last4]
   );
   if (!rows.length)
@@ -41,7 +41,7 @@ router.get('/query', async (req, res) => {
     return res.status(400).json({ code: 400, message: '身份证后4位须为4位数字' });
   }
   const [rows] = await db.execute(
-    'SELECT id, name, gender, group_no, id_last4, total_score FROM villagers WHERE name = ? AND id_last4 = ? AND is_active = 1',
+    'SELECT id, name, gender, group_no, id_last4, total_score, honor_score FROM villagers WHERE name = ? AND id_last4 = ? AND is_active = 1',
     [name.trim(), id_last4]
   );
   if (!rows.length) {
@@ -105,7 +105,7 @@ router.get('/group/rank', authMiddleware, async (req, res) => {
 // GET /api/villagers — 查询村民列表（支持姓名/组别筛选）
 router.get('/', authMiddleware, async (req, res) => {
   const { name, group_no, page = 1, limit = 50 } = req.query;
-  let sql = 'SELECT id, name, gender, group_no, id_last4, total_score FROM villagers WHERE is_active = 1';
+  let sql = 'SELECT id, name, gender, group_no, id_last4, total_score, honor_score FROM villagers WHERE is_active = 1';
   const params = [];
   if (name)     { sql += ' AND name LIKE ?';     params.push(`%${name}%`); }
   if (group_no) { sql += ' AND group_no = ?';    params.push(group_no); }
@@ -121,7 +121,7 @@ router.get('/', authMiddleware, async (req, res) => {
 // GET /api/villagers/:id — 村民详情 + 近期积分
 router.get('/:id', authMiddleware, async (req, res) => {
   const [rows] = await db.execute(
-    'SELECT id, name, gender, group_no, id_last4, total_score FROM villagers WHERE id = ? AND is_active = 1',
+    'SELECT id, name, gender, group_no, id_last4, total_score, honor_score FROM villagers WHERE id = ? AND is_active = 1',
     [req.params.id]
   );
   if (!rows.length) return res.status(404).json({ code: 404, message: '村民不存在' });
