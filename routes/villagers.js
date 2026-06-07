@@ -69,6 +69,52 @@ router.get('/query', async (req, res) => {
   res.json({ code: 0, data: { villager, records } });
 });
 
+// GET /api/villagers/groups/public — 公开组别列表（无需登录，排行榜下拉框用）
+router.get('/groups/public', async (req, res) => {
+  const [rows] = await db.execute(
+    'SELECT DISTINCT group_no FROM villagers WHERE is_active=1 AND group_no IS NOT NULL ORDER BY group_no'
+  );
+  res.json({ code: 0, data: rows.map(r => r.group_no) });
+});
+
+// GET /api/villagers/:id/exchanges — 村民兑换记录（无需登录，村民端展示待领取）
+router.get('/:id/exchanges', async (req, res) => {
+  const [rows] = await db.execute(
+    `SELECT id, goods_name, points_cost, status, created_at
+     FROM exchange_records WHERE villager_id = ? ORDER BY created_at DESC LIMIT 20`,
+    [req.params.id]
+  );
+  res.json({ code: 0, data: rows });
+});
+
+// GET /api/villagers/rank/public — 公开排行榜（无需登录，村民端使用）
+router.get('/rank/public', async (req, res) => {
+  const group = req.query.group_no || '';
+  let rows;
+  if (group) {
+    [rows] = await db.execute(`
+      SELECT name, gender, group_no, total_score,
+        (SELECT COALESCE(SUM(points),0) FROM score_records
+         WHERE villager_id = v.id AND status='approved'
+           AND MONTH(created_at)=MONTH(NOW()) AND YEAR(created_at)=YEAR(NOW())) AS month_score
+      FROM villagers v
+      WHERE group_no = ? AND is_active = 1
+      ORDER BY total_score DESC LIMIT 20
+    `, [group]);
+  } else {
+    [rows] = await db.execute(`
+      SELECT name, gender, group_no, total_score,
+        (SELECT COALESCE(SUM(points),0) FROM score_records
+         WHERE villager_id = v.id AND status='approved'
+           AND MONTH(created_at)=MONTH(NOW()) AND YEAR(created_at)=YEAR(NOW())) AS month_score
+      FROM villagers v
+      WHERE is_active = 1
+      ORDER BY total_score DESC LIMIT 50
+    `);
+  }
+  res.json({ code: 0, data: rows });
+});
+
 // GET /api/villagers/group/rank — 排行榜（传 group_no 查组内，不传查全村）
 router.get('/group/rank', authMiddleware, async (req, res) => {
   let group = req.query.group_no;

@@ -3,16 +3,20 @@ const router = require('express').Router();
 const db = require('../config/db');
 const { authMiddleware, requireVillageAdmin, requireSuper } = require('../middleware/auth');
 
+// Express 4 不自动捕获 async 路由异常
+// wrap 确保任何 await 抛出的错误都传给全局错误处理器，返回 500 而不是挂起
+const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
+
 // GET /api/admin/groups
-router.get('/groups', authMiddleware, async (req, res) => {
+router.get('/groups', authMiddleware, wrap(async (req, res) => {
   const [rows] = await db.execute(
     'SELECT DISTINCT group_no FROM villagers WHERE is_active=1 AND group_no IS NOT NULL ORDER BY group_no'
   );
   res.json({ code: 0, data: rows.map(r => r.group_no) });
-});
+}));
 
 // GET /api/admin/dashboard
-router.get('/dashboard', authMiddleware, requireVillageAdmin, async (req, res) => {
+router.get('/dashboard', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
   const [[{ total_villagers }]] = await db.execute('SELECT COUNT(*) AS total_villagers FROM villagers WHERE is_active=1');
   const [[{ total_score }]]    = await db.execute('SELECT COALESCE(SUM(total_score),0) AS total_score FROM villagers WHERE is_active=1');
   const [[{ month_records }]]  = await db.execute(`SELECT COUNT(*) AS month_records FROM score_records WHERE status='approved' AND MONTH(created_at)=MONTH(NOW()) AND YEAR(created_at)=YEAR(NOW())`);
@@ -24,10 +28,10 @@ router.get('/dashboard', authMiddleware, requireVillageAdmin, async (req, res) =
     FROM villagers WHERE is_active=1 GROUP BY group_no ORDER BY total DESC
   `);
   res.json({ code: 0, data: { total_villagers, total_score, month_records, pending, month_points, goods_stock, group_stats }});
-});
+}));
 
-// PATCH /api/admin/scores/:id/revoke — 撤回（同步回退双积分）
-router.patch('/scores/:id/revoke', authMiddleware, requireSuper, async (req, res) => {
+// PATCH /api/admin/scores/:id/revoke
+router.patch('/scores/:id/revoke', authMiddleware, requireSuper, wrap(async (req, res) => {
   const { reason } = req.body;
   if (!reason || !reason.trim()) return res.status(400).json({ code: 400, message: '撤回原因不能为空' });
   const [rows] = await db.execute('SELECT * FROM score_records WHERE id=?', [req.params.id]);
@@ -42,7 +46,6 @@ router.patch('/scores/:id/revoke', authMiddleware, requireSuper, async (req, res
       [req.admin.id, reason.trim(), req.params.id]
     );
     if (rec.status === 'approved') {
-      // 同时回退兑换积分和荣誉积分
       await conn.execute(
         'UPDATE villagers SET total_score=total_score-?, honor_score=honor_score-? WHERE id=?',
         [rec.points, rec.points, rec.villager_id]
@@ -52,10 +55,10 @@ router.patch('/scores/:id/revoke', authMiddleware, requireSuper, async (req, res
     res.json({ code: 0, message: '撤回成功，积分已回退' });
   } catch(e) { await conn.rollback(); throw e; }
   finally { conn.release(); }
-});
+}));
 
 // POST /api/admin/goods
-router.post('/goods', authMiddleware, requireVillageAdmin, async (req, res) => {
+router.post('/goods', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
   const { name, icon, points_cost, stock } = req.body;
   if (!name || !points_cost) return res.status(400).json({ code: 400, message: '名称和积分为必填' });
   const [rows] = await db.execute('SELECT MAX(sort_order) AS max_order FROM goods');
@@ -65,10 +68,10 @@ router.post('/goods', authMiddleware, requireVillageAdmin, async (req, res) => {
     [name.trim(), icon||'📦', parseInt(points_cost), parseInt(stock)||0, nextOrder]
   );
   res.json({ code: 0, message: '物资添加成功', data: { id: result.insertId } });
-});
+}));
 
 // PUT /api/admin/goods/:id
-router.put('/goods/:id', authMiddleware, requireVillageAdmin, async (req, res) => {
+router.put('/goods/:id', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
   const { name, icon, points_cost, stock } = req.body;
   if (!name || !points_cost) return res.status(400).json({ code: 400, message: '名称和积分为必填' });
   await db.execute(
@@ -76,18 +79,18 @@ router.put('/goods/:id', authMiddleware, requireVillageAdmin, async (req, res) =
     [name.trim(), icon||'📦', parseInt(points_cost), parseInt(stock)||0, req.params.id]
   );
   res.json({ code: 0, message: '物资已更新' });
-});
+}));
 
 // PATCH /api/admin/goods/:id/stock
-router.patch('/goods/:id/stock', authMiddleware, requireVillageAdmin, async (req, res) => {
+router.patch('/goods/:id/stock', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
   const { stock } = req.body;
   if (stock === undefined || stock < 0) return res.status(400).json({ code: 400, message: '库存数量不能为负数' });
   await db.execute('UPDATE goods SET stock=? WHERE id=?', [parseInt(stock), req.params.id]);
   res.json({ code: 0, message: '库存已更新' });
-});
+}));
 
 // GET /api/admin/exchange/records
-router.get('/exchange/records', authMiddleware, requireVillageAdmin, async (req, res) => {
+router.get('/exchange/records', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
   const { status, page=1, limit=20 } = req.query;
   let sql = `
     SELECT er.id, er.villager_id, v.name AS villager_name, v.group_no,
@@ -99,18 +102,25 @@ router.get('/exchange/records', authMiddleware, requireVillageAdmin, async (req,
   sql += ' ORDER BY er.created_at DESC LIMIT ? OFFSET ?';
   params.push(parseInt(limit), (parseInt(page)-1)*parseInt(limit));
   const [rows] = await db.execute(sql, params);
-  const [[{ total }]] = await db.execute(`SELECT COUNT(*) AS total FROM exchange_records er JOIN villagers v ON v.id=er.villager_id WHERE 1=1${status?' AND er.status=?':''}`, status?[status]:[]);
+  const [[{ total }]] = await db.execute(
+    `SELECT COUNT(*) AS total FROM exchange_records er JOIN villagers v ON v.id=er.villager_id WHERE 1=1${status?' AND er.status=?':''}`,
+    status?[status]:[]
+  );
   res.json({ code: 0, data: rows, total });
-});
+}));
 
 // PATCH /api/admin/exchange/:id/deliver
-router.patch('/exchange/:id/deliver', authMiddleware, requireVillageAdmin, async (req, res) => {
-  await db.execute('UPDATE exchange_records SET status=? WHERE id=?', ['delivered', req.params.id]);
-  res.json({ code: 0, message: '已标记为发放' });
-});
+router.patch('/exchange/:id/deliver', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
+  const [result] = await db.execute(
+    'UPDATE exchange_records SET status=? WHERE id=?', ['done', req.params.id]
+  );
+  if (result.affectedRows === 0)
+    return res.status(404).json({ code: 404, message: '兑换记录不存在' });
+  res.json({ code: 0, message: '已确认发放' });
+}));
 
-// GET /api/admin/export/villagers — 导出时加入荣誉积分
-router.get('/export/villagers', authMiddleware, requireVillageAdmin, async (req, res) => {
+// GET /api/admin/export/villagers
+router.get('/export/villagers', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
   const { group_no } = req.query;
   let sql = `
     SELECT v.name, v.gender, v.group_no, v.id_last4,
@@ -124,10 +134,10 @@ router.get('/export/villagers', authMiddleware, requireVillageAdmin, async (req,
   sql += ' ORDER BY v.group_no, v.total_score DESC';
   const [rows] = await db.execute(sql, params);
   res.json({ code: 0, data: rows });
-});
+}));
 
 // GET /api/admin/export/scores
-router.get('/export/scores', authMiddleware, requireVillageAdmin, async (req, res) => {
+router.get('/export/scores', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
   const { start_date, end_date, group_no } = req.query;
   let sql = `
     SELECT v.name AS villager_name, v.group_no, sr.event_name, sr.points,
@@ -143,10 +153,10 @@ router.get('/export/scores', authMiddleware, requireVillageAdmin, async (req, re
   sql += ' ORDER BY sr.created_at DESC LIMIT 5000';
   const [rows] = await db.execute(sql, params);
   res.json({ code: 0, data: rows });
-});
+}));
 
 // PATCH /api/admin/admins/:id/reset-password
-router.patch('/admins/:id/reset-password', authMiddleware, requireSuper, async (req, res) => {
+router.patch('/admins/:id/reset-password', authMiddleware, requireSuper, wrap(async (req, res) => {
   const { new_password } = req.body;
   if (!new_password || new_password.length < 8)
     return res.status(400).json({ code: 400, message: '密码不能少于8位' });
@@ -154,16 +164,19 @@ router.patch('/admins/:id/reset-password', authMiddleware, requireSuper, async (
   const hash = await bcrypt.hash(new_password, 10);
   await db.execute('UPDATE admins SET password=? WHERE id=?', [hash, req.params.id]);
   res.json({ code: 0, message: '密码重置成功' });
-});
+}));
 
-// GET /api/admin/announcements
-router.get('/announcements', authMiddleware, requireSuper, async (req, res) => {
+// GET /api/admin/announcements（后台，含已撤回）
+router.get('/announcements', authMiddleware, requireSuper, wrap(async (req, res) => {
   const [rows] = await db.execute(
-    'SELECT id,title,content,tag_type,is_active,created_at FROM announcements ORDER BY created_at DESC'
+    'SELECT id,title,content,tag_type,image_urls,audio_url,audio_type,is_active,created_at FROM announcements ORDER BY created_at DESC'
   );
+  rows.forEach(r => {
+    if (r.image_urls) { try { r.image_urls = JSON.parse(r.image_urls); } catch(e) { r.image_urls = []; } }
+    else r.image_urls = [];
+  });
   res.json({ code: 0, data: rows });
-});
-
+}));
 
 // ── 公告富媒体接口 ──
 const multer = require('multer');
@@ -188,49 +201,36 @@ const noticeUpload = multer({
   }
 });
 
-// GET /api/announcements — 公开接口（村民端）
-router.get('/announcements', async (req, res) => {
-  const [rows] = await db.execute(
-    'SELECT id,title,content,tag_type,image_urls,audio_url,audio_type,created_at FROM announcements WHERE is_active=1 ORDER BY created_at DESC LIMIT 50'
-  );
-  rows.forEach(r => {
-    if (r.image_urls) { try { r.image_urls = JSON.parse(r.image_urls); } catch(e) { r.image_urls = []; } }
-    else r.image_urls = [];
-  });
-  res.json({ code: 0, data: rows });
-});
-
-// POST /api/announcements — 发布公告（含图片/录音）
+// POST /api/admin/announcements（发布公告）
 router.post('/announcements', authMiddleware, requireSuper,
   noticeUpload.fields([{ name: 'images', maxCount: 9 }, { name: 'audio', maxCount: 1 }]),
-  async (req, res) => {
-    console.log("REQ BODY:", JSON.stringify(req.body));
+  wrap(async (req, res) => {
     const { title, content, tag_type, audio_type } = req.body;
+    if (!title || !content) return res.status(400).json({ code: 400, message: '标题和内容不能为空' });
     let image_urls = null;
     if (req.files && req.files.images && req.files.images.length) {
       image_urls = JSON.stringify(req.files.images.map(f => `/uploads/notices/${f.filename}`));
     }
-
     let audio_url = null;
     let finalAudioType = null;
     if (req.files && req.files.audio && req.files.audio.length) {
       audio_url = `/uploads/notices/${req.files.audio[0].filename}`;
       finalAudioType = 'record';
     } else if (audio_type === 'tts') {
-      finalAudioType = 'tts'; // 前端TTS，不需要服务器音频文件
+      finalAudioType = 'tts';
     }
-
     const [result] = await db.execute(
       'INSERT INTO announcements (title,content,tag_type,image_urls,audio_url,audio_type,created_by) VALUES (?,?,?,?,?,?,?)',
       [title.trim(), content.trim(), tag_type||'全村告示', image_urls, audio_url, finalAudioType, req.admin.id]
     );
     res.json({ code: 0, message: '公告已发布', data: { id: result.insertId } });
-  }
+  })
 );
 
-// DELETE /api/announcements/:id — 撤回公告
-router.delete('/announcements/:id', authMiddleware, requireSuper, async (req, res) => {
+// DELETE /api/admin/announcements/:id
+router.delete('/announcements/:id', authMiddleware, requireSuper, wrap(async (req, res) => {
   await db.execute('UPDATE announcements SET is_active=0 WHERE id=?', [req.params.id]);
   res.json({ code: 0, message: '公告已撤回' });
-});
+}));
+
 module.exports = router;

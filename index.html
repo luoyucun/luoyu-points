@@ -168,11 +168,30 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 .lb-score{font-size:20px;font-weight:700;color:var(--green);}
 
 /* ── Exchange ── */
-.egrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
-.ecard{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;}
-.ecard .eicon{font-size:32px;margin-bottom:8px;}
-.ecard .ename{font-size:15px;font-weight:600;margin-bottom:4px;}
-.ecard .epts{font-size:14px;color:var(--green);font-weight:600;}
+.egrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.ecard{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+.ecard .eicon{font-size:36px;margin-bottom:8px;}
+.ecard .ename{font-size:18px;font-weight:600;margin-bottom:4px;}
+.ecard .epts{font-size:20px;color:var(--green);font-weight:700;}
+.exchange-score-bar{background:var(--green);color:white;border-radius:var(--radius);padding:16px 18px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
+.exchange-score-bar .esb-label{font-size:15px;opacity:.85;}
+.exchange-score-bar .esb-val{font-size:32px;font-weight:700;}
+.exchange-pending{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;}
+.exchange-pending-title{font-size:16px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.ep-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
+.ep-item:last-child{border-bottom:none;}
+.ep-name{font-size:16px;color:var(--text);}
+.ep-pts{font-size:14px;color:var(--text2);}
+.ep-status{font-size:13px;padding:3px 10px;border-radius:10px;font-weight:500;}
+.ep-status.pending{background:var(--amber-bg);color:var(--amber);}
+.ep-status.done{background:var(--green-bg);color:var(--green);}
+.ep-status.cancelled{background:#f0f0f0;color:var(--text3);}
+.exchange-success-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:flex;align-items:center;justify-content:center;padding:24px;}
+.exchange-success-box{background:white;border-radius:16px;padding:28px 24px;max-width:320px;width:100%;text-align:center;}
+.exchange-success-icon{font-size:56px;margin-bottom:12px;}
+.exchange-success-title{font-size:22px;font-weight:700;color:var(--green);margin-bottom:10px;}
+.exchange-success-msg{font-size:17px;color:var(--text2);line-height:1.8;margin-bottom:20px;}
+.exchange-success-btn{width:100%;padding:13px;background:var(--green);border:none;border-radius:10px;color:white;font-size:17px;font-weight:500;cursor:pointer;}
 
 /* ── 积分细则 ── */
 .rules-cat{margin-bottom:16px;}
@@ -182,8 +201,8 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 .rule-name{color:var(--text);flex:1;}
 .rule-verify{font-size:12px;color:var(--text3);margin-top:2px;}
 .rule-pts{font-weight:700;font-size:16px;flex-shrink:0;}
-.ecard .estock{font-size:11px;color:var(--text3);margin-top:2px;}
-.ebtn{margin-top:8px;width:100%;padding:6px;border-radius:var(--radius-sm);border:1px solid var(--green-light);background:var(--green-bg);color:var(--green-dark);font-size:12px;cursor:pointer;}
+.ecard .estock{font-size:14px;color:var(--text3);margin-top:3px;}
+.ebtn{margin-top:10px;width:100%;padding:9px;border-radius:var(--radius-sm);border:1px solid var(--green-light);background:var(--green-bg);color:var(--green-dark);font-size:15px;font-weight:500;cursor:pointer;}
 .ebtn:disabled{opacity:.5;cursor:not-allowed;}
 
 /* ── Notice ── */
@@ -926,12 +945,12 @@ async function loadHome() {
         <div class="srow">
           <div style="text-align:center;flex:1;">
             <div class="snum">${v.total_score||0}</div>
-            <div class="slbl" style="font-size:11px;opacity:.8;">兑换积分</div>
+            <div class="slbl" style="font-size:13px;opacity:.9;">兑换积分（每年清零）</div>
           </div>
           <div style="width:1px;background:rgba(255,255,255,.2);margin:0 8px;align-self:stretch;"></div>
           <div style="text-align:center;flex:1;">
             <div class="snum" style="color:#f5c518;">${v.honor_score||0}</div>
-            <div class="slbl" style="font-size:11px;opacity:.8;">荣誉积分</div>
+            <div class="slbl" style="font-size:13px;opacity:.9;">荣誉积分（不可兑换）</div>
           </div>
         </div>
         <div class="chg">本月 +${v.month_score||0}分</div>
@@ -1054,19 +1073,29 @@ async function loadRank() {
   const sel = document.getElementById('rankGroupSel');
   el.innerHTML = '<div class="loading"><i class="ti ti-loader"></i>加载中…</div>';
 
-  // 填充组别下拉框（只填充一次，使用专门的组别接口）
+  // 填充组别下拉框（只填充一次）
   if (sel && sel.options.length <= 1) {
     try {
-      const gres = await api('GET', '/api/admin/groups');
-      if (gres && gres.data && gres.data.length) {
-        gres.data.forEach(g => {
-          const opt = document.createElement('option');
-          opt.value = g; opt.textContent = g.replace('罗峪村','');
-          sel.appendChild(opt);
-        });
-        // 小组长默认选自己的组
-        if (adminInfo.role === 'group_leader' && adminInfo.group_no) {
-          sel.value = adminInfo.group_no;
+      if (token && adminInfo) {
+        const gres = await api('GET', '/api/admin/groups');
+        if (gres && gres.data && gres.data.length) {
+          gres.data.forEach(g => {
+            const opt = document.createElement('option');
+            opt.value = g; opt.textContent = g.replace('罗峪村','');
+            sel.appendChild(opt);
+          });
+          if (adminInfo.role === 'group_leader' && adminInfo.group_no) sel.value = adminInfo.group_no;
+        }
+      } else {
+        // 村民：用公开接口，保证所有组都显示
+        const gres = await fetch(BASE + '/api/villagers/groups/public').then(r=>r.json());
+        if (gres && gres.data && gres.data.length) {
+          gres.data.forEach(g => {
+            const opt = document.createElement('option');
+            opt.value = g; opt.textContent = g.replace('罗峪村','');
+            sel.appendChild(opt);
+          });
+          if (villagerInfo && villagerInfo.group_no) sel.value = villagerInfo.group_no;
         }
       }
     } catch(e) {}
@@ -1074,8 +1103,14 @@ async function loadRank() {
 
   try {
     const group = sel ? sel.value : '';
-    const url = '/api/villagers/group/rank' + (group ? '?group_no=' + encodeURIComponent(group) : '?group_no=');
-    const res = await api('GET', url);
+    let res;
+    if (token && adminInfo) {
+      const url = '/api/villagers/group/rank' + (group ? '?group_no=' + encodeURIComponent(group) : '');
+      res = await api('GET', url);
+    } else {
+      const url = '/api/villagers/rank/public' + (group ? '?group_no=' + encodeURIComponent(group) : '');
+      res = await fetch(BASE + url).then(r=>r.json());
+    }
     if (!res.data || !res.data.length) {
       el.innerHTML = '<div class="empty"><i class="ti ti-users"></i>暂无排行数据</div>'; return;
     }
@@ -1084,7 +1119,7 @@ async function loadRank() {
       <div class="lb-item">
         <div class="lb-rank">${ranks[i]||i+1}</div>
         <div class="lb-av">${v.name?v.name[0]:'?'}</div>
-        <div style="flex:1"><div class="lb-name">${v.name}</div><div class="lb-grp">${v.gender||''} · ${v.group_no||''} · 本月+${v.month_score||0}</div></div>
+        <div style="flex:1"><div class="lb-name">${v.name}</div><div class="lb-grp">${v.gender||''} · ${(v.group_no||'').replace('罗峪村','')} · 本月+${v.month_score||0}</div></div>
         <div class="lb-score">${v.total_score}</div>
       </div>`).join('');
     const tip = group ? `排行仅显示${group.replace('罗峪村','')}成员，以兑换积分排名` : '全村排行（兑换积分，每年1月10日清零）';
@@ -1093,34 +1128,107 @@ async function loadRank() {
       <div class="card">${rows}</div>`;
   } catch(e) { el.innerHTML = '<div class="empty"><i class="ti ti-wifi-off"></i>加载失败</div>'; }
 }
+
 // ── Load exchange ──
 async function loadExchange() {
   const el = document.getElementById('exchangeScroll');
   el.innerHTML = '<div class="loading"><i class="ti ti-loader"></i>加载中…</div>';
   try {
-    const res = await api('GET', '/api/exchange/goods');
+    // 获取物资列表
+    const res = await fetch(BASE + '/api/exchange/goods').then(r=>r.json());
     if (!res.data || !res.data.length) { el.innerHTML = '<div class="empty"><i class="ti ti-gift"></i>暂无可兑换物资</div>'; return; }
+
+    // 当前积分
+    const currentScore = villagerInfo ? (villagerInfo.total_score || 0) : 0;
+
+    // 获取待领取记录
+    let pendingHtml = '';
+    if (villagerInfo && villagerInfo.id) {
+      try {
+        const erRes = await fetch(BASE + `/api/villagers/${villagerInfo.id}/exchanges`).then(r=>r.json());
+        if (erRes.data && erRes.data.length) {
+          const pendingItems = erRes.data.map(e => `
+            <div class="ep-item">
+              <div>
+                <div class="ep-name">${e.goods_name}</div>
+                <div class="ep-pts">扣除 ${e.points_cost} 分 · ${(e.created_at||'').slice(0,10)}</div>
+              </div>
+              <span class="ep-status ${e.status}">${e.status==='pending'?'待领取':e.status==='done'?'已发放':'已取消'}</span>
+            </div>`).join('');
+          pendingHtml = `
+            <div class="exchange-pending">
+              <div class="exchange-pending-title"><i class="ti ti-package" style="color:var(--amber);font-size:18px;"></i>我的兑换记录</div>
+              ${pendingItems}
+            </div>`;
+        }
+      } catch(e) {}
+    }
+
     const cards = res.data.map(g=>`
       <div class="ecard">
         <div class="eicon">${g.icon||'🎁'}</div>
         <div class="ename">${g.name}</div>
         <div class="epts">${g.points_cost}分</div>
         <div class="estock">库存 ${g.stock} 件</div>
-        <button class="ebtn" ${g.stock<1?'disabled':''} onclick="doExchange(${g.id},'${g.name}',${g.points_cost})">
+        <button class="ebtn" ${g.stock<1?'disabled':''} onclick="doExchange(${g.id},'${g.name.replace(/'/g,"\\'")}',${g.points_cost})">
           ${g.stock<1?'已售罄':'立即兑换'}
         </button>
       </div>`).join('');
+
     el.innerHTML = `
-      <div class="info-strip"><i class="ti ti-info-circle" style="font-size:15px;flex-shrink:0;"></i>最低兑换门槛 <strong>20分</strong>，剩余积分不清零</div>
+      <div class="exchange-score-bar">
+        <div class="esb-label">我的兑换积分</div>
+        <div class="esb-val">${currentScore} 分</div>
+      </div>
+      ${pendingHtml}
+      <div class="info-strip" style="font-size:14px;"><i class="ti ti-info-circle" style="font-size:16px;flex-shrink:0;"></i>每季度兑换一次，关注公告通知</div>
       <div class="egrid">${cards}</div>`;
   } catch(e) { el.innerHTML = '<div class="empty"><i class="ti ti-wifi-off"></i>加载失败</div>'; }
 }
 
 async function doExchange(gid, name, pts) {
-  if (!confirm(`确认兑换【${name}】，消耗 ${pts} 分？`)) return;
-  const res = await api('POST', '/api/exchange', { villager_id: adminInfo.id, goods_id: gid });
-  showToast(res.message || '兑换完成');
-  if (res.code === 0) loadExchange();
+  if (!villagerInfo) { showToast('请先登录', true); return; }
+  const currentScore = villagerInfo.total_score || 0;
+  if (currentScore < pts) {
+    showToast(`积分不足：当前 ${currentScore} 分，需要 ${pts} 分`, true); return;
+  }
+  if (!confirm(`确认兑换【${name}】\n消耗 ${pts} 分，兑换后请到村部领取`)) return;
+  try {
+    const res = await fetch(BASE + '/api/exchange', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ villager_id: villagerInfo.id, goods_id: gid })
+    }).then(r=>r.json());
+    if (res && res.code === 0) {
+      // 更新本地积分
+      villagerInfo.total_score = Math.max(0, currentScore - pts);
+      localStorage.setItem('luoyu_villager', JSON.stringify(villagerInfo));
+      // 显示成功弹窗
+      showExchangeSuccess(name, pts);
+      loadExchange();
+    } else {
+      showToast(res?.message || '兑换失败，请重试', true);
+    }
+  } catch(e) { showToast('网络错误，请重试', true); }
+}
+
+function showExchangeSuccess(name, pts) {
+  const existing = document.getElementById('exchangeSuccessOverlay');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.id = 'exchangeSuccessOverlay';
+  el.className = 'exchange-success-overlay';
+  el.innerHTML = `
+    <div class="exchange-success-box">
+      <div class="exchange-success-icon">🎉</div>
+      <div class="exchange-success-title">兑换成功！</div>
+      <div class="exchange-success-msg">
+        已兑换【${name}】，扣除 ${pts} 分。<br><br>
+        请到村部找村干部领取，<br>感谢你为罗峪村作出的贡献！
+      </div>
+      <button class="exchange-success-btn" onclick="document.getElementById('exchangeSuccessOverlay').remove()">我知道了</button>
+    </div>`;
+  document.body.appendChild(el);
 }
 
 // ── 1月清零提醒 ──

@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>罗峪村积分系统 · 后台管理</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🌾</text></svg>">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <style>
 :root {
@@ -317,7 +318,7 @@ tr:last-child td{border-bottom:none;}
   <!-- 兑换管理 -->
   <div class="page" id="page-exchange">
     <div class="card">
-      <div class="card-hd"><i class="ti ti-gift"></i>兑换记录
+      <div class="card-hd"><i class="ti ti-gift"></i>兑换记录<span id="exchangePendingBadge" style="display:none;background:var(--amber);color:white;font-size:11px;padding:2px 7px;border-radius:10px;margin-left:6px;font-weight:normal;"></span>
         <div class="actions">
           <select class="filter-sel" id="eStatus" onchange="loadExchange()">
             <option value="">全部状态</option>
@@ -1021,11 +1022,26 @@ async function loadExchange() {
   const tbody = document.getElementById('exchangeTbody');
   if (!res.data.length) {
     tbody.innerHTML = `<tr class="loading-row"><td colspan="7"><div class="empty-state"><i class="ti ti-gift"></i>暂无兑换记录</div></td></tr>`;
+    const badge = document.getElementById('exchangePendingBadge');
+    if (badge) badge.style.display = 'none';
     return;
   }
-  tbody.innerHTML = res.data.map(r=>{
-    const statusTag = {pending:'<span class="tag tag-amber">待发放</span>',delivered:'<span class="tag tag-green">已发放</span>'}[r.status]||'';
-    const deliverBtn = r.status==='pending' ? `<button class="btn btn-primary btn-sm" onclick="deliverExchange(${r.id})"><i class="ti ti-check"></i>标记发放</button>` : '';
+  // 更新待发放数量徽章（直接用预埋的元素，不动态注入）
+  const pendingCount = res.data.filter(r => r.status === 'pending').length;
+  const badge = document.getElementById('exchangePendingBadge');
+  if (badge) {
+    badge.textContent = pendingCount > 0 ? `${pendingCount} 待发放` : '';
+    badge.style.display = pendingCount > 0 ? '' : 'none';
+  }
+  tbody.innerHTML = res.data.map(r => {
+    const statusTag = {
+      pending: '<span class="tag tag-amber">待发放</span>',
+      done: '<span class="tag tag-green">已发放</span>',
+      cancelled: '<span class="tag tag-gray">已取消</span>'
+    }[r.status] || '';
+    const deliverBtn = r.status === 'pending'
+      ? `<button class="btn btn-primary btn-sm" onclick="deliverExchange(${r.id})"><i class="ti ti-check"></i>确认已发放</button>`
+      : '';
     return `<tr>
       <td><strong>${r.villager_name}</strong></td>
       <td><span class="tag tag-green">${(r.group_no||'').replace('罗峪村','')}</span></td>
@@ -1039,9 +1055,11 @@ async function loadExchange() {
 }
 
 async function deliverExchange(id) {
-  const res = await api('PATCH', `/api/admin/exchange/${id}/deliver`);
-  if (res && res.code===0) { showToast('已标记为发放'); loadExchange(); }
-  else showToast(res?.message||'操作失败', true);
+  try {
+    const res = await api('PATCH', `/api/admin/exchange/${id}/deliver`);
+    if (res && res.code === 0) { showToast('已确认发放'); loadExchange(); }
+    else showToast(res?.message || '操作失败', true);
+  } catch(e) { showToast('网络错误，请重试', true); }
 }
 
 // ── 物资管理 ──
@@ -1291,6 +1309,12 @@ async function confirmAddNotice() {
   } catch(e) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> 发布'; showToast('网络错误', true); }
 }
 
+// 返回公告列表
+function showNoticeList() {
+  document.getElementById('noticeDetailView').style.display = 'none';
+  document.getElementById('noticeListView').style.display = '';
+}
+
 // 查看公告详情
 async function viewNotice(id) {
   let n = _noticesData.find(x => x.id == id);
@@ -1336,9 +1360,11 @@ async function viewNotice(id) {
 
 async function revokeNotice(id) {
   if (!confirm('确认撤回该公告？')) return;
-  const res = await api('DELETE', `/api/announcements/${id}`);
-  if (res && res.code===0) { showToast('公告已撤回'); loadNotices(); }
-  else showToast(res?.message||'操作失败', true);
+  try {
+    const res = await api('DELETE', `/api/announcements/${id}`);
+    if (res && res.code===0) { showToast('公告已撤回'); loadNotices(); }
+    else showToast(res?.message||'操作失败', true);
+  } catch(e) { showToast('网络错误，请重试', true); }
 }
 
 // ── 重置密码 ──
