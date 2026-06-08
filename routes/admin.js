@@ -233,4 +233,77 @@ router.delete('/announcements/:id', authMiddleware, requireSuper, wrap(async (re
   res.json({ code: 0, message: '公告已撤回' });
 }));
 
+// GET /api/admin/exchange/switch — 查询兑换开关状态（公开，村民端也需要读）
+router.get('/exchange/switch', wrap(async (req, res) => {
+  const [rows] = await db.execute(
+    "SELECT cfg_value FROM system_config WHERE cfg_key='exchange_open' LIMIT 1"
+  );
+  const isOpen = rows.length ? rows[0].cfg_value === '1' : false;
+  res.json({ code: 0, data: { open: isOpen } });
+}));
+
+// PATCH /api/admin/exchange/switch — 切换兑换开关（仅超管）
+router.patch('/exchange/switch', authMiddleware, requireSuper, wrap(async (req, res) => {
+  const { open } = req.body;
+  const val = open ? '1' : '0';
+  await db.execute(
+    "INSERT INTO system_config (cfg_key, cfg_value) VALUES ('exchange_open', ?) ON DUPLICATE KEY UPDATE cfg_value=?",
+    [val, val]
+  );
+  res.json({ code: 0, message: open ? '兑换窗口已开启' : '兑换窗口已关闭', data: { open } });
+}));
+
+
+// ── 积分规则管理（score_events CRUD）──
+// GET /api/admin/events — 列出所有积分事件（含未启用的）
+router.get('/events', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
+  const [rows] = await db.execute(
+    'SELECT id, name, category, points, verify_method, is_active, sort_order FROM score_events ORDER BY category, sort_order'
+  );
+  res.json({ code: 0, data: rows });
+}));
+
+// POST /api/admin/events — 新增积分事件
+router.post('/events', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
+  const { name, category, points, verify_method } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ code: 400, message: '事件名称不能为空' });
+  if (!category || !category.trim()) return res.status(400).json({ code: 400, message: '类别不能为空' });
+  if (points === undefined || points === null || isNaN(parseInt(points)) || parseInt(points) === 0) {
+    return res.status(400).json({ code: 400, message: '分值不能为0' });
+  }
+  const [maxRow] = await db.execute('SELECT MAX(sort_order) AS max_order FROM score_events');
+  const nextOrder = (maxRow[0].max_order || 0) + 1;
+  const [result] = await db.execute(
+    'INSERT INTO score_events (name, category, points, verify_method, is_active, sort_order) VALUES (?,?,?,?,1,?)',
+    [name.trim(), category.trim(), parseInt(points), (verify_method||'').trim()||null, nextOrder]
+  );
+  res.json({ code: 0, message: '积分事件已添加', data: { id: result.insertId } });
+}));
+
+// PUT /api/admin/events/:id — 编辑积分事件
+router.put('/events/:id', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
+  const { name, category, points, verify_method } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ code: 400, message: '事件名称不能为空' });
+  if (!category || !category.trim()) return res.status(400).json({ code: 400, message: '类别不能为空' });
+  if (points === undefined || points === null || isNaN(parseInt(points)) || parseInt(points) === 0) {
+    return res.status(400).json({ code: 400, message: '分值不能为0' });
+  }
+  const [rows] = await db.execute('SELECT id FROM score_events WHERE id=?', [req.params.id]);
+  if (!rows.length) return res.status(404).json({ code: 404, message: '积分事件不存在' });
+  await db.execute(
+    'UPDATE score_events SET name=?, category=?, points=?, verify_method=? WHERE id=?',
+    [name.trim(), category.trim(), parseInt(points), (verify_method||'').trim()||null, req.params.id]
+  );
+  res.json({ code: 0, message: '积分事件已更新' });
+}));
+
+// PATCH /api/admin/events/:id/toggle — 启用/禁用积分事件
+router.patch('/events/:id/toggle', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
+  const { is_active } = req.body;
+  const [rows] = await db.execute('SELECT id FROM score_events WHERE id=?', [req.params.id]);
+  if (!rows.length) return res.status(404).json({ code: 404, message: '积分事件不存在' });
+  await db.execute('UPDATE score_events SET is_active=? WHERE id=?', [is_active ? 1 : 0, req.params.id]);
+  res.json({ code: 0, message: is_active ? '已启用' : '已禁用' });
+}));
+
 module.exports = router;

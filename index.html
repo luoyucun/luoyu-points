@@ -1033,21 +1033,72 @@ async function loadLog() {
     let res;
     if (villagerInfo) {
       // 村民看全村已审核记录
-      res = await fetch(BASE + '/api/scores/public?limit=100&status=approved').then(r=>r.json());
+      res = await fetch(BASE + '/api/scores/public?limit=100').then(r=>r.json());
     } else {
-      res = await api('GET', '/api/scores?limit=50');
+      res = await api('GET', '/api/scores?limit=100');
     }
     if (!res.data || !res.data.length) {
       el.innerHTML = '<div class="empty"><i class="ti ti-clipboard-x"></i>暂无积分记录</div>'; return;
     }
     res.data.forEach(r=>_scoreMap.set(r.id,r));
-    el.innerHTML = `<div class="card">${res.data.map(r=>logItemHtml(r)).join('')}</div>`;
+
+    // 小组长：拆分"我的提交"和"本组其他记录"，顶部显示状态汇总
+    if (adminInfo && adminInfo.role === 'group_leader') {
+      const myRecords    = res.data.filter(r => r.submitted_by === adminInfo.id);
+      const otherRecords = res.data.filter(r => r.submitted_by !== adminInfo.id);
+      const pendingCount  = myRecords.filter(r => r.status === 'pending').length;
+      const approvedCount = myRecords.filter(r => r.status === 'approved' && !r.is_revoked).length;
+      const rejectedCount = myRecords.filter(r => r.status === 'rejected' || r.is_revoked).length;
+      let html = '';
+      if (myRecords.length) {
+        const badges = [
+          pendingCount  ? `<span style="background:var(--amber-bg);color:var(--amber);padding:2px 8px;border-radius:10px;font-size:11px;">⏳ 待审核 ${pendingCount}</span>` : '',
+          approvedCount ? `<span style="background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:10px;font-size:11px;">✅ 已通过 ${approvedCount}</span>` : '',
+          rejectedCount ? `<span style="background:var(--red-bg);color:var(--red);padding:2px 8px;border-radius:10px;font-size:11px;">❌ 已驳回 ${rejectedCount}</span>` : ''
+        ].filter(Boolean).join('');
+        html += `
+          <div class="sec-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+            <span>我的提交</span>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;">${badges}</div>
+          </div>
+          <div class="card">${myRecords.map(r=>logItemHtml(r)).join('')}</div>`;
+      } else {
+        html += '<div class="empty"><i class="ti ti-edit"></i>暂无提交记录</div>';
+      }
+      if (otherRecords.length) {
+        html += `
+          <div class="sec-title" style="margin-top:8px;">本组其他记录</div>
+          <div class="card">${otherRecords.map(r=>logItemHtml(r)).join('')}</div>`;
+      }
+      el.innerHTML = html;
+    } else {
+      el.innerHTML = `<div class="card">${res.data.map(r=>logItemHtml(r)).join('')}</div>`;
+    }
   } catch(e) { el.innerHTML = '<div class="empty"><i class="ti ti-wifi-off"></i>加载失败</div>'; }
 }
 
 function logItemHtml(r) {
   const add = r.points > 0;
   const hasImg = r.image_urls && r.image_urls.length > 0;
+
+  // 状态标签：
+  // 村民视图只看已通过记录，不显示状态（显示"已撤回"除外）
+  // 管理员/组长视图显示全部三种状态
+  let statusBadge = '';
+  if (!villagerInfo) {
+    if (r.is_revoked) {
+      statusBadge = '<span style="background:var(--red-bg);color:var(--red);padding:1px 6px;border-radius:6px;font-size:10px;">↩️ 已撤回</span>';
+    } else if (r.status === 'pending') {
+      statusBadge = '<span style="background:var(--amber-bg);color:var(--amber);padding:1px 6px;border-radius:6px;font-size:10px;">⏳ 待审核</span>';
+    } else if (r.status === 'rejected') {
+      statusBadge = '<span style="background:var(--red-bg);color:var(--red);padding:1px 6px;border-radius:6px;font-size:10px;">❌ 已驳回</span>';
+    } else if (r.status === 'approved') {
+      statusBadge = '<span style="background:var(--green-bg);color:var(--green);padding:1px 6px;border-radius:6px;font-size:10px;">✅ 已通过</span>';
+    }
+  } else {
+    if (r.is_revoked) statusBadge = '<span style="background:var(--red-bg);color:var(--red);padding:1px 6px;border-radius:6px;font-size:10px;">已撤回</span>';
+  }
+
   return `<div class="log-item" onclick="showScoreDetail(_scoreMap.get(${r.id}))" style="cursor:pointer;">
     <div class="log-icon ${add?'add':'sub'}"><i class="ti ${add?'ti-plus':'ti-minus'}" style="font-size:14px;"></i></div>
     <div class="log-info">
@@ -1056,8 +1107,7 @@ function logItemHtml(r) {
       <div class="log-meta">
         <span>${r.created_at?r.created_at.slice(0,10):''}</span>
         ${hasImg?'<span style="background:var(--blue-bg);color:var(--blue);padding:1px 5px;border-radius:6px;font-size:10px;"><i class="ti ti-photo" style="font-size:10px;"></i> 有图片</span>':''}
-        ${r.status==='pending'?'<span style="background:var(--amber-bg);color:var(--amber);padding:1px 5px;border-radius:6px;font-size:10px;">待审核</span>':''}
-        ${r.is_revoked?'<span style="background:var(--red-bg);color:var(--red);padding:1px 5px;border-radius:6px;font-size:10px;">已撤回</span>':''}
+        ${statusBadge}
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
@@ -1134,9 +1184,17 @@ async function loadExchange() {
   const el = document.getElementById('exchangeScroll');
   el.innerHTML = '<div class="loading"><i class="ti ti-loader"></i>加载中…</div>';
   try {
-    // 获取物资列表
-    const res = await fetch(BASE + '/api/exchange/goods').then(r=>r.json());
-    if (!res.data || !res.data.length) { el.innerHTML = '<div class="empty"><i class="ti ti-gift"></i>暂无可兑换物资</div>'; return; }
+    // 并行请求：物资列表 + 开关状态 + 兑换记录
+    const [goodsRes, switchRes] = await Promise.all([
+      fetch(BASE + '/api/exchange/goods').then(r=>r.json()),
+      fetch(BASE + '/api/admin/exchange/switch').then(r=>r.json())
+    ]);
+
+    const isOpen = switchRes?.data?.open ?? false;
+
+    if (!goodsRes.data || !goodsRes.data.length) {
+      el.innerHTML = '<div class="empty"><i class="ti ti-gift"></i>暂无可兑换物资</div>'; return;
+    }
 
     // 当前积分
     const currentScore = villagerInfo ? (villagerInfo.total_score || 0) : 0;
@@ -1164,14 +1222,24 @@ async function loadExchange() {
       } catch(e) {}
     }
 
-    const cards = res.data.map(g=>`
+    // 兑换窗口关闭提示
+    const closedBanner = !isOpen ? `
+      <div style="background:#fff3cd;border:1px solid #ffeaa7;border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:10px;">
+        <i class="ti ti-lock" style="font-size:22px;color:#856404;flex-shrink:0;"></i>
+        <div>
+          <div style="font-size:16px;font-weight:600;color:#856404;">当前不在兑换期</div>
+          <div style="font-size:14px;color:#856404;margin-top:2px;">请关注村务公告，等待兑换窗口开放</div>
+        </div>
+      </div>` : '';
+
+    const cards = goodsRes.data.map(g=>`
       <div class="ecard">
         <div class="eicon">${g.icon||'🎁'}</div>
         <div class="ename">${g.name}</div>
         <div class="epts">${g.points_cost}分</div>
         <div class="estock">库存 ${g.stock} 件</div>
-        <button class="ebtn" ${g.stock<1?'disabled':''} onclick="doExchange(${g.id},'${g.name.replace(/'/g,"\\'")}',${g.points_cost})">
-          ${g.stock<1?'已售罄':'立即兑换'}
+        <button class="ebtn" ${(!isOpen || g.stock<1) ? 'disabled' : ''} onclick="doExchange(${g.id},'${g.name.replace(/'/g,"\\'")}',${g.points_cost})">
+          ${!isOpen ? '未到兑换期' : g.stock<1 ? '已售罄' : '立即兑换'}
         </button>
       </div>`).join('');
 
@@ -1181,6 +1249,7 @@ async function loadExchange() {
         <div class="esb-val">${currentScore} 分</div>
       </div>
       ${pendingHtml}
+      ${closedBanner}
       <div class="info-strip" style="font-size:14px;"><i class="ti ti-info-circle" style="font-size:16px;flex-shrink:0;"></i>每季度兑换一次，关注公告通知</div>
       <div class="egrid">${cards}</div>`;
   } catch(e) { el.innerHTML = '<div class="empty"><i class="ti ti-wifi-off"></i>加载失败</div>'; }

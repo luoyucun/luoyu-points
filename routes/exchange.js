@@ -18,6 +18,14 @@ router.post('/', async (req, res) => {
   if (!villager_id || !goods_id)
     return res.status(400).json({ code: 400, message: '参数不完整' });
 
+  // 校验兑换窗口是否开启
+  const [cfgRows] = await db.execute(
+    "SELECT cfg_value FROM system_config WHERE cfg_key='exchange_open' LIMIT 1"
+  );
+  const isOpen = cfgRows.length ? cfgRows[0].cfg_value === '1' : false;
+  if (!isOpen)
+    return res.status(403).json({ code: 403, message: '当前不在兑换期，请关注公告通知' });
+
   const [gRows] = await db.execute('SELECT * FROM goods WHERE id=? AND is_active=1', [goods_id]);
   if (!gRows.length) return res.status(404).json({ code: 404, message: '商品不存在' });
   const goods = gRows[0];
