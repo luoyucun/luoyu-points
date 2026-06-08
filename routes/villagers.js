@@ -14,13 +14,35 @@ router.post('/login', async (req, res) => {
     return res.status(400).json({ code: 400, message: '身份证后4位须为4位数字' });
 
   const [rows] = await db.execute(
-    'SELECT id,name,gender,group_no,id_last4,total_score,honor_score FROM villagers WHERE name=? AND id_last4=? AND is_active=1',
+    'SELECT id,name,gender,group_no,id_last4,total_score,honor_score,first_login_bonus FROM villagers WHERE name=? AND id_last4=? AND is_active=1',
     [name.trim(), id_last4]
   );
   if (!rows.length)
     return res.status(404).json({ code: 404, message: '未找到匹配的村民信息，请确认姓名和身份证后4位' });
 
   const villager = rows[0];
+
+  // 首次登录赠送10基础分
+  if (!villager.first_login_bonus) {
+    const conn = await db.getConnection();
+    try {
+      await conn.beginTransaction();
+      await conn.execute(
+        'INSERT INTO score_records (villager_id, event_id, event_name, points, submitted_by, status) VALUES (?,NULL,?,?,1,"approved")',
+        [villager.id, '首次登录基础积分', 10]
+      );
+      await conn.execute(
+        'UPDATE villagers SET total_score=total_score+10, honor_score=honor_score+10, first_login_bonus=1 WHERE id=?',
+        [villager.id]
+      );
+      await conn.commit();
+      villager.total_score += 10;
+      villager.honor_score += 10;
+      villager.first_login_bonus = 1;
+    } catch(e) { await conn.rollback(); throw e; }
+    finally { conn.release(); }
+  }
+
   // 组内排名
   const [rankRows] = await db.execute(
     'SELECT COUNT(*)+1 AS rank_no FROM villagers WHERE group_no=? AND is_active=1 AND total_score>? AND id!=?',

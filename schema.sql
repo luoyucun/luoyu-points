@@ -34,6 +34,7 @@ CREATE TABLE villagers (
   gender      ENUM('男','女') NOT NULL,
   group_no    VARCHAR(20)  NOT NULL       COMMENT '村民小组',
   id_last4    CHAR(4)      NOT NULL       COMMENT '身份证后4位',
+  first_login_bonus TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否已领取首次登录积分',
   total_score INT          NOT NULL DEFAULT 0 COMMENT '兑换积分（可用于兑换，年度清零）',
   honor_score INT          NOT NULL DEFAULT 0 COMMENT '荣誉积分（累计不扣减，不清零）',
   is_active   TINYINT(1)   NOT NULL DEFAULT 1,

@@ -215,6 +215,42 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 .checkin-success .cs-title{font-size:20px;font-weight:700;color:#2d6a1f;margin-bottom:6px;}
 .checkin-success .cs-msg{font-size:15px;color:#4a4a4a;line-height:1.8;}
 
+
+/* ── 红黑榜 ── */
+.honor-card{margin-bottom:0;}
+.honor-list{display:flex;flex-direction:column;gap:6px;}
+.honor-row{display:flex;align-items:center;gap:10px;font-size:14px;padding:6px 0;border-bottom:1px solid #f5f5f5;}
+.honor-row:last-child{border-bottom:none;}
+.honor-rank{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+.honor-rank.gold{background:#f5c518;color:#5a3e00;}
+.honor-rank.silver{background:#c0c0c0;color:#333;}
+.honor-rank.bronze{background:#cd7f32;color:#fff;}
+.honor-rank.normal{background:#e8f5e8;color:#2d6a1f;}
+.honor-name{flex:1;color:var(--text1);font-weight:500;}
+.honor-group{color:var(--text3);font-size:11px;}
+.honor-score{color:var(--green);font-weight:600;font-size:15px;}
+.deduction-item{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px;border-bottom:1px solid #fff0f0;}
+.deduction-item:last-child{border-bottom:none;}
+.deduction-icon{width:20px;height:20px;border-radius:50%;background:var(--red-bg);color:var(--red);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;}
+
+/* ── 反馈 ── */
+.feedback-btn{width:100%;padding:11px;background:white;border:1.5px dashed var(--border);border-radius:var(--radius-sm);color:var(--text2);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;}
+.feedback-btn:active{background:var(--bg);}
+.feedback-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:none;align-items:flex-end;justify-content:center;}
+.feedback-modal.open{display:flex;}
+.feedback-sheet{background:white;border-radius:16px 16px 0 0;width:100%;max-width:480px;padding:20px 16px 28px;animation:slideUp .25s;}
+@keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.feedback-sheet h3{font-size:17px;margin-bottom:4px;text-align:center;}
+.feedback-sheet .fb-sub{font-size:12px;color:var(--text3);text-align:center;margin-bottom:14px;}
+.feedback-sheet textarea{width:100%;height:100px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:14px;resize:none;outline:none;}
+.feedback-sheet textarea:focus{border-color:var(--green);}
+.feedback-sheet .fb-name{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:14px;outline:none;margin-bottom:8px;}
+.feedback-sheet .fb-actions{display:flex;gap:8px;margin-top:12px;}
+.feedback-sheet .fb-actions button{flex:1;padding:12px;border-radius:10px;font-size:15px;cursor:pointer;}
+.fb-submit{background:var(--green);color:white;border:none;}
+.fb-cancel{background:var(--bg);color:var(--text2);border:1px solid var(--border);}
+.fb-chars{text-align:right;font-size:11px;color:var(--text3);margin-top:4px;}
+
 /* ── 积分细则 ── */
 .rules-cat{margin-bottom:16px;}
 .rules-cat-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
@@ -511,6 +547,22 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
   </div>
 </div>
 
+
+<!-- ============ FEEDBACK MODAL ============ -->
+<div class="feedback-modal" id="feedbackModal" onclick="if(event.target===this)closeFeedback()">
+  <div class="feedback-sheet">
+    <h3>我有话说</h3>
+    <div class="fb-sub">对积分制度有什么建议？告诉村委会</div>
+    <input type="text" class="fb-name" id="fbName" placeholder="您的姓名（选填，可匿名）" maxlength="20">
+    <textarea id="fbContent" placeholder="请输入您的建议或意见…" maxlength="500" oninput="document.getElementById('fbChars').textContent=this.value.length"></textarea>
+    <div class="fb-chars"><span id="fbChars">0</span>/500</div>
+    <div class="fb-actions">
+      <button class="fb-cancel" onclick="closeFeedback()">取消</button>
+      <button class="fb-submit" id="fbSubmit" onclick="submitFeedback()">提交反馈</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ MAIN APP ============ -->
 <div id="mainApp" class="app" style="display:none;">
 
@@ -546,6 +598,10 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
       <select id="rankGroupSel" onchange="loadRank()" style="width:100%;padding:8px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--card);color:var(--text1);font-size:14px;">
         <option value="">全村排行</option>
       </select>
+      <div style="display:flex;gap:6px;margin-top:8px;">
+        <button class="rank-mode-btn active" id="rankModeTotal" onclick="switchRankMode('total')">总分排行</button>
+        <button class="rank-mode-btn" id="rankModeMonth" onclick="switchRankMode('month')">本月排行</button>
+      </div>
     </div>
     <div class="scroll" id="rankScroll">
       <div class="loading"><i class="ti ti-loader"></i>加载中…</div>
@@ -1105,9 +1161,98 @@ async function loadHome() {
           <button class="qbtn cp" onclick="vTab('rules')"><i class="ti ti-clipboard-text"></i><span class="lbl">积分细则</span></button>
           <button class="qbtn cb" onclick="vTab('notice')" style="grid-column:1/-1;"><i class="ti ti-bell"></i><span class="lbl">村务公告</span></button>
         </div>
+      </div>
+      <button class="feedback-btn" onclick="openFeedback()"><i class="ti ti-message"></i>我有话说 · 向村委会提建议</button>
+      <div class="card honor-card" style="margin-top:10px;" id="honorBoardCard">
+        <div class="sec-title">月度光荣榜</div>
+        <div id="honorBoardContent" style="padding:0 0 4px;"><div style="text-align:center;color:var(--text3);font-size:12px;padding:8px;">加载中…</div></div>
+      </div>
+      <div class="card" style="margin-top:10px;" id="deductionCard">
+        <div class="sec-title" style="color:var(--red);">扣分公示</div>
+        <div id="deductionContent" style="padding:0 0 4px;"><div style="text-align:center;color:var(--text3);font-size:12px;padding:4px;">加载中…</div></div>
       </div>`;
     loadRecentLog(el);
+    loadHonorBoard();
   } catch(e) { el.innerHTML = '<div class="empty"><i class="ti ti-wifi-off"></i>加载失败，请检查网络</div>'; }
+}
+
+
+// ── 红黑榜 ──
+async function loadHonorBoard() {
+  try {
+    var res = await fetch(BASE + '/api/public/honorboard').then(function(r){return r.json();});
+    if (!res.data) return;
+
+    // 光荣榜
+    var top5 = res.data.top5 || [];
+    var honEl = document.getElementById('honorBoardContent');
+    if (top5.length) {
+      var ranks = ['gold','silver','bronze','normal','normal'];
+      var medals = ['🥇','🥈','🥉','4','5'];
+      honEl.innerHTML = '<div class="honor-list">' + top5.map(function(v,i){
+        return '<div class="honor-row">' +
+          '<div class="honor-rank ' + ranks[i] + '">' + medals[i] + '</div>' +
+          '<span class="honor-name">' + v.name + '</span>' +
+          '<span class="honor-group">' + (v.group_no||'').replace('罗峪村','') + '</span>' +
+          '<span class="honor-score">+' + v.month_score + '分</span>' +
+        '</div>';
+      }).join('') + '</div>';
+    } else {
+      honEl.innerHTML = '<div style="text-align:center;color:var(--text3);font-size:12px;padding:8px;">本月暂无加分记录</div>';
+    }
+
+    // 扣分公示（匿名）
+    var ded = res.data.deductions || [];
+    var dedEl = document.getElementById('deductionContent');
+    if (ded.length) {
+      dedEl.innerHTML = ded.map(function(d){
+        return '<div class="deduction-item">' +
+          '<div class="deduction-icon">!</div>' +
+          '<span style="flex:1;color:var(--text2);">' + d.event_name + '</span>' +
+          '<span style="color:var(--red);font-weight:600;">' + d.points + '分</span>' +
+          '<span style="color:var(--text3);font-size:11px;">' + (d.created_at?d.created_at.slice(0,10):'') + '</span>' +
+        '</div>';
+      }).join('');
+    } else {
+      dedEl.innerHTML = '<div style="text-align:center;color:var(--text3);font-size:12px;padding:4px;">暂无扣分记录，继续保持！</div>';
+    }
+  } catch(e) {}
+}
+
+// ── 反馈 ──
+function openFeedback() {
+  document.getElementById('feedbackModal').classList.add('open');
+  document.getElementById('fbContent').value = '';
+  document.getElementById('fbChars').textContent = '0';
+  var nameInput = document.getElementById('fbName');
+  nameInput.value = villagerInfo ? villagerInfo.name : '';
+  document.getElementById('fbSubmit').disabled = false;
+}
+function closeFeedback() {
+  document.getElementById('feedbackModal').classList.remove('open');
+}
+async function submitFeedback() {
+  var content = document.getElementById('fbContent').value.trim();
+  if (!content) { showToast('请输入反馈内容'); return; }
+  if (content.length > 500) { showToast('内容不能超过500字'); return; }
+  var btn = document.getElementById('fbSubmit');
+  btn.disabled = true; btn.textContent = '提交中…';
+  try {
+    var name = document.getElementById('fbName').value.trim();
+    var res = await fetch(BASE + '/api/public/feedback', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ content: content, villager_name: name || null })
+    });
+    var data = await res.json();
+    if (data.code === 0) {
+      showToast('感谢您的反馈！');
+      closeFeedback();
+    } else {
+      showToast(data.message || '提交失败', true);
+    }
+  } catch(e) { showToast('网络错误', true); }
+  btn.disabled = false; btn.textContent = '提交反馈';
 }
 
 // ── Load rules（积分细则） ──
@@ -1258,6 +1403,15 @@ function logItemHtml(r) {
 }
 
 // ── Load rank ──
+
+var rankMode = 'total';
+function switchRankMode(mode) {
+  rankMode = mode;
+  document.getElementById('rankModeTotal').classList.toggle('active', mode==='total');
+  document.getElementById('rankModeMonth').classList.toggle('active', mode==='month');
+  loadRank();
+}
+
 async function loadRank() {
   const el = document.getElementById('rankScroll');
   const sel = document.getElementById('rankGroupSel');
@@ -1294,12 +1448,14 @@ async function loadRank() {
   try {
     const group = sel ? sel.value : '';
     let res;
+    var sortField = rankMode === 'month' ? 'month_score' : 'total_score';
     if (token && adminInfo) {
-      const url = '/api/villagers/group/rank' + (group ? '?group_no=' + encodeURIComponent(group) : '');
-      res = await api('GET', url);
+      res = await api('GET', '/api/public/top10?mode=' + rankMode);
     } else {
-      const url = '/api/villagers/rank/public' + (group ? '?group_no=' + encodeURIComponent(group) : '');
-      res = await fetch(BASE + url).then(r=>r.json());
+      res = await fetch(BASE + '/api/public/top10?mode=' + rankMode).then(r=>r.json());
+    }
+    if (group && res.data) {
+      res.data = res.data.filter(function(v) { return v.group_no === group; });
     }
     if (!res.data || !res.data.length) {
       el.innerHTML = '<div class="empty"><i class="ti ti-users"></i>暂无排行数据</div>'; return;
@@ -1309,10 +1465,12 @@ async function loadRank() {
       <div class="lb-item">
         <div class="lb-rank">${ranks[i]||i+1}</div>
         <div class="lb-av">${v.name?v.name[0]:'?'}</div>
-        <div style="flex:1"><div class="lb-name">${v.name}</div><div class="lb-grp">${v.gender||''} · ${(v.group_no||'').replace('罗峪村','')} · 本月+${v.month_score||0}</div></div>
-        <div class="lb-score">${v.total_score}</div>
+        <div style="flex:1"><div class="lb-name">${v.name}</div><div class="lb-grp">${(v.group_no||'').replace('罗峪村','')} · 本月+${v.month_score||0}</div></div>
+        <div class="lb-score">${rankMode==='month' ? (v.month_score||0) : v.total_score}</div>
       </div>`).join('');
-    const tip = group ? `排行仅显示${group.replace('罗峪村','')}成员，以兑换积分排名` : '全村排行（兑换积分，每年1月10日清零）';
+    const tip = rankMode==='month'
+      ? (group ? `${group.replace('罗峪村','')}本月积分排行` : '全村本月积分排行')
+      : (group ? `${group.replace('罗峪村','')}总积分排行` : '全村总积分排行（每年1月10日清零）');
     el.innerHTML = `
       <div class="info-strip"><i class="ti ti-trophy" style="font-size:15px;flex-shrink:0;"></i>${tip}</div>
       <div class="card">${rows}</div>`;
