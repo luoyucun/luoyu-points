@@ -482,7 +482,7 @@ tr:last-child td{border-bottom:none;}
       <div class="card-body" style="padding:0;">
         <div class="tbl-wrap">
           <table>
-            <thead><tr><th>村民姓名</th><th>组别</th><th>签到时间</th></tr></thead>
+            <thead><tr><th>村民姓名</th><th>组别</th><th>签到照片</th><th>签到时间</th></tr></thead>
             <tbody id="checkinRecTbody"></tbody>
           </table>
         </div>
@@ -1825,12 +1825,16 @@ async function viewCheckinRecords(id, title) {
   var res = await api('GET', '/api/checkin/' + id + '/records');
   if (!res || res.code !== 0) return;
   document.getElementById('checkinRecTbody').innerHTML = res.data.map(function(r) {
+    var photoCell = r.photo_url
+      ? '<img src="' + r.photo_url + '" style="width:48px;height:48px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="window.open(\'' + r.photo_url + '\')" title="点击查看大图">'
+      : '<span style="color:var(--text3);font-size:11px;">无照片</span>';
     return '<tr>' +
       '<td data-label="村民姓名"><strong>' + r.villager_name + '</strong></td>' +
       '<td data-label="组别">' + (r.group_no || '-') + '</td>' +
+      '<td data-label="签到照片">' + photoCell + '</td>' +
       '<td data-label="签到时间" style="color:var(--text3);">' + (r.created_at ? r.created_at.slice(0,19) : '') + '</td>' +
     '</tr>';
-  }).join('') || '<tr><td colspan="3"><div class="empty-state">暂无签到记录</div></td></tr>';
+  }).join('') || '<tr><td colspan="4"><div class="empty-state">暂无签到记录</div></td></tr>';
   switchPage('checkin-records');
 }
 

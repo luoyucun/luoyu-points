@@ -197,6 +197,7 @@ CREATE TABLE checkin_records (
   checkin_event_id INT UNSIGNED NOT NULL,
   villager_id      INT UNSIGNED NOT NULL,
   score_record_id  INT UNSIGNED DEFAULT NULL COMMENT '关联积分记录',
+  photo_url      VARCHAR(255) DEFAULT NULL COMMENT '签到现场照片',
   created_at       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uk_ev_villager (checkin_event_id, villager_id)
 ) COMMENT '签到记录';

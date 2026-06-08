@@ -204,6 +204,12 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 .checkin-card .ci-btn{width:100%;padding:14px;background:#2d6a1f;border:none;border-radius:10px;color:white;font-size:17px;font-weight:600;cursor:pointer;}
 .checkin-card .ci-btn:disabled{opacity:.6;}
 .checkin-card .ci-err{color:#c0392b;font-size:13px;margin-top:8px;min-height:16px;}
+.ci-photo-area{width:100%;height:140px;border:2px dashed #ccc;border-radius:10px;margin-bottom:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;position:relative;background:#f9faf9;}
+.ci-photo-area img{width:100%;height:100%;object-fit:cover;}
+.ci-photo-placeholder{text-align:center;color:#aaa;}
+.ci-photo-placeholder i{font-size:36px;display:block;margin-bottom:4px;}
+.ci-photo-placeholder span{font-size:12px;}
+.ci-photo-retake{position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,.55);color:white;border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;}
 .checkin-success{text-align:center;}
 .checkin-success .cs-icon{font-size:64px;margin-bottom:12px;}
 .checkin-success .cs-title{font-size:20px;font-weight:700;color:#2d6a1f;margin-bottom:6px;}
@@ -486,9 +492,18 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
   <div class="checkin-card" id="checkinCard">
     <div class="ci-title" id="ciTitle">加载中…</div>
     <div class="ci-points" id="ciPoints"></div>
+    <div class="ci-photo-area" id="ciPhotoArea" onclick="document.getElementById('ciPhotoInput').click()">
+      <div class="ci-photo-placeholder" id="ciPhotoPlaceholder">
+        <i class="ti ti-camera" style="display:block;font-size:32px;margin-bottom:4px;"></i>
+        <span>点击拍摄现场照片</span>
+      </div>
+      <img id="ciPhotoPreview" src="" alt="" style="display:none;">
+      <button class="ci-photo-retake" id="ciRetakeBtn" style="display:none;" onclick="event.stopPropagation();document.getElementById('ciPhotoInput').click();">重拍</button>
+    </div>
+    <input type="file" id="ciPhotoInput" accept="image/*" capture="environment" style="display:none;" onchange="previewCheckinPhoto(this)">
     <input type="text" class="ci-input" id="ciName" placeholder="请输入姓名">
     <input type="text" class="ci-input" id="ciId4" placeholder="请输入身份证后4位" maxlength="4" inputmode="numeric">
-    <button class="ci-btn" id="ciBtn" onclick="doCheckin()">确认签到</button>
+    <button class="ci-btn" id="ciBtn" onclick="doCheckin()">拍照并签到</button>
     <div class="ci-err" id="ciErr"></div>
   </div>
   <div style="margin-top:40px;">
@@ -816,6 +831,22 @@ async function loadCheckinInfo(token) {
   }
 }
 
+var checkinPhotoFile = null;
+
+function previewCheckinPhoto(input) {
+  if (input.files && input.files[0]) {
+    checkinPhotoFile = input.files[0];
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById('ciPhotoPreview').src = e.target.result;
+      document.getElementById('ciPhotoPreview').style.display = 'block';
+      document.getElementById('ciPhotoPlaceholder').style.display = 'none';
+      document.getElementById('ciRetakeBtn').style.display = 'block';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
 async function doCheckin() {
   var name = document.getElementById('ciName').value.trim();
   var id4 = document.getElementById('ciId4').value.trim();
@@ -824,16 +855,21 @@ async function doCheckin() {
 
   if (!name) { err.textContent = '请输入姓名'; return; }
   if (!/^\d{4}$/.test(id4)) { err.textContent = '身份证后4位须为4位数字'; return; }
+  if (!checkinPhotoFile) { err.textContent = '请拍摄现场照片作为签到凭证'; return; }
   err.textContent = '';
   btn.disabled = true; btn.textContent = '签到中…';
 
   try {
     var params = new URLSearchParams(location.search);
     var token = params.get('checkin');
+    var form = new FormData();
+    form.append('name', name);
+    form.append('id_last4', id4);
+    form.append('photo', checkinPhotoFile);
+
     var res = await fetch(BASE + '/api/checkin/' + token + '/checkin', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: name, id_last4: id4 })
+      body: form
     });
     var data = await res.json();
     if (data.code === 0) {
@@ -841,15 +877,15 @@ async function doCheckin() {
         '<div class="checkin-success">' +
         '<div class="cs-icon">🎉</div>' +
         '<div class="cs-title">签到成功！</div>' +
-        '<div class="cs-msg">' + data.data.villager_name + '，签到成功<br>获得 <b>+' + data.data.points + '</b> 积分</div>' +
+        '<div class="cs-msg">' + data.data.villager_name + '，签到成功<br>获得 <b>+' + data.data.points + '</b> 积分<br><span style="font-size:12px;color:var(--text3);">照片已存档</span></div>' +
         '</div>';
     } else {
       err.textContent = data.message || '签到失败';
-      btn.disabled = false; btn.textContent = '确认签到';
+      btn.disabled = false; btn.textContent = '拍照并签到';
     }
   } catch(e) {
     err.textContent = '网络错误，请稍后重试';
-    btn.disabled = false; btn.textContent = '确认签到';
+    btn.disabled = false; btn.textContent = '拍照并签到';
   }
 }
 
