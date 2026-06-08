@@ -193,6 +193,22 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 .exchange-success-msg{font-size:17px;color:var(--text2);line-height:1.8;margin-bottom:20px;}
 .exchange-success-btn{width:100%;padding:13px;background:var(--green);border:none;border-radius:10px;color:white;font-size:17px;font-weight:500;cursor:pointer;}
 
+
+/* ── 签到页面 ── */
+.checkin-screen{position:fixed;inset:0;background:linear-gradient(160deg,#2d6a1f,#1a3d0f);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:9999;}
+.checkin-card{background:white;border-radius:16px;padding:32px 24px;width:340px;max-width:90vw;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.checkin-card .ci-title{font-size:18px;font-weight:700;color:#1a1a1a;margin-bottom:6px;}
+.checkin-card .ci-points{font-size:28px;font-weight:700;color:#2d6a1f;margin-bottom:16px;}
+.checkin-card .ci-input{width:100%;padding:12px 14px;border:1px solid #e2e8dd;border-radius:10px;font-size:16px;outline:none;margin-bottom:12px;}
+.checkin-card .ci-input:focus{border-color:#2d6a1f;}
+.checkin-card .ci-btn{width:100%;padding:14px;background:#2d6a1f;border:none;border-radius:10px;color:white;font-size:17px;font-weight:600;cursor:pointer;}
+.checkin-card .ci-btn:disabled{opacity:.6;}
+.checkin-card .ci-err{color:#c0392b;font-size:13px;margin-top:8px;min-height:16px;}
+.checkin-success{text-align:center;}
+.checkin-success .cs-icon{font-size:64px;margin-bottom:12px;}
+.checkin-success .cs-title{font-size:20px;font-weight:700;color:#2d6a1f;margin-bottom:6px;}
+.checkin-success .cs-msg{font-size:15px;color:#4a4a4a;line-height:1.8;}
+
 /* ── 积分细则 ── */
 .rules-cat{margin-bottom:16px;}
 .rules-cat-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
@@ -462,6 +478,22 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
     <div class="login-err" id="queryErr"></div>
   </div>
   <div class="query-result" id="queryResult"></div>
+</div>
+
+
+<!-- ============ CHECKIN SCREEN ============ -->
+<div id="checkinScreen" class="checkin-screen">
+  <div class="checkin-card" id="checkinCard">
+    <div class="ci-title" id="ciTitle">加载中…</div>
+    <div class="ci-points" id="ciPoints"></div>
+    <input type="text" class="ci-input" id="ciName" placeholder="请输入姓名">
+    <input type="text" class="ci-input" id="ciId4" placeholder="请输入身份证后4位" maxlength="4" inputmode="numeric">
+    <button class="ci-btn" id="ciBtn" onclick="doCheckin()">确认签到</button>
+    <div class="ci-err" id="ciErr"></div>
+  </div>
+  <div style="margin-top:40px;">
+    <div style="color:rgba(255,255,255,.5);font-size:12px;text-align:center;">桑植县凉水口镇罗峪村</div>
+  </div>
 </div>
 
 <!-- ============ MAIN APP ============ -->
@@ -747,6 +779,78 @@ async function doLogin() {
     document.getElementById('loginErr').textContent = '网络连接失败，请检查网络';
   }
   btn.disabled = false; btn.textContent = '登 录';
+}
+
+
+// ── 签到流程 ──
+(function() {
+  var params = new URLSearchParams(location.search);
+  var checkinToken = params.get('checkin');
+  if (checkinToken) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('checkinScreen').style.display = 'flex';
+    loadCheckinInfo(checkinToken);
+  }
+})();
+
+async function loadCheckinInfo(token) {
+  try {
+    var res = await fetch(BASE + '/api/checkin/' + token + '/info');
+    var data = await res.json();
+    if (data.code !== 0) {
+      document.getElementById('ciTitle').textContent = data.message || '签到活动不存在';
+      document.getElementById('ciPoints').textContent = '';
+      document.getElementById('ciBtn').style.display = 'none';
+      document.getElementById('ciName').style.display = 'none';
+      document.getElementById('ciId4').style.display = 'none';
+      return;
+    }
+    document.getElementById('ciTitle').textContent = data.data.title;
+    document.getElementById('ciPoints').textContent = '签到 +' + data.data.score_points + ' 分';
+  } catch(e) {
+    document.getElementById('ciTitle').textContent = '加载失败，请检查网络';
+    document.getElementById('ciPoints').textContent = '';
+    document.getElementById('ciBtn').style.display = 'none';
+    document.getElementById('ciName').style.display = 'none';
+    document.getElementById('ciId4').style.display = 'none';
+  }
+}
+
+async function doCheckin() {
+  var name = document.getElementById('ciName').value.trim();
+  var id4 = document.getElementById('ciId4').value.trim();
+  var err = document.getElementById('ciErr');
+  var btn = document.getElementById('ciBtn');
+
+  if (!name) { err.textContent = '请输入姓名'; return; }
+  if (!/^\d{4}$/.test(id4)) { err.textContent = '身份证后4位须为4位数字'; return; }
+  err.textContent = '';
+  btn.disabled = true; btn.textContent = '签到中…';
+
+  try {
+    var params = new URLSearchParams(location.search);
+    var token = params.get('checkin');
+    var res = await fetch(BASE + '/api/checkin/' + token + '/checkin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name, id_last4: id4 })
+    });
+    var data = await res.json();
+    if (data.code === 0) {
+      document.getElementById('checkinCard').innerHTML =
+        '<div class="checkin-success">' +
+        '<div class="cs-icon">🎉</div>' +
+        '<div class="cs-title">签到成功！</div>' +
+        '<div class="cs-msg">' + data.data.villager_name + '，签到成功<br>获得 <b>+' + data.data.points + '</b> 积分</div>' +
+        '</div>';
+    } else {
+      err.textContent = data.message || '签到失败';
+      btn.disabled = false; btn.textContent = '确认签到';
+    }
+  } catch(e) {
+    err.textContent = '网络错误，请稍后重试';
+    btn.disabled = false; btn.textContent = '确认签到';
+  }
 }
 
 document.addEventListener('DOMContentLoaded', function() {

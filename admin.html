@@ -6,6 +6,7 @@
 <title>罗峪村积分系统 · 后台管理</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🌾</text></svg>">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <style>
 :root {
   --green:      #2d6a1f;
@@ -284,6 +285,7 @@ tr:last-child td{border-bottom:none;}
     <div class="sb-item" onclick="switchPage('exchange')"><i class="ti ti-gift"></i>兑换管理</div>
     <div class="sb-item" onclick="switchPage('goods')"><i class="ti ti-package"></i>物资管理</div>
     <div class="sb-item" onclick="switchPage('events')"><i class="ti ti-adjustments"></i>积分规则</div>
+    <div class="sb-item" onclick="switchPage('checkin')"><i class="ti ti-qrcode"></i>签到管理</div>
     <div class="sb-section">系统</div>
     <div class="sb-item" onclick="switchPage('export')"><i class="ti ti-file-export"></i>数据导出</div>
     <div class="sb-item" onclick="switchPage('notices')"><i class="ti ti-bell"></i>公告管理</div>
@@ -327,6 +329,20 @@ tr:last-child td{border-bottom:none;}
       </div>
     </div>
   </div>
+
+
+        <div class="card" style="margin-top:16px;" id="resetCard">
+          <div class="card-hd"><i class="ti ti-refresh"></i>年度积分清零<span style="font-size:11px;color:var(--amber);margin-left:8px;">仅超管可见</span></div>
+          <div class="card-body">
+            <div style="font-size:13px;color:var(--text2);margin-bottom:12px;">每年1月10日系统自动清零所有村民的<b>兑换积分</b>（荣誉积分保留）。如需手动触发清零，请点击下方按钮。</div>
+            <div style="display:flex;gap:10px;">
+              <button class="btn btn-danger" onclick="triggerReset()"><i class="ti ti-refresh"></i>手动清零</button>
+              <button class="btn btn-outline btn-sm" onclick="loadResetLog()"><i class="ti ti-history"></i>清零历史</button>
+            </div>
+            <div id="resetLogTable" style="margin-top:12px;display:none;"></div>
+          </div>
+        </div>
+
 
   <!-- 村民管理 -->
   <div class="page" id="page-villagers">
@@ -433,6 +449,41 @@ tr:last-child td{border-bottom:none;}
           <table>
             <thead><tr><th>物资名称</th><th>图标</th><th>兑换积分</th><th>当前库存</th><th>状态</th><th>操作</th></tr></thead>
             <tbody id="goodsTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 签到管理 -->
+  <div class="page" id="page-checkin">
+    <div class="card">
+      <div class="card-hd"><i class="ti ti-qrcode"></i>签到活动管理
+        <div class="actions"><button class="btn btn-primary btn-sm" onclick="openCreateCheckin()"><i class="ti ti-plus"></i>创建签到</button></div>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>活动标题</th><th>签到分值</th><th>签到人数</th><th>创建时间</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody id="checkinTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 签到记录详情 -->
+  <div class="page" id="page-checkin-records">
+    <div class="card">
+      <div class="card-hd"><i class="ti ti-list-check"></i><span id="checkinRecTitle">签到名单</span>
+        <div class="actions"><button class="btn btn-outline btn-sm" onclick="switchPage('checkin')"><i class="ti ti-arrow-left"></i>返回</button></div>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>村民姓名</th><th>组别</th><th>签到时间</th></tr></thead>
+            <tbody id="checkinRecTbody"></tbody>
           </table>
         </div>
       </div>
@@ -703,6 +754,38 @@ tr:last-child td{border-bottom:none;}
   </div>
 </div>
 
+
+<!-- 创建签到活动弹窗 -->
+<div class="modal-overlay" id="createCheckinModal">
+  <div class="modal">
+    <div class="modal-hd">创建签到活动<span class="modal-close" onclick="closeModal('createCheckinModal')">×</span></div>
+    <div class="modal-bd">
+      <div class="form-row"><label>活动标题</label><input type="text" id="checkinTitle" placeholder="例：村民大会签到"></div>
+      <div class="form-row"><label>关联积分事件（可选）</label><select id="checkinEventId" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;outline:none;"><option value="">不关联（自定义分值）</option></select></div>
+      <div class="form-row"><label>签到加分值</label><input type="number" id="checkinPoints" min="1" max="100" placeholder="例：5" value="5"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal('createCheckinModal')">取消</button>
+      <button class="btn btn-primary" onclick="confirmCreateCheckin()">创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- 签到二维码弹窗 -->
+<div class="modal-overlay" id="qrCodeModal">
+  <div class="modal" style="width:380px;text-align:center;">
+    <div class="modal-hd">签到二维码<span class="modal-close" onclick="closeModal('qrCodeModal')">×</span></div>
+    <div class="modal-bd">
+      <div style="font-size:16px;font-weight:600;margin-bottom:8px;" id="qrEventTitle"></div>
+      <div style="font-size:13px;color:var(--text3);margin-bottom:14px;">签到成功 +<span id="qrEventPoints" style="color:var(--green);font-weight:600;"></span> 分</div>
+      <div id="qrCodeContainer" style="display:inline-block;padding:12px;background:white;border:1px solid var(--border);border-radius:8px;"></div>
+      <div style="font-size:11px;color:var(--text3);margin-top:10px;">请村民使用手机扫描二维码签到</div>
+      <div style="font-size:10px;color:var(--amber);margin-top:4px;word-break:break-all;">链接：<span id="qrUrlText"></span></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="copyCheckinUrl()"><i class="ti ti-copy"></i>复制签到链接</button>
+    </div>
+  </div>
+</div>
+
 <!-- 新增/编辑积分规则模态框 -->
 <div class="modal-overlay" id="addEventModal">
   <div class="modal">
@@ -915,9 +998,9 @@ function switchPage(name) {
   const mobItem = document.querySelector(`.mob-nav-item[data-page="${name}"]`);
   if (mobItem) mobItem.classList.add('active');
   currentPage = name;
-  const titles = {dashboard:'数据总览',villagers:'村民管理',scores:'积分管理',exchange:'兑换管理',goods:'物资管理',events:'积分规则',export:'数据导出',notices:'公告管理',admins:'账号管理'};
+  const titles = {dashboard:'数据总览',villagers:'村民管理',scores:'积分管理',exchange:'兑换管理',goods:'物资管理',events:'积分规则',checkin:'签到管理',export:'数据导出',notices:'公告管理',admins:'账号管理'};
   document.getElementById('pageTitle').textContent = titles[name]||name;
-  const loaders = {dashboard:loadDashboard,villagers:loadVillagers,scores:loadScores,exchange:()=>{loadExchangeSwitch();loadExchange();},goods:loadGoods,events:loadEvents,notices:loadNotices,admins:loadAdmins};
+  const loaders = {dashboard:loadDashboard,villagers:loadVillagers,scores:loadScores,exchange:()=>{loadExchangeSwitch();loadExchange();},goods:loadGoods,events:loadEvents,checkin:loadCheckins,notices:loadNotices,admins:loadAdmins};
   if (loaders[name]) loaders[name]();
 }
 
@@ -1646,6 +1729,225 @@ async function confirmAddGoods() {
   if (res && res.code===0) { showToast(editGoodsId?'物资已更新':'物资添加成功'); closeModal('addGoodsModal'); loadGoods(); loadDashboard(); }
   else showToast(res?.message||'操作失败', true);
 }
+
+
+// ── Checkin Management ──
+let currentCheckinQrUrl = '';
+let selectedVillagers = {};
+
+async function loadCheckins() {
+  const res = await api('GET', '/api/checkin/list');
+  if (!res || res.code !== 0) return;
+  document.getElementById('checkinTbody').innerHTML = res.data.map(function(c) {
+    return '<tr>' +
+      '<td data-label="活动标题"><strong>' + c.title + '</strong></td>' +
+      '<td data-label="签到分值"><span class="tag tag-green">+' + c.score_points + '分</span></td>' +
+      '<td data-label="签到人数"><strong>' + c.checkin_count + '</strong> 人</td>' +
+      '<td data-label="创建时间" style="color:var(--text3);">' + (c.created_at ? c.created_at.slice(0,10) : '') + '</td>' +
+      '<td data-label="状态"><span class="tag ' + (c.is_active ? 'tag-green' : 'tag-gray') + '">' + (c.is_active ? '进行中' : '已关闭') + '</span></td>' +
+      '<td class="td-ops">' +
+        (c.is_active ? '<button class="btn btn-outline btn-sm" onclick="showQrCode(\'' + c.qr_token + '\',\'' + escHtml(c.title) + '\',' + c.score_points + ')"><i class="ti ti-qrcode"></i>二维码</button> ' : '') +
+        '<button class="btn btn-outline btn-sm" onclick="viewCheckinRecords(' + c.id + ',\'' + escHtml(c.title) + '\')"><i class="ti ti-list"></i>名单</button> ' +
+        (c.is_active ? '<button class="btn btn-outline btn-sm" onclick="closeCheckin(' + c.id + ')">关闭</button>' : '') +
+      '</td>' +
+    '</tr>';
+  }).join('') || '<tr><td colspan="6"><div class="empty-state"><i class="ti ti-qrcode"></i>暂无签到活动</div></td></tr>';
+}
+
+async function openCreateCheckin() {
+  var res = await api('GET', '/api/scores/events');
+  if (res && res.code === 0) {
+    var sel = document.getElementById('checkinEventId');
+    sel.innerHTML = '<option value="">不关联（自定义分值）</option>' +
+      res.data.map(function(e) { return '<option value="' + e.id + '">' + e.name + ' (+' + e.points + '分)</option>'; }).join('');
+  }
+  document.getElementById('checkinTitle').value = '';
+  document.getElementById('checkinPoints').value = '5';
+  openModal('createCheckinModal');
+}
+
+async function confirmCreateCheckin() {
+  var title = document.getElementById('checkinTitle').value.trim();
+  var eventId = document.getElementById('checkinEventId').value;
+  var points = parseInt(document.getElementById('checkinPoints').value);
+  if (!title) { showToast('请填写活动标题', true); return; }
+  if (isNaN(points) || points <= 0) { showToast('请填写有效的签到分值', true); return; }
+  var res = await api('POST', '/api/checkin/create', { title: title, score_event_id: eventId || null, score_points: points });
+  if (res && res.code === 0) {
+    showToast('签到活动已创建');
+    closeModal('createCheckinModal');
+    showQrCode(res.data.qr_token, title, points, res.data.url);
+    loadCheckins();
+  } else {
+    showToast(res && res.message || '创建失败', true);
+  }
+}
+
+function showQrCode(token, title, points, url) {
+  currentCheckinQrUrl = url || (location.origin + '/index.html?checkin=' + token);
+  document.getElementById('qrEventTitle').textContent = title;
+  document.getElementById('qrEventPoints').textContent = points;
+  document.getElementById('qrUrlText').textContent = currentCheckinQrUrl;
+  document.getElementById('qrCodeContainer').innerHTML = '';
+  openModal('qrCodeModal');
+  // Generate QR code using qrcodejs if available
+  if (typeof QRCode !== 'undefined') {
+    new QRCode(document.getElementById('qrCodeContainer'), {
+      text: currentCheckinQrUrl,
+      width: 200,
+      height: 200,
+      colorDark: '#1a3d0f',
+      colorLight: '#ffffff'
+    });
+  } else {
+    document.getElementById('qrCodeContainer').innerHTML = '<div style="padding:20px;color:var(--text3);">QR库加载中...<br>请复制链接使用</div>';
+  }
+}
+
+function copyCheckinUrl() {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(currentCheckinQrUrl).then(function() {
+      showToast('签到链接已复制，可发送到微信群');
+    });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = currentCheckinQrUrl;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('签到链接已复制');
+  }
+}
+
+async function viewCheckinRecords(id, title) {
+  document.getElementById('checkinRecTitle').textContent = title + ' - 签到名单';
+  var res = await api('GET', '/api/checkin/' + id + '/records');
+  if (!res || res.code !== 0) return;
+  document.getElementById('checkinRecTbody').innerHTML = res.data.map(function(r) {
+    return '<tr>' +
+      '<td data-label="村民姓名"><strong>' + r.villager_name + '</strong></td>' +
+      '<td data-label="组别">' + (r.group_no || '-') + '</td>' +
+      '<td data-label="签到时间" style="color:var(--text3);">' + (r.created_at ? r.created_at.slice(0,19) : '') + '</td>' +
+    '</tr>';
+  }).join('') || '<tr><td colspan="3"><div class="empty-state">暂无签到记录</div></td></tr>';
+  switchPage('checkin-records');
+}
+
+async function closeCheckin(id) {
+  if (!confirm('确定关闭此签到活动？关闭后村民将无法继续签到。')) return;
+  var res = await api('PATCH', '/api/checkin/' + id + '/close');
+  if (res && res.code === 0) { showToast('签到活动已关闭'); loadCheckins(); }
+  else showToast(res && res.message || '操作失败', true);
+}
+
+// ── Batch Selection for Score Recording ──
+function renderVillagerDrop(vlist) {
+  var drop = document.getElementById('villagerDrop');
+  if (!vlist.length) { drop.innerHTML = '<div style="padding:10px;color:var(--text3);text-align:center;">无匹配村民</div>'; drop.style.display='block'; return; }
+  drop.innerHTML = vlist.map(function(v) {
+    var checked = selectedVillagers[v.id] ? 'checked' : '';
+    return '<div style="padding:8px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;border-bottom:1px solid #f0f0f0;font-size:13px;" onclick="toggleVillager(' + v.id + ',\'' + escHtml(v.name) + '\',\'' + escHtml(v.group_no) + '\')">' +
+      '<input type="checkbox" ' + checked + ' style="pointer-events:none;">' +
+      '<span>' + v.name + '</span>' +
+      '<span style="color:var(--text3);font-size:11px;">' + (v.group_no||'').replace('罗峪村','') + '</span>' +
+      '</div>';
+  }).join('');
+  drop.style.display = 'block';
+}
+
+function toggleVillager(id, name, group) {
+  if (selectedVillagers[id]) {
+    delete selectedVillagers[id];
+  } else {
+    selectedVillagers[id] = { name: name, group: group };
+  }
+  updateBatchUI();
+  // Re-render drop with current search
+  var val = document.getElementById('villagerInput').value;
+  if (val) searchVillager(val);
+}
+
+function updateBatchUI() {
+  var ids = Object.keys(selectedVillagers);
+  var bar = document.getElementById('batchBar');
+  var tags = document.getElementById('batchTags');
+  var countEl = document.getElementById('batchCount');
+  if (ids.length > 0) {
+    bar.style.display = 'flex';
+    countEl.textContent = ids.length;
+    tags.style.display = 'flex';
+    tags.innerHTML = Object.entries(selectedVillagers).map(function(e) {
+      return '<span style="display:inline-flex;align-items:center;gap:3px;background:var(--green-bg);color:var(--green-dark);padding:2px 8px;border-radius:12px;font-size:11px;">' +
+        e[1].name + '<button onclick="event.stopPropagation();delete selectedVillagers[' + e[0] + '];updateBatchUI();" style="background:none;border:none;color:var(--red);cursor:pointer;padding:0;line-height:1;">×</button></span>';
+    }).join('');
+  } else {
+    bar.style.display = 'none';
+    tags.style.display = 'none';
+  }
+}
+
+function clearAllSelection() {
+  selectedVillagers = {};
+  updateBatchUI();
+}
+
+function clearVillager() {
+  currentVillager = null;
+  selectedVillagers = {};
+  document.getElementById('villagerSelected').style.display = 'none';
+  document.getElementById('villagerInput').value = '';
+  document.getElementById('villagerDrop').style.display = 'none';
+  updateBatchUI();
+  updateSteps();
+}
+
+// ── 年度积分清零 ──
+async function triggerReset() {
+  if (!confirm('⚠ 确定要清零所有村民的兑换积分吗？\n\n此操作将把所有村民的 total_score（兑换积分）重置为 0，荣誉积分保持不变。\n\n此操作不可撤销！')) return;
+  if (!confirm('再次确认：您确定要执行年度积分清零？')) return;
+  var res = await api('POST', '/api/admin/scores/reset');
+  if (res && res.code === 0) {
+    showToast(res.message);
+    loadDashboard();
+  } else {
+    showToast(res && res.message || '操作失败', true);
+  }
+}
+
+async function loadResetLog() {
+  var res = await api('GET', '/api/admin/scores/reset/log');
+  if (!res || res.code !== 0) return;
+  var el = document.getElementById('resetLogTable');
+  el.style.display = 'block';
+  if (!res.data.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:13px;margin-top:8px;">暂无清零记录</div>';
+    return;
+  }
+  el.innerHTML = '<table style="margin-top:8px;"><thead><tr><th>年份</th><th>清零人数</th><th>触发方式</th><th>操作人</th><th>时间</th></tr></thead><tbody>' +
+    res.data.map(function(r) {
+      return '<tr>' +
+        '<td>' + r.reset_year + '</td>' +
+        '<td>' + r.villagers_count + ' 人</td>' +
+        '<td><span class="tag ' + (r.triggered_by === 'auto' ? 'tag-blue' : 'tag-amber') + '">' + (r.triggered_by === 'auto' ? '系统自动' : '人工操作') + '</span></td>' +
+        '<td>' + (r.admin_name || '-') + '</td>' +
+        '<td style="color:var(--text3);">' + (r.created_at ? r.created_at.slice(0,19) : '') + '</td>' +
+      '</tr>';
+    }).join('') +
+    '</tbody></table>';
+}
+
+// Show/hide reset card based on role
+(function() {
+  var origInitApp = initApp;
+  initApp = function() {
+    origInitApp();
+    if (adminInfo && adminInfo.role === 'super') {
+      var rc = document.getElementById('resetCard');
+      if (rc) rc.style.display = '';
+    }
+  };
+})();
 
 // ── 键盘事件 ──
 // ── 积分规则管理 ──

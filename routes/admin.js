@@ -183,6 +183,25 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
+// shared upload dir for batch scores
+const UPLOAD_DIR = path.join(__dirname, '../uploads');
+if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, UPLOAD_DIR),
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname) || '.jpg';
+      cb(null, 'batch_' + Date.now() + '_' + Math.random().toString(36).slice(2,6) + ext);
+    }
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg','image/png','image/webp','image/gif'];
+    cb(null, allowed.includes(file.mimetype));
+  }
+});
+
 const NOTICE_UPLOAD_DIR = path.join(__dirname, '../uploads/notices');
 if (!fs.existsSync(NOTICE_UPLOAD_DIR)) fs.mkdirSync(NOTICE_UPLOAD_DIR, { recursive: true });
 
@@ -304,6 +323,109 @@ router.patch('/events/:id/toggle', authMiddleware, requireVillageAdmin, wrap(asy
   if (!rows.length) return res.status(404).json({ code: 404, message: '积分事件不存在' });
   await db.execute('UPDATE score_events SET is_active=? WHERE id=?', [is_active ? 1 : 0, req.params.id]);
   res.json({ code: 0, message: is_active ? '已启用' : '已禁用' });
+}));
+
+// ── 批量积分录入 ──
+// POST /api/admin/scores/batch
+router.post('/scores/batch', authMiddleware, requireVillageAdmin, upload.array('images', 4), wrap(async (req, res) => {
+  const { villager_ids, event_id, description, custom, custom_points, custom_name } = req.body;
+  let ids = [];
+  try { ids = JSON.parse(villager_ids); } catch(e) { return res.status(400).json({ code: 400, message: 'villager_ids 格式错误，需要JSON数组' }); }
+  if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ code: 400, message: '请至少选择一位村民' });
+  if (ids.length > 200) return res.status(400).json({ code: 400, message: '单次批量操作最多200人' });
+
+  const isCustom = custom === 'true';
+  if (isCustom) {
+    if (!custom_name || !custom_name.trim())
+      return res.status(400).json({ code: 400, message: '自定义积分必须填写原因说明' });
+    const pts = parseInt(custom_points);
+    if (isNaN(pts) || pts === 0) return res.status(400).json({ code: 400, message: '积分值不能为0' });
+    if (Math.abs(pts) > 100) return res.status(400).json({ code: 400, message: '单次自定义积分不能超过100分' });
+  } else {
+    if (!event_id) return res.status(400).json({ code: 400, message: 'event_id 必填' });
+  }
+
+  let evt = null;
+  if (!isCustom) {
+    const [evRows] = await db.execute('SELECT * FROM score_events WHERE id=? AND is_active=1', [event_id]);
+    if (!evRows.length) return res.status(400).json({ code: 400, message: '积分事件不存在' });
+    evt = evRows[0];
+  }
+
+  const finalPoints  = isCustom ? parseInt(custom_points) : evt.points;
+  const finalName    = isCustom ? custom_name.trim() : evt.name;
+  const finalEventId = isCustom ? null : event_id;
+  const finalDesc    = isCustom ? null : (description || null);
+  const status = (!isCustom && ['super','village_admin'].includes(req.admin.role)) ? 'approved' : 'pending';
+
+  let imageUrls = [];
+  if (req.files && req.files.length) {
+    const evtSlug = finalName.replace(/[^一-龥a-zA-Z0-9]/g, '').slice(0, 10) || 'batch';
+    const renamedFiles = req.files.map(f => {
+      const ext = path.extname(f.filename);
+      const newName = `batch_${evtSlug}_${Date.now()}_${Math.random().toString(36).slice(2,4)}${ext}`;
+      const oldPath = path.join(UPLOAD_DIR, f.filename);
+      const newPath = path.join(UPLOAD_DIR, newName);
+      try { fs.renameSync(oldPath, newPath); } catch(e) {}
+      return fs.existsSync(newPath) ? newName : f.filename;
+    });
+    imageUrls = renamedFiles.map(name => `/uploads/${name}`);
+  }
+
+  const imgJson = imageUrls.length ? JSON.stringify(imageUrls) : null;
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+    const inserted = [];
+    for (const vid of ids) {
+      const [ins] = await conn.execute(
+        `INSERT INTO score_records (villager_id, event_id, event_name, points, description, image_urls, submitted_by, status)
+         VALUES (?,?,?,?,?,?,?,?)`,
+        [parseInt(vid), finalEventId, finalName, finalPoints, finalDesc, imgJson, req.admin.id, status]
+      );
+      if (status === 'approved') {
+        await conn.execute(
+          'UPDATE villagers SET total_score=total_score+?, honor_score=honor_score+? WHERE id=?',
+          [finalPoints, finalPoints, parseInt(vid)]
+        );
+      }
+      inserted.push({ id: ins.insertId, villager_id: parseInt(vid) });
+    }
+    await conn.commit();
+    res.json({ code: 0, message: `已为${inserted.length}位村民${status==='approved'?'录入积分并生效':'提交积分，等待审核'}`, data: { count: inserted.length, status } });
+  } catch(e) { await conn.rollback(); throw e; }
+  finally { conn.release(); }
+}));
+
+// ── 年度积分清零 ──
+// POST /api/admin/scores/reset — 手动触发清零（仅超管）
+router.post('/scores/reset', authMiddleware, requireSuper, wrap(async (req, res) => {
+  const currentYear = new Date().getFullYear();
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+    const [result] = await conn.execute(
+      "UPDATE villagers SET total_score=0 WHERE total_score>0 AND is_active=1"
+    );
+    const count = result.changedRows;
+    await conn.execute(
+      "INSERT INTO reset_log (reset_year, villagers_count, triggered_by, admin_id) VALUES (?,?,?,?)",
+      [currentYear, count, 'manual', req.admin.id]
+    );
+    await conn.commit();
+    res.json({ code: 0, message: `积分清零完成，共清零${count}位村民的兑换积分（荣誉积分保留）`, data: { count, year: currentYear } });
+  } catch(e) { await conn.rollback(); throw e; }
+  finally { conn.release(); }
+}));
+
+// GET /api/admin/scores/reset/log — 查询清零历史（村干部+）
+router.get('/scores/reset/log', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
+  const [rows] = await db.execute(
+    `SELECT rl.*, IFNULL(a.name,'系统自动') AS admin_name
+     FROM reset_log rl LEFT JOIN admins a ON a.id=rl.admin_id
+     ORDER BY rl.created_at DESC LIMIT 20`
+  );
+  res.json({ code: 0, data: rows });
 }));
 
 module.exports = router;
