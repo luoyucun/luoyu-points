@@ -28,7 +28,7 @@ router.post('/login', async (req, res) => {
     try {
       await conn.beginTransaction();
       await conn.execute(
-        'INSERT INTO score_records (villager_id, event_id, event_name, points, show_in_feed, submitted_by, status) VALUES (?,NULL,?,?,1,1,"approved")',
+        'INSERT INTO score_records (villager_id, event_id, event_name, points, show_in_feed, submitted_by, status) VALUES (?,NULL,?,?,0,1,"approved")',
         [villager.id, '首次登录基础积分', 10]
       );
       await conn.execute(
