@@ -59,7 +59,7 @@ router.get('/public', async (req, res) => {
            sr.event_name, sr.points, sr.description, sr.image_urls, sr.status, sr.is_revoked, sr.created_at
     FROM score_records sr
     JOIN villagers v ON v.id = sr.villager_id
-    WHERE sr.status = 'approved' AND sr.is_revoked = 0
+    WHERE sr.status = 'approved' AND sr.is_revoked = 0 AND sr.show_in_feed = 1
     ORDER BY sr.created_at DESC LIMIT ?
   `, [parseInt(limit)]);
   rows.forEach(r => { if (r.image_urls) { try { r.image_urls = JSON.parse(r.image_urls); } catch(e) { r.image_urls = [r.image_urls]; } } });

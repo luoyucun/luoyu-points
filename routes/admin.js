@@ -379,8 +379,8 @@ router.post('/scores/batch', authMiddleware, requireVillageAdmin, upload.array('
     const inserted = [];
     for (const vid of ids) {
       const [ins] = await conn.execute(
-        `INSERT INTO score_records (villager_id, event_id, event_name, points, description, image_urls, submitted_by, status)
-         VALUES (?,?,?,?,?,?,?,?)`,
+        `INSERT INTO score_records (villager_id, event_id, event_name, points, show_in_feed, description, image_urls, submitted_by, status)
+         VALUES (?,?,?,?,0,?,?,?,?)`,
         [parseInt(vid), finalEventId, finalName, finalPoints, finalDesc, imgJson, req.admin.id, status]
       );
       if (status === 'approved') {

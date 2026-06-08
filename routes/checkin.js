@@ -104,7 +104,7 @@ router.post('/:token/checkin', checkinUpload.single('photo'), wrap(async (req, r
     const points = evt.score_points;
 
     const [srResult] = await conn.execute(
-      'INSERT INTO score_records (villager_id, event_id, event_name, points, submitted_by, status) VALUES (?,?,?,?,1,\'approved\')',
+      'INSERT INTO score_records (villager_id, event_id, event_name, points, show_in_feed, submitted_by, status) VALUES (?,?,?,?,0,1,"approved")',
       [villager.id, eventId, eventName, points]
     );
 
