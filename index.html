@@ -370,45 +370,51 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
   <div class="login-bg-deco">
     <!-- 山林稻田背景SVG -->
     <svg class="login-bg-landscape" viewBox="0 0 400 220" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
-      <!-- 远山 -->
-      <path d="M0 160 Q30 100 70 120 Q100 85 130 110 Q160 70 190 100 Q220 60 260 95 Q290 70 330 95 Q360 80 400 105 L400 220 L0 220Z" fill="#1a4a08" opacity="0.9"/>
-      <!-- 近山 -->
-      <path d="M0 180 Q40 145 80 158 Q110 138 150 155 Q185 135 220 152 Q255 138 290 155 Q330 142 370 158 L400 165 L400 220 L0 220Z" fill="#2d6012" opacity="0.95"/>
-      <!-- 稻田：金色层次 -->
-      <path d="M0 195 Q100 185 200 192 Q300 185 400 192 L400 220 L0 220Z" fill="#5a8020" opacity="0.9"/>
-      <!-- 稻田纹理横线 -->
-      <g opacity="0.5" stroke="#8ab030" stroke-width="0.8" fill="none">
-        <path d="M0 200 Q50 197 100 200 Q150 197 200 200 Q250 197 300 200 Q350 197 400 200"/>
-        <path d="M0 206 Q50 203 100 206 Q150 203 200 206 Q250 203 300 206 Q350 203 400 206"/>
-        <path d="M0 212 Q50 209 100 212 Q150 209 200 212 Q250 209 300 212 Q350 209 400 212"/>
+      <!-- 远山：深青色山林 -->
+      <path d="M0 150 Q25 100 60 115 Q90 80 120 105 Q150 70 180 100 Q210 60 240 95 Q270 65 300 95 Q330 70 360 100 Q380 80 400 105 L400 220 L0 220Z" fill="#1a3d0f" opacity="0.85"/>
+      <!-- 中景山峦 -->
+      <path d="M0 165 Q35 130 70 148 Q100 120 135 142 Q165 120 200 140 Q235 120 270 140 Q305 122 340 145 Q370 130 400 155 L400 220 L0 220Z" fill="#2d5a15" opacity="0.9"/>
+      <!-- 近山：山脚山林 -->
+      <path d="M0 180 Q45 155 85 170 Q120 155 160 172 Q195 158 230 175 Q265 160 300 175 Q340 162 380 178 L400 185 L400 220 L0 220Z" fill="#3d6e1f" opacity="0.95"/>
+      <!-- 稻田层一（上）：深金绿色 -->
+      <path d="M0 188 Q80 182 160 186 Q240 182 320 186 L400 188 L400 220 L0 220Z" fill="#6d8a30" opacity="0.9"/>
+      <!-- 稻田层二（中）：金黄色 -->
+      <path d="M0 196 Q70 190 150 194 Q230 190 310 195 L400 196 L400 220 L0 220Z" fill="#8a9e2a" opacity="0.88"/>
+      <!-- 稻田层三（下）：成熟金黄 -->
+      <path d="M0 204 Q90 200 180 203 Q270 200 360 204 L400 204 L400 220 L0 220Z" fill="#c4a820" opacity="0.85"/>
+      <!-- 稻田纹理线 -->
+      <g opacity="0.4" stroke="#d4b830" stroke-width="0.7" fill="none">
+        <path d="M0 190 Q80 186 160 189 Q240 186 400 190"/>
+        <path d="M0 198 Q70 194 150 197 Q230 194 400 198"/>
+        <path d="M0 206 Q90 203 180 205 Q270 203 400 206"/>
+        <path d="M0 212 Q80 209 170 211 Q260 209 400 212"/>
       </g>
       <!-- 稻穗点缀 -->
-      <g fill="#d4a017" opacity="0.6">
-        <ellipse cx="60" cy="193" rx="2" ry="5" transform="rotate(-10 60 193)"/>
-        <ellipse cx="80" cy="191" rx="2" ry="5" transform="rotate(5 80 191)"/>
-        <ellipse cx="130" cy="192" rx="2" ry="5" transform="rotate(-8 130 192)"/>
-        <ellipse cx="160" cy="190" rx="2" ry="5" transform="rotate(12 160 190)"/>
-        <ellipse cx="230" cy="192" rx="2" ry="5" transform="rotate(-5 230 192)"/>
-        <ellipse cx="270" cy="191" rx="2" ry="5" transform="rotate(8 270 191)"/>
-        <ellipse cx="320" cy="193" rx="2" ry="5" transform="rotate(-12 320 193)"/>
-        <ellipse cx="360" cy="191" rx="2" ry="5" transform="rotate(6 360 191)"/>
+      <g fill="#e8c840" opacity="0.55">
+        <ellipse cx="50" cy="192" rx="1.5" ry="4" transform="rotate(-10 50 192)"/>
+        <ellipse cx="90" cy="189" rx="1.5" ry="4" transform="rotate(8 90 189)"/>
+        <ellipse cx="140" cy="191" rx="1.5" ry="4" transform="rotate(-5 140 191)"/>
+        <ellipse cx="200" cy="188" rx="1.5" ry="4" transform="rotate(12 200 188)"/>
+        <ellipse cx="250" cy="191" rx="1.5" ry="4" transform="rotate(-8 250 191)"/>
+        <ellipse cx="300" cy="188" rx="1.5" ry="4" transform="rotate(6 300 188)"/>
+        <ellipse cx="350" cy="190" rx="1.5" ry="4" transform="rotate(-12 350 190)"/>
       </g>
       <!-- 松树剪影 -->
-      <g fill="#0d2d05" opacity="0.85">
-        <polygon points="18,160 22,145 26,160"/>
-        <polygon points="15,165 22,148 29,165"/>
-        <rect x="20" y="165" width="4" height="8"/>
-        <polygon points="340,155 345,138 350,155"/>
-        <polygon points="337,160 345,141 353,160"/>
-        <rect x="342" y="160" width="6" height="9"/>
-        <polygon points="375,162 379,148 383,162"/>
-        <polygon points="373,167 379,150 385,167"/>
-        <rect x="377" y="167" width="4" height="7"/>
+      <g fill="#0d2d05" opacity="0.8">
+        <polygon points="22,172 26,155 30,172"/>
+        <polygon points="19,177 26,158 33,177"/>
+        <rect x="24" y="177" width="4" height="7"/>
+        <polygon points="350,168 355,150 360,168"/>
+        <polygon points="347,173 355,153 363,173"/>
+        <rect x="353" y="173" width="5" height="8"/>
+        <polygon points="378,175 382,159 386,175"/>
+        <polygon points="376,180 382,161 388,180"/>
+        <rect x="380" y="180" width="4" height="6"/>
       </g>
-      <!-- 晨光：顶部光晕 -->
-      <ellipse cx="200" cy="0" rx="200" ry="60" fill="#f5c518" opacity="0.04"/>
+      <!-- 顶部光晕 -->
+      <ellipse cx="200" cy="0" rx="200" ry="50" fill="#f5c518" opacity="0.03"/>
     </svg>
-  </div>
+</div>
 
   <!-- 贺龙语录横幅 -->
   <div class="login-quotebanner">
@@ -458,11 +464,11 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
         <!-- 书法"罗峪"文字，居中叠加，红色带描边 -->
         <text x="50" y="62"
           font-size="36"
-          fill="#e8c84a"
+          fill="#c45a5a"
           font-family="STKaiti,KaiTi,华文行楷,FZKaiTi,serif"
           font-weight="900"
           text-anchor="middle"
-          stroke="#a08020"
+          stroke="#6b2e2e"
           stroke-width="0.8"
           style="filter:drop-shadow(0 2px 6px rgba(0,0,0,0.5))">罗峪</text>
       </svg>
