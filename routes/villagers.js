@@ -183,7 +183,16 @@ router.get('/', authMiddleware, async (req, res) => {
   sql += ' ORDER BY group_no, name LIMIT ? OFFSET ?';
   params.push(parseInt(limit), (parseInt(page) - 1) * parseInt(limit));
   const [rows] = await db.execute(sql, params);
-  res.json({ code: 0, data: rows });
+  // 总条数
+  let countSql = 'SELECT COUNT(*) AS total FROM villagers WHERE is_active = 1';
+  const countParams = [];
+  if (name)     { countSql += ' AND name LIKE ?';     countParams.push('%' + name + '%'); }
+  if (group_no) { countSql += ' AND group_no = ?';    countParams.push(group_no); }
+  if (req.admin.role === 'group_leader') {
+    countSql += ' AND group_no = ?'; countParams.push(req.admin.group_no);
+  }
+  const [[{ total }]] = await db.execute(countSql, countParams);
+  res.json({ code: 0, data: rows, total });
 });
 
 // GET /api/villagers/:id — 村民详情 + 近期积分

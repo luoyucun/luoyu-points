@@ -44,11 +44,20 @@ router.get('/', authMiddleware, async (req, res) => {
   if (req.admin.role === 'group_leader') {
     sql += ' AND v.group_no=?'; params.push(req.admin.group_no);
   }
+  // 总条数
+  let countSql2 = 'SELECT COUNT(*) AS total FROM score_records sr JOIN villagers v ON v.id=sr.villager_id WHERE 1=1';
+  const countParams2 = [];
+  if (villager_id) { countSql2 += ' AND sr.villager_id=?'; countParams2.push(villager_id); }
+  if (status)      { countSql2 += ' AND sr.status=?';      countParams2.push(status); }
+  if (req.admin.role === 'group_leader') {
+    countSql2 += ' AND v.group_no=?'; countParams2.push(req.admin.group_no);
+  }
+  const [[{ total }]] = await db.execute(countSql2, countParams2);
   sql += ' ORDER BY sr.created_at DESC LIMIT ? OFFSET ?';
   params.push(parseInt(limit), (parseInt(page)-1)*parseInt(limit));
   const [rows] = await db.execute(sql, params);
   rows.forEach(r => { if (r.image_urls) { try { r.image_urls = JSON.parse(r.image_urls); } catch(e) { r.image_urls = [r.image_urls]; } } });
-  res.json({ code: 0, data: rows });
+  res.json({ code: 0, data: rows, total });
 });
 
 // GET /api/scores/public

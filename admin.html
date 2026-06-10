@@ -198,7 +198,7 @@ tr:last-child td{border-bottom:none;}
   .mob-nav{display:flex;}
   .main{margin-left:0;}
   /* 页面内边距，底部留出导航高度 */
-  .page{padding:14px 12px 76px;}
+  .page{padding:14px 12px 90px;}
   .topbar{padding:0 14px;height:50px;}
   .topbar-title{font-size:15px;}
   /* 统计卡片 2列 */
@@ -928,6 +928,22 @@ let adminInfo = JSON.parse(localStorage.getItem('luoyu_admin_info') || 'null');
 let currentPage = 'dashboard';
 let vPage = 1, sPage = 1, ePage = 1;
 let revokeId = null, stockGoodsId = null, editEventId = null;
+
+// ── 通用分页渲染 ──
+function renderPager(pagerId, page, total, loadFn) {
+  var el = document.getElementById(pagerId);
+  if (!el) return;
+  var totalPages = Math.max(1, Math.ceil(total / 15));
+  var html = '';
+  html += '<button class="page-btn" onclick="' + loadFn + '(1)" ' + (page <= 1 ? 'disabled' : '') + '>首页</button>';
+  html += '<button class="page-btn" onclick="' + loadFn + '(' + (page - 1) + ')" ' + (page <= 1 ? 'disabled' : '') + '>上一页</button>';
+  html += '<span style="margin:0 8px;">第 <input type="number" value="' + page + '" min="1" max="' + totalPages + '" style="width:50px;text-align:center;padding:4px;border:1px solid var(--border);border-radius:4px;" onchange="var v=parseInt(this.value);if(v>=1&&v<=' + totalPages + '){' + loadFn + '(v)}"> / ' + totalPages + ' 页</span>';
+  html += '<button class="page-btn" onclick="' + loadFn + '(' + (page + 1) + ')" ' + (page >= totalPages ? 'disabled' : '') + '>下一页</button>';
+  html += '<button class="page-btn" onclick="' + loadFn + '(' + totalPages + ')" ' + (page >= totalPages ? 'disabled' : '') + '>末页</button>';
+  html += '<span style="margin-left:8px;color:var(--text3);">共 ' + total + ' 条</span>';
+  el.innerHTML = html;
+}
+
 let allGroups = [];
 
 // ── API ──
@@ -1081,17 +1097,20 @@ async function loadDashboard() {
 }
 
 // ── 村民管理 ──
+function goVPage(p) { vPage = p; loadVillagers(); }
 async function loadVillagers() {
   const q = document.getElementById('vSearch').value.trim();
   const g = document.getElementById('vGroup').value;
-  let url = `/api/villagers?page=${vPage}&limit=20`;
+  let url = `/api/villagers?page=${vPage}&limit=15`;
   if (q) url += '&name='+encodeURIComponent(q);
   if (g) url += '&group_no='+encodeURIComponent(g);
   const res = await api('GET', url);
   if (!res || res.code !== 0) return;
+  renderPager('sPager', sPage, res.total, 'goSPage');
+  renderPager('vPager', vPage, res.total, 'goVPage');
   const tbody = document.getElementById('villagersTbody');
   if (!res.data.length) {
-    tbody.innerHTML = `<tr class="loading-row"><td colspan="6"><div class="empty-state"><i class="ti ti-users"></i>暂无数据</div></td></tr>`;
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><div class="empty-state"><i class="ti ti-users"></i>暂无数据</div></td></tr>';
     return;
   }
   tbody.innerHTML = res.data.map(v=>`
@@ -1219,14 +1238,16 @@ async function viewVillager(id, name) {
 }
 
 // ── 积分管理 ──
+function goSPage(p) { sPage = p; loadScores(); }
 async function loadScores() {
   const q = document.getElementById('sSearch').value.trim();
   const status = document.getElementById('sStatus').value;
   const group = document.getElementById('sGroup').value;
-  let url = `/api/scores?page=${sPage}&limit=20`;
+  let url = `/api/scores?page=${sPage}&limit=15`;
   if (status) url += '&status='+status;
   const res = await api('GET', url);
   if (!res || res.code !== 0) return;
+  renderPager('sPager', sPage, res.total, 'goSPage');
   let data = res.data;
   if (q) data = data.filter(r=>r.villager_name&&r.villager_name.includes(q));
   if (group) data = data.filter(r=>r.group_no===group);
@@ -1334,12 +1355,15 @@ async function toggleExchangeSwitch() {
 }
 
 // ── 兑换管理 ──
+function goEPage(p) { ePage = p; loadExchange(); }
 async function loadExchange() {
   const status = document.getElementById('eStatus').value;
-  let url = `/api/admin/exchange/records?page=${ePage}&limit=20`;
+  let url = `/api/admin/exchange/records?page=${ePage}&limit=15`;
+  if (status) url += '&status='+encodeURIComponent(status);
   if (status) url += '&status='+status;
   const res = await api('GET', url);
   if (!res || res.code !== 0) return;
+  renderPager('sPager', sPage, res.total, 'goSPage');
   const tbody = document.getElementById('exchangeTbody');
   if (!res.data.length) {
     tbody.innerHTML = `<tr class="loading-row"><td colspan="7"><div class="empty-state"><i class="ti ti-gift"></i>暂无兑换记录</div></td></tr>`;
@@ -1520,7 +1544,7 @@ async function exportScores() {
 async function viewScoreDetail(id) {
   openModal('scoreDetailModal');
   document.getElementById('scoreDetailBody').innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);">加载中…</div>';
-  const res = await api('GET', `/api/scores?page=1&limit=200`);
+  const res = await api('GET', `/api/scores?page=1&limit=150`);
   if (!res) return;
   const rec = (res.data||[]).find(r=>r.id===id);
   if (!rec) { document.getElementById('scoreDetailBody').innerHTML = '<div class="empty-state">记录不存在</div>'; return; }
