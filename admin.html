@@ -993,7 +993,7 @@ function initApp() {
   document.getElementById('loginPage').style.display = 'none';
   document.getElementById('sidebar').style.display = 'flex';
   document.getElementById('mainArea').style.display = 'flex';
-  document.getElementById('mobNav').style.display = 'flex';
+  
   document.getElementById('userName').textContent = adminInfo.name;
   document.getElementById('userAv').textContent = adminInfo.name[0];
   document.getElementById('pageTime').textContent = new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric'});
@@ -1024,12 +1024,10 @@ async function loadGroups() {
 function switchPage(name) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
-  document.querySelectorAll('.mob-nav-item[data-page]').forEach(i=>i.classList.remove('active'));
+  
   document.getElementById('page-'+name).classList.add('active');
   const sbItem = document.querySelector(`.sb-item[onclick="switchPage('${name}')"]`);
   if (sbItem) sbItem.classList.add('active');
-  const mobItem = document.querySelector(`.mob-nav-item[data-page="${name}"]`);
-  if (mobItem) mobItem.classList.add('active');
   currentPage = name;
   const titles = {dashboard:'数据总览',villagers:'村民管理',scores:'积分管理',exchange:'兑换管理',goods:'物资管理',events:'积分规则',checkin:'签到管理',feedback:'村民反馈',export:'数据导出',notices:'公告管理',admins:'账号管理'};
   document.getElementById('pageTitle').textContent = titles[name]||name;
@@ -1037,15 +1035,6 @@ function switchPage(name) {
   if (loaders[name]) loaders[name]();
 }
 
-// 移动端更多菜单
-function openMobMore() {
-  document.getElementById('mobMoreOverlay').style.display = 'block';
-  document.getElementById('mobMoreSheet').style.display = 'block';
-}
-function closeMobMore() {
-  document.getElementById('mobMoreOverlay').style.display = 'none';
-  document.getElementById('mobMoreSheet').style.display = 'none';
-}
 
 // ── 工具 ──
 function showToast(msg, isErr) {
@@ -1246,13 +1235,13 @@ async function loadScores() {
   const status = document.getElementById('sStatus').value;
   const group = document.getElementById('sGroup').value;
   let url = `/api/scores?page=${sPage}&limit=15`;
+  if (q) url += '&villager_name='+encodeURIComponent(q);
   if (status) url += '&status='+status;
+  if (group) url += '&group_no='+encodeURIComponent(group);
   const res = await api('GET', url);
   if (!res || res.code !== 0) return;
   renderPager('sPager', sPage, res.total, 'goSPage');
   let data = res.data;
-  if (q) data = data.filter(r=>r.villager_name&&r.villager_name.includes(q));
-  if (group) data = data.filter(r=>r.group_no===group);
   const tbody = document.getElementById('scoresTbody');
   if (!data.length) {
     tbody.innerHTML = `<tr class="loading-row"><td colspan="8"><div class="empty-state"><i class="ti ti-list"></i>暂无记录</div></td></tr>`;

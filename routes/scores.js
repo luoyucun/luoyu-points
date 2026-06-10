@@ -27,7 +27,7 @@ const upload = multer({
 
 // GET /api/scores
 router.get('/', authMiddleware, async (req, res) => {
-  const { villager_id, status, page = 1, limit = 50 } = req.query;
+  const { villager_id, villager_name, group_no, status, page = 1, limit = 50 } = req.query;
   let sql = `
     SELECT sr.id, sr.villager_id, v.name AS villager_name, v.group_no,
            sr.event_id, sr.event_name, sr.points, sr.description,
@@ -39,16 +39,20 @@ router.get('/', authMiddleware, async (req, res) => {
     WHERE 1=1
   `;
   const params = [];
-  if (villager_id) { sql += ' AND sr.villager_id=?'; params.push(villager_id); }
-  if (status)      { sql += ' AND sr.status=?';      params.push(status); }
+  if (villager_id)   { sql += ' AND sr.villager_id=?';  params.push(villager_id); }
+  if (villager_name) { sql += ' AND v.name LIKE ?';      params.push('%' + villager_name + '%'); }
+  if (group_no)      { sql += ' AND v.group_no=?';       params.push(group_no); }
+  if (status)        { sql += ' AND sr.status=?';         params.push(status); }
   if (req.admin.role === 'group_leader') {
     sql += ' AND v.group_no=?'; params.push(req.admin.group_no);
   }
   // 总条数
   let countSql2 = 'SELECT COUNT(*) AS total FROM score_records sr JOIN villagers v ON v.id=sr.villager_id WHERE 1=1';
   const countParams2 = [];
-  if (villager_id) { countSql2 += ' AND sr.villager_id=?'; countParams2.push(villager_id); }
-  if (status)      { countSql2 += ' AND sr.status=?';      countParams2.push(status); }
+  if (villager_id)   { countSql2 += ' AND sr.villager_id=?';  countParams2.push(villager_id); }
+  if (villager_name) { countSql2 += ' AND v.name LIKE ?';      countParams2.push('%' + villager_name + '%'); }
+  if (group_no)      { countSql2 += ' AND v.group_no=?';       countParams2.push(group_no); }
+  if (status)        { countSql2 += ' AND sr.status=?';         countParams2.push(status); }
   if (req.admin.role === 'group_leader') {
     countSql2 += ' AND v.group_no=?'; countParams2.push(req.admin.group_no);
   }
