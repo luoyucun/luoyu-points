@@ -811,7 +811,7 @@ function pubTab(name) {
   var isLoggedIn = !!(villagerInfo || (token && adminInfo));
   document.getElementById('pubBanner').style.display = isLoggedIn ? 'none' : 'flex';
   // Navigate
-  if (name==='my') { showLogin(); return; }
+  if (name==='my') { if (villagerInfo || (token && adminInfo)) { doLogout(); showLogin(); return; } showLogin(); return; }
   if (name==='notice') loadNotice();
   else if (name==='rank') loadRank();
   else if (name==='feed') loadPublicFeed();
