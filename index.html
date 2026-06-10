@@ -252,6 +252,15 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 .fb-cancel{background:var(--bg);color:var(--text2);border:1px solid var(--border);}
 .fb-chars{text-align:right;font-size:11px;color:var(--text3);margin-top:4px;}
 
+
+/* ── 公开浏览提示 ── */
+.pub-bar{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:var(--green-bg);font-size:12px;color:var(--green-dark);position:sticky;top:0;z-index:50;}
+.pub-bar .pub-login-btn{background:var(--green);color:white;border:none;border-radius:14px;padding:4px 14px;font-size:12px;cursor:pointer;}
+
+/* ── 我的页面 ── */
+.my-tab{display:none;min-height:100vh;}
+.my-tab.active{display:block;}
+
 /* ── 积分细则 ── */
 .rules-cat{margin-bottom:16px;}
 .rules-cat-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
@@ -365,8 +374,9 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 </head>
 <body>
 
-<!-- ============ LOGIN ============ -->
-<div id="loginScreen" class="login-screen">
+<!-- ============ LOGIN / MY TAB ============ -->
+<div id="myTabContent" class="my-tab active">
+<div class="login-screen">
   <div class="login-bg-deco">
     <!-- 山林稻田背景SVG -->
     <svg class="login-bg-landscape" viewBox="0 0 400 220" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
@@ -505,6 +515,7 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
     </div>
   </div>
 </div>
+</div>
 
 <!-- ============ QUERY SCREEN ============ -->
 <div id="queryScreen" class="query-screen" style="display:none;">
@@ -569,12 +580,18 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
     </div>
   </div>
 </div>
+</div>
 
 <!-- ============ MAIN APP ============ -->
-<div id="mainApp" class="app" style="display:none;">
+<div id="mainApp" class="app">
 
+  <!-- Public banner (hidden when logged in) -->
+  <div class="pub-bar" id="pubBanner">
+    <span>🌾 罗峪村村民积分 · 公开浏览</span>
+    <button class="pub-login-btn" onclick="pubTab('my')">登录</button>
+  </div>
   <!-- Header -->
-  <div class="header" id="appHeader">
+  <div class="header" id="appHeader" style="display:none;">
     <div class="header-top">
       <div>
         <h1 id="headerTitle">罗峪村村民积分</h1>
@@ -586,7 +603,7 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 
   <!-- ===== VILLAGER SCREENS ===== -->
   <!-- 首页 -->
-  <div class="screen active" id="sv-home">
+  <div class="screen" id="sv-home" style="display:none;">
     <div class="scroll" id="homeScroll">
       <div class="loading"><i class="ti ti-loader"></i>加载中…</div>
     </div>
@@ -636,7 +653,7 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
     <button onclick="document.getElementById('resetNoticeBanner').style.display='none'" style="background:none;border:none;font-size:16px;cursor:pointer;color:#856404;line-height:1;">×</button>
   </div>
 
-  <div class="screen" id="sv-notice">
+  <div class="screen active" id="sv-notice">
     <div class="scroll" id="noticeScroll">
       <div class="loading"><i class="ti ti-loader"></i>加载中…</div>
     </div>
@@ -749,16 +766,16 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
     </div>
   </div>
 
-  <!-- Villager Bottom Nav -->
-  <nav class="bottom-nav" id="vNav">
-    <button class="nav-item active" onclick="vTab('home')" data-t="home"><i class="ti ti-home"></i><span>首页</span></button>
-    <button class="nav-item" onclick="vTab('log')" data-t="log"><i class="ti ti-list-details"></i><span>明细</span></button>
-    <button class="nav-item" onclick="vTab('rank')" data-t="rank"><i class="ti ti-trophy"></i><span>排行</span></button>
-    <button class="nav-item" onclick="vTab('rules')" data-t="rules"><i class="ti ti-clipboard-text"></i><span>细则</span></button>
-    <button class="nav-item" onclick="vTab('notice')" data-t="notice"><i class="ti ti-bell"></i><span>公告</span></button>
+  <!-- Unified Bottom Nav (always visible) -->
+  <nav class="bottom-nav" id="pubNav">
+    <button class="nav-item active" onclick="pubTab('notice')" data-t="notice"><i class="ti ti-bell"></i><span>公告</span></button>
+    <button class="nav-item" onclick="pubTab('rank')" data-t="rank"><i class="ti ti-trophy"></i><span>排行</span></button>
+    <button class="nav-item" onclick="pubTab('feed')" data-t="feed"><i class="ti ti-list-details"></i><span>动态</span></button>
+    <button class="nav-item" onclick="pubTab('rules')" data-t="rules"><i class="ti ti-clipboard-text"></i><span>细则</span></button>
+    <button class="nav-item" onclick="pubTab('my')" data-t="my"><i class="ti ti-user"></i><span>我的</span></button>
   </nav>
 
-  <!-- Admin Bottom Nav -->
+  <!-- Admin Bottom Nav (hidden by default, shown when admin logged in) -->
   <nav class="bottom-nav" id="aNav" style="display:none;">
     <button class="nav-item active" onclick="aTab('home')" data-t="home"><i class="ti ti-layout-dashboard"></i><span>工作台</span></button>
     <button class="nav-item" onclick="aTab('record')" data-t="record"><i class="ti ti-edit"></i><span>录入</span></button>
@@ -777,6 +794,118 @@ let villagers = [];
 let events = [];
 let currentVillager = null;
 let uploadedPhotos = [];
+
+
+// ── Public tab navigation ──
+function pubTab(name) {
+  // Hide all screens
+  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+  // Hide my tab content
+  document.getElementById('myTabContent').classList.remove('active');
+  // Hide admin pages
+  document.getElementById('appHeader').style.display = 'none';
+  document.getElementById('aNav').style.display = 'none';
+  // Hide pub banner when in login tab or logged in
+  var pubBanner = document.getElementById('pubBanner');
+
+  // Update bottom nav
+  document.querySelectorAll('#pubNav .nav-item').forEach(function(i) { i.classList.remove('active'); });
+  var navItem = document.querySelector('#pubNav [data-t="' + name + '"]');
+  if (navItem) navItem.classList.add('active');
+
+  if (name === 'my') {
+    // Show login/profile tab
+    document.getElementById('myTabContent').classList.add('active');
+    if (villagerInfo || (token && adminInfo)) {
+      // Already logged in - show personal view
+      pubBanner.style.display = 'none';
+      document.getElementById('appHeader').style.display = 'block';
+      if (token && adminInfo && ['super','village_admin','group_leader'].includes(adminInfo.role)) {
+        document.getElementById('aNav').style.display = 'flex';
+        initApp();
+        return;
+      }
+      if (villagerInfo) {
+        document.getElementById('sv-home').classList.add('active');
+        loadHome();
+      }
+    } else {
+      pubBanner.style.display = 'flex';
+      // Show login form
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('queryScreen').style.display = 'none';
+    }
+    return;
+  }
+
+  // Public tabs
+  if (villagerInfo || (token && adminInfo)) {
+    pubBanner.style.display = 'none';
+  } else {
+    pubBanner.style.display = 'flex';
+  }
+
+  var screenId = '';
+  if (name === 'notice') screenId = 'sv-notice';
+  else if (name === 'rank') screenId = 'sv-rank';
+  else if (name === 'feed') screenId = 'sv-log';
+  else if (name === 'rules') screenId = 'sv-rules';
+
+  var screen = document.getElementById(screenId);
+  if (screen) {
+    screen.classList.add('active');
+    // Load content if needed
+    if (name === 'notice' && typeof loadNotices === 'function') loadPublicNotices();
+    if (name === 'rank' && typeof loadRank === 'function') loadRank();
+    if (name === 'feed' && typeof loadPublicFeed === 'function') loadPublicFeed();
+    if (name === 'rules' && typeof loadRules === 'function') loadRules();
+  }
+}
+
+// ── Public feed loader (no auth) ──
+async function loadPublicFeed() {
+  var el = document.getElementById('logScroll');
+  el.innerHTML = '<div class="loading"><i class="ti ti-loader"></i>加载中…</div>';
+  try {
+    var res = await fetch(BASE + '/api/scores/public?limit=50').then(function(r){return r.json();});
+    if (!res.data || !res.data.length) {
+      el.innerHTML = '<div class="empty"><i class="ti ti-clipboard-x"></i>暂无积分动态</div>'; return;
+    }
+    res.data.forEach(function(r) { _scoreMap.set(r.id, r); });
+    el.innerHTML = res.data.map(function(r) { return logItemHtml(r); }).join('');
+  } catch(e) { el.innerHTML = '<div class="empty"><i class="ti ti-wifi-off"></i>加载失败</div>'; }
+}
+
+// ── Public notice loader (no auth) ──
+async function loadPublicNotices() {
+  var el = document.getElementById('noticeScroll');
+  el.innerHTML = '<div class="loading"><i class="ti ti-loader"></i>加载中…</div>';
+  try {
+    var res = await fetch(BASE + '/api/announcements').then(function(r){return r.json();});
+    if (!res.data || !res.data.length) {
+      el.innerHTML = '<div class="empty"><i class="ti ti-bell-off"></i>暂无村务公告</div>'; return;
+    }
+    el.innerHTML = res.data.map(function(n) {
+      var imgs = n.image_urls || [];
+      var imgBadge = imgs.length ? '<span style="font-size:11px;color:var(--blue);">📷' + imgs.length + '</span>' : '';
+      var audioBadge = n.audio_type ? '<span style="font-size:11px;color:var(--amber);margin-left:4px;">🔊</span>' : '';
+      return '<div class="ni" onclick="openNoticeDetail(' + n.id + ')">' +
+        '<div class="ni-left">' +
+        '<div style="display:flex;align-items:center;gap:6px;"><span class="tag tag-green" style="font-size:10px;">' + (n.tag_type || '全村告示') + '</span>' + imgBadge + audioBadge + '</div>' +
+        '<div class="ni-title">' + n.title + '</div>' +
+        '<div class="ni-meta">' + (n.created_at ? n.created_at.slice(0,10) : '') + '</div>' +
+        '</div>' +
+        '<div class="ni-arrow"><i class="ti ti-chevron-right"></i></div>' +
+        '</div>';
+    }).join('');
+  } catch(e) { el.innerHTML = '<div class="empty"><i class="ti ti-wifi-off"></i>加载失败</div>'; }
+}
+
+// ── Override vTab for compatibility (old references) ──
+function vTab(name) { pubTab(name); }
+
+// ── Show login from public banner ──
+function showLoginFromPublic() { pubTab('my'); }
 
 // ── API helper ──
 async function api(method, path, body) {
@@ -827,7 +956,7 @@ async function doVillagerLogin() {
 }
 
 function initVillagerApp() {
-  document.getElementById('vNav').style.display = 'flex';
+  document.getElementById('pubNav').style.display = 'flex';
   document.getElementById('aNav').style.display = 'none';
   document.getElementById('headerSub').textContent = (villagerInfo.group_no||'').replace('罗峪村','') + ' · ' + villagerInfo.name;
   vTab('home');
@@ -847,8 +976,11 @@ async function doLogin() {
       adminInfo = res.data.admin;
       localStorage.setItem('luoyu_token', token);
       localStorage.setItem('luoyu_admin', JSON.stringify(adminInfo));
-      document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('mainApp').style.display = 'block';
+      document.getElementById('pubBanner').style.display = 'none';
+      document.getElementById('myTabContent').classList.remove('active');
+      document.getElementById('pubNav').style.display = 'none';
+      document.getElementById('aNav').style.display = 'flex';
+      document.getElementById('appHeader').style.display = 'block';
       initApp();
     } else {
       document.getElementById('loginErr').textContent = res.message || '登录失败';
@@ -957,19 +1089,31 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('queryId4').addEventListener('keydown', e => { if(e.key==='Enter') doQuery(); });
   document.getElementById('vLoginId4').addEventListener('keydown', e => { if(e.key==='Enter') doVillagerLogin(); });
 
-  // 恢复管理员会话
-  if (token && adminInfo) {
-    document.getElementById('loginScreen').style.display='none';
-    document.getElementById('mainApp').style.display='block';
+  // Always show main app - public content first
+  document.getElementById('mainApp').style.display = 'block';
+  document.getElementById('pubNav').style.display = 'flex';
+
+  // Restore admin session
+  if (token && adminInfo && ['super','village_admin','group_leader'].includes(adminInfo.role)) {
+    document.getElementById('pubBanner').style.display = 'none';
+    document.getElementById('appHeader').style.display = 'block';
+    document.getElementById('aNav').style.display = 'flex';
+    document.getElementById('pubNav').style.display = 'none';
     initApp();
     return;
   }
-  // 恢复村民会话
+  // Restore villager session
   if (villagerInfo) {
-    document.getElementById('loginScreen').style.display='none';
-    document.getElementById('mainApp').style.display='block';
-    initVillagerApp();
+    document.getElementById('pubBanner').style.display = 'none';
+    document.getElementById('appHeader').style.display = 'block';
+    document.getElementById('myTabContent').classList.remove('active');
+    document.getElementById('sv-home').classList.add('active');
+    loadHome();
+    return;
   }
+
+  // Anonymous visitor - show public notice tab by default
+  pubTab('notice');
 });
 
 function doLogout() {
@@ -977,11 +1121,15 @@ function doLogout() {
   localStorage.removeItem('luoyu_token');
   localStorage.removeItem('luoyu_admin');
   localStorage.removeItem('luoyu_villager');
-  document.getElementById('mainApp').style.display = 'none';
-  document.getElementById('loginScreen').style.display = 'flex';
+  // Return to public mode
+  document.getElementById('appHeader').style.display = 'none';
+  document.getElementById('aNav').style.display = 'none';
+  document.getElementById('pubNav').style.display = 'flex';
+  document.getElementById('pubBanner').style.display = 'flex';
   document.getElementById('loginUser').value = '';
   document.getElementById('loginPass').value = '';
   document.getElementById('loginErr').textContent = '';
+  pubTab('notice');
 }
 
 // ── Query screen ──
@@ -1228,6 +1376,7 @@ async function loadHonorBoard() {
 
 // ── 反馈 ──
 function openFeedback() {
+  if (!villagerInfo) { showToast('请先登录后再提建议'); pubTab('my'); return; }
   document.getElementById('feedbackModal').classList.add('open');
   document.getElementById('fbContent').value = '';
   document.getElementById('fbChars').textContent = '0';
@@ -1486,6 +1635,7 @@ async function loadRank() {
 
 // ── Load exchange ──
 async function loadExchange() {
+  if (!villagerInfo) { showToast('请先登录后再兑换'); pubTab('my'); return; }
   const el = document.getElementById('exchangeScroll');
   el.innerHTML = '<div class="loading"><i class="ti ti-loader"></i>加载中…</div>';
   try {
