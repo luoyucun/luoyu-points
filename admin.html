@@ -121,7 +121,7 @@ tr:last-child td{border-bottom:none;}
 .filter-sel{padding:7px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;outline:none;background:var(--card);cursor:pointer;}
 
 /* ── 分页 ── */
-.pagination{display:flex;align-items:center;gap:8px;margin-top:16px;font-size:13px;color:var(--text3);}
+.pagination{display:flex;align-items:center;gap:8px;margin-top:16px;padding-bottom:8px;font-size:13px;color:var(--text3);}
 .page-btn{padding:5px 10px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:var(--card);}
 .page-btn:hover{border-color:var(--green);color:var(--green);}
 .page-btn.active{background:var(--green);color:white;border-color:var(--green);}
@@ -193,12 +193,13 @@ tr:last-child td{border-bottom:none;}
 @media(max-width:900px){.chart-grid{grid-template-columns:1fr;}}
 
 @media(max-width:768px){
+  .page{padding:14px 12px 80px;}
   /* 侧边栏隐藏，底部导航显示 */
   .sidebar{display:none!important;}
   .mob-nav{display:flex;}
   .main{margin-left:0;}
   /* 页面内边距，底部留出导航高度 */
-  .page{padding:14px 12px 90px;}
+  .page{padding:24px;}
   .topbar{padding:0 14px;height:50px;}
   .topbar-title{font-size:15px;}
   /* 统计卡片 2列 */
