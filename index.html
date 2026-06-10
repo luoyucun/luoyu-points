@@ -1106,7 +1106,7 @@ function showQueryScreen() {  document.getElementById("sv-my").classList.remove(
 
 function hideQueryScreen() {
   document.getElementById('queryScreen').style.display = 'none';
-  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('sv-my').classList.add('active');
 }
 
 async function doQuery() {
@@ -1190,7 +1190,7 @@ function initApp() {
   // 管理员直接进管理员视图，不显示村民视图切换
   document.getElementById('vNav').style.display = 'none';
   document.getElementById('aNav').style.display = 'flex';
-  document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.style.display='none';});
+  document.querySelectorAll('.screen').forEach(s=>{s.classList.remove("active");});
   aTab('home');
 }
 
@@ -1203,7 +1203,7 @@ function setRole(r) {
   document.querySelectorAll('.role-tab').forEach((t,i)=>t.classList.toggle('active', (i===0&&!isAdmin)||(i===1&&isAdmin)));
   document.getElementById('vNav').style.display = isAdmin ? 'none' : 'flex';
   document.getElementById('aNav').style.display = isAdmin ? 'flex' : 'none';
-  document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.style.display='none';});
+  document.querySelectorAll('.screen').forEach(s=>{s.classList.remove("active");});
   if (isAdmin) { aTab('home'); } else { vTab('home'); }
 }
 
@@ -1233,7 +1233,7 @@ function vTab(t) {
 
 // ── Admin tabs ──
 function aTab(t) {
-  document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.style.display='none';});
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
   const el = document.getElementById('sa-'+t);
   if (el) { el.style.display='flex'; el.classList.add('active'); }
   document.querySelectorAll('#aNav .nav-item').forEach(n=>n.classList.toggle('active',n.dataset.t===t));
