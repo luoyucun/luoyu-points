@@ -855,7 +855,7 @@ function pubTab(name) {
   if (screen) {
     screen.classList.add('active');
     // Load content if needed
-    if (name === 'notice' && typeof loadNotices === 'function') loadPublicNotices();
+    if (name === 'notice') loadNotice();
     if (name === 'rank' && typeof loadRank === 'function') loadRank();
     if (name === 'feed' && typeof loadPublicFeed === 'function') loadPublicFeed();
     if (name === 'rules' && typeof loadRules === 'function') loadRules();
@@ -876,30 +876,8 @@ async function loadPublicFeed() {
   } catch(e) { el.innerHTML = '<div class="empty"><i class="ti ti-wifi-off"></i>加载失败</div>'; }
 }
 
-// ── Public notice loader (no auth) ──
-async function loadPublicNotices() {
-  var el = document.getElementById('noticeScroll');
-  el.innerHTML = '<div class="loading"><i class="ti ti-loader"></i>加载中…</div>';
-  try {
-    var res = await fetch(BASE + '/api/announcements').then(function(r){return r.json();});
-    if (!res.data || !res.data.length) {
-      el.innerHTML = '<div class="empty"><i class="ti ti-bell-off"></i>暂无村务公告</div>'; return;
-    }
-    el.innerHTML = res.data.map(function(n) {
-      var imgs = n.image_urls || [];
-      var imgBadge = imgs.length ? '<span style="font-size:11px;color:var(--blue);">📷' + imgs.length + '</span>' : '';
-      var audioBadge = n.audio_type ? '<span style="font-size:11px;color:var(--amber);margin-left:4px;">🔊</span>' : '';
-      return '<div class="ni" onclick="openNoticeDetail(' + n.id + ')">' +
-        '<div class="ni-left">' +
-        '<div style="display:flex;align-items:center;gap:6px;"><span class="tag tag-green" style="font-size:10px;">' + (n.tag_type || '全村告示') + '</span>' + imgBadge + audioBadge + '</div>' +
-        '<div class="ni-title">' + n.title + '</div>' +
-        '<div class="ni-meta">' + (n.created_at ? n.created_at.slice(0,10) : '') + '</div>' +
-        '</div>' +
-        '<div class="ni-arrow"><i class="ti ti-chevron-right"></i></div>' +
-        '</div>';
-    }).join('');
-  } catch(e) { el.innerHTML = '<div class="empty"><i class="ti ti-wifi-off"></i>加载失败</div>'; }
-}
+// Public notice: reuse existing loadNotice
+function loadPublicNotices() { loadNotice(); }
 
 // ── Override vTab for compatibility (old references) ──
 function vTab(name) { pubTab(name); }
