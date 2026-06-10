@@ -329,9 +329,6 @@ tr:last-child td{border-bottom:none;}
         <div class="card-body"><div id="stockList"></div></div>
       </div>
     </div>
-  </div>
-
-
         <div class="card" style="margin-top:16px;" id="resetCard">
           <div class="card-hd"><i class="ti ti-refresh"></i>年度积分清零<span style="font-size:11px;color:var(--amber);margin-left:8px;">仅超管可见</span></div>
           <div class="card-body">
@@ -343,6 +340,7 @@ tr:last-child td{border-bottom:none;}
             <div id="resetLogTable" style="margin-top:12px;display:none;"></div>
           </div>
         </div>
+  </div>
 
 
   <!-- 村民管理 -->
@@ -1969,6 +1967,25 @@ async function loadResetLog() {
     }
   };
 })();
+
+
+// ── 村民反馈管理 ──
+async function loadFeedback() {
+  var res = await api('GET', '/api/public/admin/feedback');
+  if (!res || res.code !== 0) return;
+  var list = res.data || [];
+  var unread = list.filter(function(f){ return !f.is_read; }).length;
+  var badge = document.getElementById('feedbackBadge');
+  if (badge) { badge.style.display = unread > 0 ? 'inline' : 'none'; badge.textContent = unread; }
+  document.getElementById('feedbackTbody').innerHTML = list.map(function(f) {
+    return '<tr style="' + (f.is_read ? '' : 'background:#fffde7;') + '">' +
+      '<td data-label="留言人" style="color:' + (f.villager_name ? 'var(--text1)' : 'var(--text3)') + ';">' + (f.villager_name || '匿名') + '</td>' +
+      '<td data-label="内容" style="max-width:300px;word-break:break-word;">' + f.content + '</td>' +
+      '<td data-label="时间" style="color:var(--text3);font-size:12px;">' + (f.created_at ? f.created_at.slice(0,16) : '') + '</td>' +
+      '<td data-label="状态"><span class="tag ' + (f.is_read ? 'tag-gray' : 'tag-amber') + '">' + (f.is_read ? '已读' : '未读') + '</span></td>' +
+    '</tr>';
+  }).join('') || '<tr><td colspan="4"><div class="empty-state"><i class="ti ti-message"></i>暂无反馈</div></td></tr>';
+}
 
 // ── 键盘事件 ──
 // ── 积分规则管理 ──
