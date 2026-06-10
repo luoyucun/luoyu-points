@@ -259,6 +259,11 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 
 /* ── 我的页面 ── */
 
+
+#sv-my{min-height:100vh;}
+#sv-my.active{display:flex;flex-direction:column;}
+#sv-my .login-screen{flex:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;background:linear-gradient(175deg,#0d1f06 0%,#1a3a0a 25%,#2d5c10 55%,#4a7c1f 75%,#7a9a3a 90%,#b8a050 100%);position:relative;overflow:hidden;}
+
 /* ── 积分细则 ── */
 .rules-cat{margin-bottom:16px;}
 .rules-cat-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
@@ -828,7 +833,6 @@ function pubTab(name) {
       }
     } else {
       pubBanner.style.display = 'flex';
-      document.getElementById('loginScreen').style.display = 'flex';
       document.getElementById('queryScreen').style.display = 'none';
     }
     return;
@@ -909,7 +913,7 @@ async function doVillagerLogin() {
     if (res.code === 0) {
       villagerInfo = res.data.villager;
       localStorage.setItem('luoyu_villager', JSON.stringify(villagerInfo));
-      document.getElementById('loginScreen').style.display = 'none';
+      // loginScreen now CSS-controlled
       document.getElementById('mainApp').style.display = 'block';
       initVillagerApp();
     } else {
@@ -961,7 +965,7 @@ async function doLogin() {
   var params = new URLSearchParams(location.search);
   var checkinToken = params.get('checkin');
   if (checkinToken) {
-    document.getElementById('loginScreen').style.display = 'none';
+    // loginScreen now CSS-controlled
     document.getElementById('checkinScreen').style.display = 'flex';
     loadCheckinInfo(checkinToken);
   }
@@ -1094,16 +1098,10 @@ function doLogout() {
   document.getElementById('loginPass').value = '';
   document.getElementById('loginErr').textContent = '';
   pubTab('notice');
-}
+  document.getElementById("sv-my").classList.remove("active");
 
 // ── Query screen ──
-function showQueryScreen() {
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('queryScreen').style.display = 'flex';
-  document.getElementById('queryResult').innerHTML = '';
-  document.getElementById('queryErr').textContent = '';
-  document.getElementById('queryName').value = '';
-  document.getElementById('queryId4').value = '';
+function showQueryScreen() {  document.getElementById("sv-my").classList.remove("active");  document.getElementById("queryScreen").style.display = "flex";  document.getElementById("queryResult").innerHTML = '';  document.getElementById("queryErr").textContent = '';  document.getElementById("queryName").value = '';  document.getElementById("queryId4").value = '';}
 }
 
 function hideQueryScreen() {
