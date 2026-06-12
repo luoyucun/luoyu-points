@@ -43,7 +43,7 @@ router.get('/weather', authMiddleware, requireVillageAdmin, wrap(async (req, res
     const mock = {
       temp: 22, feels_like: 21, humidity: 65, wind_speed: 2,
       weather_type: 'cloudy', weather_text: '多云',
-      rain_3day: true, rain_5day: false,
+      rain_3day: true, rain_5day: false, daily_max: 28, daily_min: 20, daily_precip: 5, daily_text_day: '多云', daily_text_night: '小雨',
       updated: new Date().toISOString()
     };
     weatherCache = mock;
@@ -85,6 +85,13 @@ router.get('/weather', authMiddleware, requireVillageAdmin, wrap(async (req, res
 
     weatherCache = weather;
     weatherCacheTime = now;
+    // 今日预报（来自7日预报）
+    var todayForecast = daily[0] || {};
+    weather.daily_max = parseFloat(todayForecast.tempMax) || weather.temp;
+    weather.daily_min = parseFloat(todayForecast.tempMin) || weather.temp;
+    weather.daily_precip = parseFloat(todayForecast.precip) || 0;
+    weather.daily_text_day = todayForecast.textDay || '';
+    weather.daily_text_night = todayForecast.textNight || '';
     res.json({ code: 0, data: weather });
   } catch (e) {
     if (weatherCache) return res.json({ code: 0, data: weatherCache, cached: true });
@@ -130,7 +137,7 @@ router.post('/analyze', authMiddleware, requireVillageAdmin, wrap(async (req, re
   const { soil_moisture, crop_stage } = req.body || {};
   let weather = weatherCache;
   if (!weather) {
-    weather = { temp: 22, humidity: 65, wind_speed: 2, weather_text: '多云', rain_3day: true, rain_5day: false };
+    weather = { temp: 22, humidity: 65, wind_speed: 2, wind_scale: 2, weather_text: '多云', rain_3day: true, rain_5day: false, daily_max: 28, daily_min: 20 };
   }
 
   const [rules] = await db.execute(
