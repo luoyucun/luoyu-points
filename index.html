@@ -266,9 +266,9 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 .farm-card{background:linear-gradient(135deg,#e8f5e9,#f1f8e9);border-radius:12px;padding:14px 16px;margin-bottom:12px;}
 .farm-card .fw-row{display:flex;align-items:center;gap:12px;margin-bottom:8px;}
 .farm-card .fw-icon{font-size:40px;flex-shrink:0;}
-.farm-card .fw-temp{font-size:26px;font-weight:700;color:var(--text1);}
-.farm-card .fw-desc{font-size:12px;color:var(--text3);}
-.farm-card .fw-lunar{font-size:13px;color:var(--text2);margin-top:2px;}
+.farm-card .fw-temp{font-size:30px;font-weight:700;color:var(--text1);}
+.farm-card .fw-desc{font-size:14px;color:var(--text3);}
+.farm-card .fw-lunar{font-size:14px;color:var(--text2);margin-top:2px;}
 .farm-tip{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06);font-size:13px;color:var(--text1);}
 .farm-tip:last-child{border-bottom:none;}
 .farm-tip .ft-icon{font-size:18px;flex-shrink:0;}
@@ -1264,11 +1264,11 @@ async function loadHome() {
         </div>
         <div class="sec-title">快捷功能</div>
         <div class="qgrid">
+          <button class="qbtn cb" onclick="vTab('notice')"><i class="ti ti-bell"></i><span class="lbl">村务公告</span></button>
           <button class="qbtn cg" onclick="vTab('log')"><i class="ti ti-clipboard-list"></i><span class="lbl">积分明细</span></button>
-          <button class="qbtn ct" onclick="vTab('rank')"><i class="ti ti-trophy"></i><span class="lbl">积分排行</span></button>
           <button class="qbtn ca" onclick="vTab('exchange')"><i class="ti ti-gift"></i><span class="lbl">积分兑换</span></button>
           <button class="qbtn cp" onclick="vTab('rules')"><i class="ti ti-clipboard-text"></i><span class="lbl">积分细则</span></button>
-          <button class="qbtn cb" onclick="vTab('notice')" style="grid-column:1/-1;"><i class="ti ti-bell"></i><span class="lbl">村务公告</span></button>
+          <button class="qbtn ct" onclick="vTab('rank')" style="grid-column:1/-1;"><i class="ti ti-trophy"></i><span class="lbl">积分排行</span></button>
         </div>
       </div>
       <button class="feedback-btn" onclick="openFeedback()"><i class="ti ti-message"></i>我有话说 · 向村委会提建议</button>
@@ -1370,25 +1370,41 @@ async function submitFeedback() {
 async function loadFarmingWidget() {
   var el = document.getElementById('farmingContent');
   try {
-    var res = await fetch(BASE + '/api/farming/report/today').then(function(r){return r.json();});
-    if (!res.data) { el.innerHTML = '📋 今日农事建议尚未更新'; return; }
-    var w = res.data.weather || {};
-    var tips = res.data.suggestions || [];
-    var icons = {plant:'🌱',pest:'🐛',weed:'🌿',harvest:'🌾',irrigate:'💧',other:'📋'};
-
     var lunarInfo = getLunarInfo();
+    // 先展示农历 + 加载中
+    el.innerHTML = '<div class="fw-row"><div class="fw-icon">⏳</div><div><div class="fw-lunar" style="font-size:15px;">📅 ' + lunarInfo + '</div><div class="fw-desc">天气加载中…</div></div></div>';
+
+    // 尝试获取已发布的农事报告
+    var reportRes = await fetch(BASE + '/api/farming/report/today').then(function(r){return r.json();});
+    var w = (reportRes.data && reportRes.data.weather) ? reportRes.data.weather : null;
+    var tips = (reportRes.data && reportRes.data.suggestions) ? reportRes.data.suggestions : [];
+
+    // 如果没有报告，直接从天气API获取（公开接口不可用，用报告里的天气快照）
+    if (!w) {
+      el.innerHTML = '<div class="fw-row"><div class="fw-icon">📅</div><div><div class="fw-lunar" style="font-size:15px;">' + lunarInfo + '</div><div class="fw-desc">管理员尚未更新今日农事</div></div></div>';
+      return;
+    }
+
+    var icons = {plant:'🌱',pest:'🐛',weed:'🌿',harvest:'🌾',irrigate:'💧',other:'📋'};
+    var weatherIcon = '⛅';
+    if (w.weather_text && w.weather_text.indexOf('雨')>=0) weatherIcon='🌧️';
+    else if (w.weather_text && w.weather_text.indexOf('晴')>=0) weatherIcon='☀️';
+    else if (w.weather_text && w.weather_text.indexOf('雪')>=0) weatherIcon='❄️';
+
     var html = '<div class="fw-row">';
-    html += '<div class="fw-icon">☀️</div>';
-    html += '<div><div class="fw-temp">' + (w.temp||'--') + '°C</div>';
-    html += '<div class="fw-desc">' + (w.weather_text||'') + ' · 湿度' + (w.humidity||'--') + '%</div>';
-    html += '<div class="fw-lunar">📅 ' + lunarInfo + '</div></div></div>';
+    html += '<div class="fw-icon" style="font-size:48px;">' + weatherIcon + '</div>';
+    html += '<div>';
+    html += '<div class="fw-temp" style="font-size:30px;">' + (w.temp||'--') + '°C</div>';
+    html += '<div class="fw-desc" style="font-size:14px;">' + (w.weather_text||'') + ' · 湿度' + (w.humidity||'--') + '%</div>';
+    html += '<div class="fw-lunar" style="font-size:14px;">📅 ' + lunarInfo + '</div>';
+    html += '</div></div>';
     if (tips.length) {
       html += tips.map(function(t) {
-        return '<div class="farm-tip"><span class="ft-icon">' + (icons[t.task_type]||'📋') + '</span><span>' + t.suggestion + '</span></div>';
+        return '<div class="farm-tip" style="font-size:14px;"><span class="ft-icon" style="font-size:22px;">' + (icons[t.task_type]||'📋') + '</span><span>' + t.suggestion + '</span></div>';
       }).join('');
     }
     el.innerHTML = html;
-  } catch(e) { el.innerHTML = '📋 农事信息加载失败'; }
+  } catch(e) { el.innerHTML = '📅 农事信息加载失败'; }
 }
 
 // ── 简易农历计算 ──
