@@ -75,6 +75,7 @@ router.get('/weather', authMiddleware, requireVillageAdmin, wrap(async (req, res
       feels_like: parseFloat(nowData.feelsLike) || 0,
       humidity: parseFloat(nowData.humidity) || 0,
       wind_speed: parseFloat(nowData.windSpeed) || 0,
+      wind_scale: parseInt(nowData.windScale) || 0,
       weather_type: nowData.text || '',
       weather_text: nowData.text || '',
       rain_3day: rain3,
