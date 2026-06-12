@@ -20,6 +20,7 @@ app.use('/api/announcements', require('./routes/announcements'));
 app.use('/api/exchange',      require('./routes/exchange'));
 app.use('/api/admin',         require('./routes/admin'));
 app.use('/api/checkin',       require('./routes/checkin'));
+app.use('/api/farming',       require('./routes/farming'));
 app.use('/api/public',        require('./routes/public'));
 
 // 健康检查

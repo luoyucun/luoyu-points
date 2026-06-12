@@ -289,6 +289,8 @@ tr:last-child td{border-bottom:none;}
     <div class="sb-item" onclick="switchPage('events')"><i class="ti ti-adjustments"></i>积分规则</div>
     <div class="sb-item" onclick="switchPage('checkin')"><i class="ti ti-qrcode"></i>签到管理</div>
     <div class="sb-item" onclick="switchPage('feedback')"><i class="ti ti-message"></i>村民反馈<span class="sb-badge" id="feedbackBadge" style="display:none;">0</span></div>
+    <div class="sb-section">农事</div>
+    <div class="sb-item" onclick="switchPage('farming')"><i class="ti ti-leaf"></i>农事分析</div>
     <div class="sb-section">系统</div>
     <div class="sb-item" onclick="switchPage('export')"><i class="ti ti-file-export"></i>数据导出</div>
     <div class="sb-item" onclick="switchPage('notices')"><i class="ti ti-bell"></i>公告管理</div>
@@ -344,6 +346,90 @@ tr:last-child td{border-bottom:none;}
         </div>
   </div>
 
+
+
+  <!-- 农事分析 -->
+  <div class="page" id="page-farming">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <!-- 左侧：天气 + 手动输入 -->
+      <div>
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-hd"><i class="ti ti-cloud"></i>实时天气<span style="font-size:11px;color:var(--text3);margin-left:8px;" id="weatherTime"></span></div>
+          <div class="card-body" id="weatherCard">
+            <div style="text-align:center;padding:16px;color:var(--text3);">点击下方按钮获取天气</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><i class="ti ti-adjustments"></i>田间条件</div>
+          <div class="card-body">
+            <div class="form-row"><label>土壤墒情</label>
+              <select id="soilMoisture" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;">
+                <option value="">不设定</option><option value="dry">偏干</option><option value="normal">适中</option><option value="wet">偏湿</option>
+              </select>
+            </div>
+            <div class="form-row"><label>作物阶段</label>
+              <select id="cropStage" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;">
+                <option value="">不设定</option><option value="seedling">育苗期</option><option value="tillering">分蘖期</option><option value="heading">抽穗期</option><option value="filling">灌浆期</option><option value="mature">成熟期</option>
+              </select>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <button class="btn btn-primary" onclick="getWeather()" style="flex:1;"><i class="ti ti-cloud-download"></i>获取天气</button>
+              <button class="btn btn-primary" onclick="runAnalyze()" style="flex:1;background:var(--amber);"><i class="ti ti-search"></i>分析匹配</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- 右侧：分析结果 -->
+      <div>
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-hd"><i class="ti ti-checklist"></i>匹配建议<span style="font-size:11px;color:var(--text3);margin-left:8px;" id="matchCount"></span>
+            <div class="actions"><button class="btn btn-primary btn-sm" id="publishBtn" onclick="publishReport()" disabled><i class="ti ti-send"></i>发布报告</button></div>
+          </div>
+          <div class="card-body" id="matchResults">
+            <div style="text-align:center;padding:24px;color:var(--text3);">请先获取天气，填入田间条件，点击"分析匹配"</div>
+          </div>
+        </div>
+        <!-- 规则管理 -->
+        <div class="card">
+          <div class="card-hd"><i class="ti ti-list-check"></i>农事规则
+            <div class="actions"><button class="btn btn-primary btn-sm" onclick="openFarmingRule()"><i class="ti ti-plus"></i>新增规则</button></div>
+          </div>
+          <div class="card-body" style="padding:0;">
+            <div class="tbl-wrap">
+              <table>
+                <thead><tr><th>规则名称</th><th>类型</th><th>优先级</th><th>状态</th><th>操作</th></tr></thead>
+                <tbody id="farmingRulesTbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 农事规则编辑弹窗 -->
+  <div class="modal-overlay" id="farmingRuleModal">
+    <div class="modal" style="width:560px;">
+      <div class="modal-hd" id="farmingRuleTitle">新增农事规则<span class="modal-close" onclick="closeModal('farmingRuleModal')">x</span></div>
+      <div class="modal-bd">
+        <div class="form-row"><label>规则名称</label><input type="text" id="frTitle" placeholder="例：适宜水稻播种"></div>
+        <div class="form-row"><label>类型</label>
+          <select id="frType" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;">
+            <option value="plant">种植</option><option value="pest">防虫</option><option value="weed">除草</option><option value="harvest">收割</option><option value="irrigate">灌溉</option><option value="other">其他</option>
+          </select>
+        </div>
+        <div class="form-row"><label>触发条件（JSON）</label><textarea id="frConditions" rows="4" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:12px;font-family:monospace;" placeholder='{"temp_min":20,"temp_max":30,"rain_3day":true}'></textarea>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px;">可用字段：temp_min, temp_max, humidity_min, wind_min, wind_max, rain_3day, rain_5day, weather_type, soil_moisture, crop_stage</div>
+        </div>
+        <div class="form-row"><label>建议内容</label><textarea id="frSuggestion" rows="3" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;" placeholder="温度适宜且近期有雨，适合水稻播种育秧"></textarea></div>
+        <div class="form-row"><label>优先级（数字越大越靠前）</label><input type="number" id="frPriority" value="0" min="0" max="100"></div>
+      </div>
+      <div class="modal-ft">
+        <button class="btn btn-outline" onclick="closeModal('farmingRuleModal')">取消</button>
+        <button class="btn btn-primary" onclick="saveFarmingRule()">保存</button>
+      </div>
+    </div>
+  </div>
 
   <!-- 村民管理 -->
   <div class="page" id="page-villagers">
@@ -1029,9 +1115,9 @@ function switchPage(name) {
   const sbItem = document.querySelector(`.sb-item[onclick="switchPage('${name}')"]`);
   if (sbItem) sbItem.classList.add('active');
   currentPage = name;
-  const titles = {dashboard:'数据总览',villagers:'村民管理',scores:'积分管理',exchange:'兑换管理',goods:'物资管理',events:'积分规则',checkin:'签到管理',feedback:'村民反馈',export:'数据导出',notices:'公告管理',admins:'账号管理'};
+  const titles = {dashboard:'数据总览',villagers:'村民管理',scores:'积分管理',exchange:'兑换管理',goods:'物资管理',events:'积分规则',checkin:'签到管理',farming:'农事分析',feedback:'村民反馈',export:'数据导出',notices:'公告管理',admins:'账号管理'};
   document.getElementById('pageTitle').textContent = titles[name]||name;
-  const loaders = {dashboard:loadDashboard,villagers:loadVillagers,scores:loadScores,exchange:()=>{loadExchangeSwitch();loadExchange();},goods:loadGoods,events:loadEvents,checkin:loadCheckins,feedback:loadFeedback,notices:loadNotices,admins:loadAdmins};
+  const loaders = {dashboard:loadDashboard,villagers:loadVillagers,scores:loadScores,exchange:()=>{loadExchangeSwitch();loadExchange();},goods:loadGoods,events:loadEvents,checkin:loadCheckins,farming:loadFarming,feedback:loadFeedback,notices:loadNotices,admins:loadAdmins};
   if (loaders[name]) loaders[name]();
 }
 
@@ -1760,6 +1846,150 @@ async function confirmAddGoods() {
   else showToast(res?.message||'操作失败', true);
 }
 
+
+
+// ── 农事分析 ──
+var farmingWeather = null;
+var farmingMatched = [];
+var editFarmingRuleId = null;
+
+async function loadFarming() {
+  await Promise.all([getWeather(), loadFarmingRules()]);
+}
+
+async function getWeather() {
+  var res = await api('GET', '/api/farming/weather');
+  if (!res || res.code !== 0) return;
+  farmingWeather = res.data;
+  var w = res.data;
+  var icon = '⛅';
+  if (w.weather_text.indexOf('雨')>=0) icon='🌧️';
+  else if (w.weather_text.indexOf('雪')>=0) icon='❄️';
+  else if (w.weather_text.indexOf('云')>=0) icon='⛅';
+  else if (w.weather_text.indexOf('晴')>=0) icon='☀️';
+  document.getElementById('weatherCard').innerHTML =
+    '<div style="text-align:center;">' +
+    '<div style="font-size:48px;">' + icon + '</div>' +
+    '<div style="font-size:28px;font-weight:700;">' + w.temp + '°C</div>' +
+    '<div style="font-size:14px;color:var(--text2);margin-top:4px;">体感 ' + w.feels_like + '°C · ' + w.weather_text + '</div>' +
+    '<div style="display:flex;justify-content:center;gap:16px;margin-top:10px;font-size:13px;color:var(--text3);">' +
+    '<span>💧 ' + w.humidity + '%</span><span>💨 ' + w.wind_speed + '级</span>' +
+    '</div>' +
+    '<div style="font-size:11px;color:var(--text3);margin-top:6px;">' + (w.rain_3day?'🌧 近3天有雨':'☀ 近3天无雨') + ' · ' + (w.rain_5day?'🌧 近5天有雨':'☀ 近5天无雨') + '</div>' +
+    (res.mock ? '<div style="font-size:10px;color:var(--amber);margin-top:4px;">模拟数据（未配置API Key）</div>' : '') +
+    '</div>';
+  document.getElementById('weatherTime').textContent = w.updated ? w.updated.slice(11,16) : '';
+}
+
+async function loadFarmingRules() {
+  var res = await api('GET', '/api/farming/rules');
+  if (!res || res.code !== 0) return;
+  var taskTypes = {plant:'种植',pest:'防虫',weed:'除草',harvest:'收割',irrigate:'灌溉',other:'其他'};
+  document.getElementById('farmingRulesTbody').innerHTML = res.data.map(function(r) {
+    var cond = typeof r.conditions==='string' ? r.conditions : JSON.stringify(r.conditions);
+    return '<tr>' +
+      '<td><strong>' + r.title + '</strong><div style="font-size:10px;color:var(--text3);">' + cond + '</div></td>' +
+      '<td>' + (taskTypes[r.task_type]||'其他') + '</td>' +
+      '<td>' + r.priority + '</td>' +
+      '<td><span class="tag ' + (r.is_active?'tag-green':'tag-gray') + '">' + (r.is_active?'启用':'禁用') + '</span></td>' +
+      '<td class="td-ops">' +
+        '<button class="btn btn-outline btn-sm" onclick="editFarmingRule(' + r.id + ')">编辑</button>' +
+        '<button class="btn btn-outline btn-sm" onclick="toggleFarmingRule(' + r.id + ',' + (r.is_active?0:1) + ')">' + (r.is_active?'禁用':'启用') + '</button>' +
+      '</td>' +
+    '</tr>';
+  }).join('') || '<tr><td colspan="5" class="empty-state">暂无规则</td></tr>';
+}
+
+async function runAnalyze() {
+  if (!farmingWeather) { showToast('请先获取天气数据', true); return; }
+  var soil = document.getElementById('soilMoisture').value;
+  var crop = document.getElementById('cropStage').value;
+  var res = await api('POST', '/api/farming/analyze', { soil_moisture: soil||null, crop_stage: crop||null });
+  if (!res || res.code !== 0) return;
+  farmingMatched = res.data.matched;
+  var el = document.getElementById('matchResults');
+  document.getElementById('matchCount').textContent = '匹配 ' + farmingMatched.length + ' 条';
+  if (!farmingMatched.length) {
+    el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text3);">当前条件未匹配到农事建议</div>';
+    document.getElementById('publishBtn').disabled = true;
+  } else {
+    var icons = {plant:'🌱',pest:'🐛',weed:'🌿',harvest:'🌾',irrigate:'💧',other:'📋'};
+    el.innerHTML = farmingMatched.map(function(r) {
+      return '<div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:10px;">' +
+        '<span style="font-size:24px;">' + (icons[r.task_type]||'📋') + '</span>' +
+        '<div style="flex:1;"><strong>' + r.title + '</strong><div style="font-size:13px;color:var(--text2);margin-top:2px;">' + r.suggestion + '</div></div>' +
+        '<span style="font-size:11px;color:var(--text3);">优先级 ' + r.priority + '</span>' +
+      '</div>';
+    }).join('');
+    document.getElementById('publishBtn').disabled = false;
+  }
+}
+
+async function publishReport() {
+  if (!farmingMatched.length) { showToast('没有可发布的建议', true); return; }
+  var res = await api('POST', '/api/farming/report', {
+    suggestions: farmingMatched,
+    weather: farmingWeather,
+    soil_input: { moisture: document.getElementById('soilMoisture').value, crop_stage: document.getElementById('cropStage').value }
+  });
+  if (res && res.code === 0) { showToast('农事报告已发布，村民可在首页查看'); }
+  else showToast(res && res.message || '发布失败', true);
+}
+
+function openFarmingRule() {
+  editFarmingRuleId = null;
+  document.getElementById('farmingRuleTitle').innerHTML = '新增农事规则<span class="modal-close" onclick="closeModal('farmingRuleModal')">×</span>';
+  document.getElementById('frTitle').value = '';
+  document.getElementById('frType').value = 'other';
+  document.getElementById('frConditions').value = '';
+  document.getElementById('frSuggestion').value = '';
+  document.getElementById('frPriority').value = '0';
+  openModal('farmingRuleModal');
+}
+
+async function editFarmingRule(id) {
+  var res = await api('GET', '/api/farming/rules');
+  if (!res || res.code !== 0) return;
+  var rule = res.data.find(function(r) { return r.id === id; });
+  if (!rule) return;
+  editFarmingRuleId = id;
+  document.getElementById('farmingRuleTitle').innerHTML = '编辑农事规则<span class="modal-close" onclick="closeModal('farmingRuleModal')">×</span>';
+  document.getElementById('frTitle').value = rule.title;
+  document.getElementById('frType').value = rule.task_type;
+  document.getElementById('frConditions').value = JSON.stringify(rule.conditions);
+  document.getElementById('frSuggestion').value = rule.suggestion;
+  document.getElementById('frPriority').value = rule.priority;
+  openModal('farmingRuleModal');
+}
+
+async function saveFarmingRule() {
+  var title = document.getElementById('frTitle').value.trim();
+  var cond = document.getElementById('frConditions').value.trim();
+  var sug = document.getElementById('frSuggestion').value.trim();
+  if (!title || !cond || !sug) { showToast('请填写完整信息', true); return; }
+  var conditions;
+  try { conditions = JSON.parse(cond); } catch(e) { showToast('条件JSON格式错误', true); return; }
+  var data = {
+    title: title,
+    task_type: document.getElementById('frType').value,
+    conditions: conditions,
+    suggestion: sug,
+    priority: parseInt(document.getElementById('frPriority').value) || 0
+  };
+  var res;
+  if (editFarmingRuleId) {
+    res = await api('PUT', '/api/farming/rules/' + editFarmingRuleId, data);
+  } else {
+    res = await api('POST', '/api/farming/rules', data);
+  }
+  if (res && res.code === 0) { showToast(editFarmingRuleId?'规则已更新':'规则已添加'); closeModal('farmingRuleModal'); loadFarmingRules(); }
+  else showToast(res && res.message || '操作失败', true);
+}
+
+async function toggleFarmingRule(id, active) {
+  var res = await api('PATCH', '/api/farming/rules/' + id + '/toggle', { is_active: active });
+  if (res && res.code === 0) { showToast(res.message); loadFarmingRules(); }
+}
 
 // ── Checkin Management ──
 let currentCheckinQrUrl = '';
