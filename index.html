@@ -1446,17 +1446,16 @@ function getLunarInfo() {
     if (m === tm && d >= td && d <= td + 2) { termText = ' · ' + terms[i]; break; }
   }
 
-  // 简易宜忌（基于农历日）
-  var goodDays = [1,2,4,6,9,12,15,18,21,24,26,28];
-  var badDays = [3,7,13,17,22,27,30];
-  var isGood = goodDays.indexOf(lunarDay) >= 0;
-  var isBad = badDays.indexOf(lunarDay) >= 0;
-
-  var yiJi = '';
-  if (isGood) yiJi = ' 🌱宜栽种·出行';
-  if (isBad) yiJi = yiJi + ' ⚠忌动土·伐木';
-  if (lunarDay === 0) yiJi = ' 🌱宜栽种·祭祀·开市';
-  if (lunarDay === 14) yiJi = ' 🌱宜栽种·嫁娶·出行';
+  // 简易宜忌（基于农历日，每日都有）
+  var yiList = ['栽种','出行','祭祀','嫁娶','开市','移徙','沐浴','入学','修造','纳财'];
+  var jiList = ['动土','伐木','安葬','作灶','开渠','穿井'];
+  var yiIdx = lunarDay % yiList.length;
+  var jiIdx = (lunarDay * 3) % jiList.length;
+  var yi = '🌱宜' + yiList[yiIdx];
+  var ji = '⚠忌' + jiList[jiIdx];
+  // 合并去重
+  if (yiIdx === (yiIdx + 1) % yiList.length) yi += '·' + yiList[(yiIdx + 2) % yiList.length];
+  var yiJi = ' ' + yi + ' ' + ji;
 
   return tg[tgIdx] + dz[dzIdx] + '年（' + sx[dzIdx] + '） ' + lunarMonths[lunarMonth] + '月' + lunarDays[lunarDay] + termText + yiJi;
 }
