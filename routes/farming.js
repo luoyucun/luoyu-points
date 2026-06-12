@@ -71,8 +71,8 @@ router.get('/weather', authMiddleware, requireVillageAdmin, wrap(async (req, res
     daily.slice(0, 3).forEach(function(d) { if (d.textDay && d.textDay.indexOf('雨') >= 0) rain3 = true; });
     daily.slice(0, 5).forEach(function(d) { if (d.textDay && d.textDay.indexOf('雨') >= 0) rain5 = true; });
 
-    // 优先用逐小时预报第一条（更贴近当前天气），观测站数据作为后备
-    var currentForecast = null;
+    // 使用实时观测数据
+    var currentForecast = null; // 不再使用预报
     if (hourRes.hourly && hourRes.hourly.length) {
       currentForecast = hourRes.hourly[0];
     }
