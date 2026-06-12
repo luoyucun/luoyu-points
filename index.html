@@ -1424,10 +1424,7 @@ function getLunarInfo() {
   for (var i = 0; i < 24; i++) {
     var tm = Math.floor(i/2) + 1;
     var td = termDays[i];
-    if ((m === tm && d >= td - 1) || (m === tm + 1 && d < td - 1)) {
-      termText = ' · ' + terms[i];
-      break;
-    }
+    if (m === tm && d >= td && d <= td + 2) { termText = ' · ' + terms[i]; break; }
   }
 
   return tg[tgIdx] + dz[dzIdx] + '年（' + sx[dzIdx] + '） ' + lunarMonths[lunarMonth] + '月' + lunarDays[lunarDay] + termText;
