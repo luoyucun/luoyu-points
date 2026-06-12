@@ -1,6 +1,10 @@
+const { webcrypto } = require("node:crypto");
+if (!globalThis.crypto) globalThis.crypto = webcrypto;
+if (!globalThis.crypto.subtle) globalThis.crypto.subtle = webcrypto.subtle;
 // routes/farming.js
 const router = require('express').Router();
 const db = require('../config/db');
+const fs = require('fs');
 const { authMiddleware, requireVillageAdmin } = require('../middleware/auth');
 
 const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
@@ -10,6 +14,21 @@ let weatherCache = null;
 let weatherCacheTime = 0;
 const WEATHER_TTL = 30 * 60 * 1000;
 
+// 生成和风天气JWT Token
+async function getQWeatherToken() {
+  const jose = await import('jose');
+  const pkPath = process.env.QWEATHER_PRIVATE_KEY || '/www/wwwroot/luoyu/config/qweather_private.pem';
+  const pk = fs.readFileSync(pkPath, 'utf8');
+  const key = await jose.importPKCS8(pk, 'EdDSA');
+  const kid = process.env.QWEATHER_KEY || 'KEGW8R8EFF';
+  const jwt = await new jose.SignJWT({ sub: process.env.QWEATHER_PROJECT || '3EE26WGUM5' })
+    .setProtectedHeader({ alg: 'EdDSA', kid: kid })
+    .setExpirationTime('1h')
+    .setIssuedAt()
+    .sign(key);
+  return jwt;
+}
+
 // GET /api/farming/weather — 获取实时天气
 router.get('/weather', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
   const now = Date.now();
@@ -17,10 +36,10 @@ router.get('/weather', authMiddleware, requireVillageAdmin, wrap(async (req, res
     return res.json({ code: 0, data: weatherCache, cached: true });
   }
 
-  const apiKey = process.env.QWEATHER_KEY;
+  const apiHost = process.env.QWEATHER_HOST;
   const cityId = process.env.QWEATHER_CITY || '101251401';
 
-  if (!apiKey || apiKey === 'your_qweather_key') {
+  if (!apiHost) {
     const mock = {
       temp: 22, feels_like: 21, humidity: 65, wind_speed: 2,
       weather_type: 'cloudy', weather_text: '多云',
@@ -33,10 +52,16 @@ router.get('/weather', authMiddleware, requireVillageAdmin, wrap(async (req, res
   }
 
   try {
+    const token = await getQWeatherToken();
+    const baseUrl = 'https://' + apiHost;
     const [nowRes, dayRes] = await Promise.all([
-      fetch('https://devapi.qweather.com/v7/weather/now?location=' + cityId + '&key=' + apiKey).then(r => r.json()),
-      fetch('https://devapi.qweather.com/v7/weather/7d?location=' + cityId + '&key=' + apiKey).then(r => r.json())
+      fetch(baseUrl + '/v7/weather/now?location=' + cityId, { headers: { 'Authorization': 'Bearer ' + token } }).then(r => r.json()),
+      fetch(baseUrl + '/v7/weather/7d?location=' + cityId, { headers: { 'Authorization': 'Bearer ' + token } }).then(r => r.json())
     ]);
+
+    if (nowRes.code && nowRes.code !== '200') {
+      throw new Error(nowRes.msg || '天气API返回错误');
+    }
 
     const nowData = nowRes.now || {};
     const daily = dayRes.daily || [];
@@ -62,13 +87,11 @@ router.get('/weather', authMiddleware, requireVillageAdmin, wrap(async (req, res
     res.json({ code: 0, data: weather });
   } catch (e) {
     if (weatherCache) return res.json({ code: 0, data: weatherCache, cached: true });
-    res.status(500).json({ code: 500, message: '天气获取失败' });
+    res.status(500).json({ code: 500, message: '天气获取失败: ' + e.message });
   }
 }));
 
 // ── 规则 CRUD ──
-
-// GET /api/farming/rules
 router.get('/rules', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
   const [rows] = await db.execute(
     'SELECT id, title, task_type, conditions, suggestion, priority, is_active FROM farming_rules ORDER BY priority DESC'
@@ -77,7 +100,6 @@ router.get('/rules', authMiddleware, requireVillageAdmin, wrap(async (req, res) 
   res.json({ code: 0, data: rows });
 }));
 
-// POST /api/farming/rules
 router.post('/rules', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
   const { title, task_type, conditions, suggestion, priority } = req.body;
   if (!title || !conditions || !suggestion) return res.status(400).json({ code: 400, message: '标题、条件、建议不能为空' });
@@ -88,7 +110,6 @@ router.post('/rules', authMiddleware, requireVillageAdmin, wrap(async (req, res)
   res.json({ code: 0, message: '规则已添加', data: { id: result.insertId } });
 }));
 
-// PUT /api/farming/rules/:id
 router.put('/rules/:id', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
   const { title, task_type, conditions, suggestion, priority } = req.body;
   await db.execute(
@@ -98,18 +119,14 @@ router.put('/rules/:id', authMiddleware, requireVillageAdmin, wrap(async (req, r
   res.json({ code: 0, message: '规则已更新' });
 }));
 
-// PATCH /api/farming/rules/:id/toggle
 router.patch('/rules/:id/toggle', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
   await db.execute('UPDATE farming_rules SET is_active=? WHERE id=?', [req.body.is_active ? 1 : 0, req.params.id]);
   res.json({ code: 0, message: req.body.is_active ? '已启用' : '已禁用' });
 }));
 
 // ── 分析引擎 ──
-
-// POST /api/farming/analyze
 router.post('/analyze', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
   const { soil_moisture, crop_stage } = req.body || {};
-
   let weather = weatherCache;
   if (!weather) {
     weather = { temp: 22, humidity: 65, wind_speed: 2, weather_text: '多云', rain_3day: true, rain_5day: false };
@@ -122,8 +139,8 @@ router.post('/analyze', authMiddleware, requireVillageAdmin, wrap(async (req, re
   const soil = { moisture: soil_moisture, crop_stage: crop_stage };
 
   const matched = rules.filter(function(r) {
-    var c;
-    c = r.conditions; if (typeof c === "string") { try { c = JSON.parse(c); } catch(e) { return false; } }
+    var c = r.conditions;
+    if (typeof c === 'string') { try { c = JSON.parse(c); } catch(e) { return false; } }
     if (c.temp_min !== undefined && weather.temp < c.temp_min) return false;
     if (c.temp_max !== undefined && weather.temp > c.temp_max) return false;
     if (c.humidity_min !== undefined && weather.humidity < c.humidity_min) return false;
@@ -145,8 +162,6 @@ router.post('/analyze', authMiddleware, requireVillageAdmin, wrap(async (req, re
 }));
 
 // ── 报告发布 ──
-
-// POST /api/farming/report
 router.post('/report', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
   var suggestions = req.body.suggestions;
   if (!suggestions || !suggestions.length) return res.status(400).json({ code: 400, message: '请至少选择一条建议' });
@@ -161,7 +176,6 @@ router.post('/report', authMiddleware, requireVillageAdmin, wrap(async (req, res
   res.json({ code: 0, message: '农事报告已发布' });
 }));
 
-// GET /api/farming/report/today — 村民端公开
 router.get('/report/today', wrap(async (req, res) => {
   var today = new Date().toISOString().slice(0, 10);
   const [rows] = await db.execute(
