@@ -43,7 +43,7 @@ router.get('/weather', authMiddleware, requireVillageAdmin, wrap(async (req, res
     const mock = {
       temp: 22, feels_like: 21, humidity: 65, wind_speed: 2,
       weather_type: 'cloudy', weather_text: '多云',
-      rain_3day: true, rain_5day: false, daily_max: 28, daily_min: 20, daily_precip: 5, daily_text_day: '多云', daily_text_night: '小雨',
+      rain_3day: true, rain_5day: false, precip: 0, from_forecast: false, daily_max: 28, daily_min: 20, daily_precip: 5, daily_text_day: '多云', daily_text_night: '小雨',
       updated: new Date().toISOString()
     };
     weatherCache = mock;
@@ -54,9 +54,10 @@ router.get('/weather', authMiddleware, requireVillageAdmin, wrap(async (req, res
   try {
     const token = await getQWeatherToken();
     const baseUrl = 'https://' + apiHost;
-    const [nowRes, dayRes] = await Promise.all([
+    const [nowRes, dayRes, hourRes] = await Promise.all([
       fetch(baseUrl + '/v7/weather/now?location=' + cityId, { headers: { 'Authorization': 'Bearer ' + token } }).then(r => r.json()),
-      fetch(baseUrl + '/v7/weather/7d?location=' + cityId, { headers: { 'Authorization': 'Bearer ' + token } }).then(r => r.json())
+      fetch(baseUrl + '/v7/weather/7d?location=' + cityId, { headers: { 'Authorization': 'Bearer ' + token } }).then(r => r.json()),
+      fetch(baseUrl + '/v7/weather/24h?location=' + cityId, { headers: { 'Authorization': 'Bearer ' + token } }).then(r => r.json())
     ]);
 
     if (nowRes.code && nowRes.code !== '200') {
@@ -70,16 +71,32 @@ router.get('/weather', authMiddleware, requireVillageAdmin, wrap(async (req, res
     daily.slice(0, 3).forEach(function(d) { if (d.textDay && d.textDay.indexOf('雨') >= 0) rain3 = true; });
     daily.slice(0, 5).forEach(function(d) { if (d.textDay && d.textDay.indexOf('雨') >= 0) rain5 = true; });
 
+    // 优先用逐小时预报第一条（更贴近当前天气），观测站数据作为后备
+    var currentForecast = null;
+    if (hourRes.hourly && hourRes.hourly.length) {
+      currentForecast = hourRes.hourly[0];
+    }
+
+    var nowText = currentForecast ? currentForecast.text : (nowData.text || '');
+    var nowTemp = currentForecast ? parseFloat(currentForecast.temp) : parseFloat(nowData.temp) || 0;
+    var nowHumidity = currentForecast ? parseFloat(currentForecast.humidity) : parseFloat(nowData.humidity) || 0;
+    var nowWindScale = currentForecast ? (currentForecast.windScale || '') : (parseInt(nowData.windScale) || 0);
+    var nowWindSpeed = currentForecast ? parseFloat(currentForecast.windSpeed) : parseFloat(nowData.windSpeed) || 0;
+    var nowPrecip = currentForecast ? parseFloat(currentForecast.precip) : 0;
+    var nowFeelsLike = parseFloat(nowData.feelsLike) || nowTemp;
+
     const weather = {
-      temp: parseFloat(nowData.temp) || 0,
-      feels_like: parseFloat(nowData.feelsLike) || 0,
-      humidity: parseFloat(nowData.humidity) || 0,
-      wind_speed: parseFloat(nowData.windSpeed) || 0,
-      wind_scale: parseInt(nowData.windScale) || 0,
-      weather_type: nowData.text || '',
-      weather_text: nowData.text || '',
+      temp: nowTemp,
+      feels_like: nowFeelsLike,
+      humidity: nowHumidity,
+      wind_speed: nowWindSpeed,
+      wind_scale: nowWindScale,
+      weather_type: nowText,
+      weather_text: nowText,
+      precip: nowPrecip,
       rain_3day: rain3,
       rain_5day: rain5,
+      from_forecast: !!currentForecast,
       updated: new Date().toISOString()
     };
 
