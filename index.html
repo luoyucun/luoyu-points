@@ -1371,33 +1371,36 @@ async function submitFeedback() {
 // ── 农事日历卡片 ──
 async function loadFarmingWidget() {
   var el = document.getElementById('farmingContent');
+  var lunarInfo = getLunarInfo();
   try {
-    var lunarInfo = getLunarInfo();
-    // 先展示农历 + 加载中
-    el.innerHTML = '<div class="fw-row"><div class="fw-icon">⏳</div><div><div class="fw-lunar" style="font-size:15px;">📅 ' + lunarInfo + '</div><div class="fw-desc">天气加载中…</div></div></div>';
-
-    // 尝试获取已发布的农事报告
     var reportRes = await fetch(BASE + '/api/farming/report/today').then(function(r){return r.json();});
-    var w = (reportRes.data && reportRes.data.weather) ? reportRes.data.weather : null;
-    var tips = (reportRes.data && reportRes.data.suggestions) ? reportRes.data.suggestions : [];
-
-    // 如果没有报告，直接从天气API获取（公开接口不可用，用报告里的天气快照）
-    if (!w) {
-      el.innerHTML = '<div class="fw-row"><div class="fw-icon">📅</div><div><div class="fw-lunar" style="font-size:15px;">' + lunarInfo + '</div><div class="fw-desc">管理员尚未更新今日农事</div></div></div>';
-      return;
-    }
+    var hasReport = !!(reportRes.data && reportRes.data.weather);
+    var w = hasReport ? reportRes.data.weather : null;
+    var tips = hasReport ? (reportRes.data.suggestions || []) : [];
 
     var icons = {plant:'🌱',pest:'🐛',weed:'🌿',harvest:'🌾',irrigate:'💧',other:'📋'};
-    var weatherIcon = '⛅';
-    if (w.weather_text && w.weather_text.indexOf('雨')>=0) weatherIcon='🌧️';
-    else if (w.weather_text && w.weather_text.indexOf('晴')>=0) weatherIcon='☀️';
-    else if (w.weather_text && w.weather_text.indexOf('雪')>=0) weatherIcon='❄️';
+    var wi = '⛅';
+    if (w) {
+      if (w.weather_text.indexOf('雨')>=0) wi='🌧️';
+      else if (w.weather_text.indexOf('晴')>=0) wi='☀️';
+      else if (w.weather_text.indexOf('雪')>=0) wi='❄️';
+    }
 
     var html = '<div class="fw-row">';
-    html += '<div class="fw-icon" style="font-size:48px;">' + weatherIcon + '</div>';
+    html += '<div class="fw-icon" style="font-size:48px;">' + (w ? wi : '📅') + '</div>';
     html += '<div>';
-    html += '<div class="fw-temp" style="font-size:30px;">' + (w.temp||'--') + '°C</div>';
-    html += '<div class="fw-desc" style="font-size:14px;">' + (w.weather_text||'') + ' · 湿度' + (w.humidity||'--') + '%</div>';
+    if (w) {
+      html += '<div class="fw-temp" style="font-size:30px;">' + w.temp + '°C</div>';
+      html += '<div class="fw-desc" style="font-size:14px;">' + w.weather_text + ' · 湿度' + w.humidity + '%</div>';
+      // 三日预报
+      if (w.forecast && w.forecast.length >= 2) {
+        var f = w.forecast;
+        html += '<div style="font-size:11px;color:var(--text3);margin-top:4px;">📊 ' + f[0].text_day + ' ' + f[0].low + '~' + f[0].high + '°C</div>';
+        html += '<div style="font-size:11px;color:var(--text3);">📊 明天 ' + f[1].text_day + ' ' + f[1].low + '~' + f[1].high + '°C</div>';
+      }
+    } else {
+      html += '<div class="fw-desc" style="font-size:14px;">管理员尚未更新今日农事</div>';
+    }
     html += '<div class="fw-lunar" style="font-size:14px;">📅 ' + lunarInfo + '</div>';
     html += '</div></div>';
     if (tips.length) {
@@ -1406,7 +1409,7 @@ async function loadFarmingWidget() {
       }).join('');
     }
     el.innerHTML = html;
-  } catch(e) { el.innerHTML = '📅 农事信息加载失败'; }
+  } catch(e) { el.innerHTML = '<div class="fw-row"><div class="fw-icon">📅</div><div><div class="fw-lunar" style="font-size:14px;">📅 ' + lunarInfo + '</div><div class="fw-desc">农事信息加载失败</div></div></div>'; }
 }
 
 // ── 简易农历计算 ──

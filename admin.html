@@ -291,6 +291,7 @@ tr:last-child td{border-bottom:none;}
     <div class="sb-item" onclick="switchPage('feedback')"><i class="ti ti-message"></i>村民反馈<span class="sb-badge" id="feedbackBadge" style="display:none;">0</span></div>
     <div class="sb-section">农事</div>
     <div class="sb-item" onclick="switchPage('farming')"><i class="ti ti-leaf"></i>农事分析</div>
+    <div class="sb-item" onclick="switchPage('crops')"><i class="ti ti-plant"></i>作物配置</div>
     <div class="sb-item" onclick="switchPage('settings')"><i class="ti ti-settings"></i>系统设置</div>
     <div class="sb-section">系统</div>
     <div class="sb-item" onclick="switchPage('export')"><i class="ti ti-file-export"></i>数据导出</div>
@@ -348,6 +349,47 @@ tr:last-child td{border-bottom:none;}
   </div>
 
 
+
+
+  <!-- 作物配置 -->
+  <div class="page" id="page-crops">
+    <div class="card" style="max-width:700px;margin-bottom:16px;">
+      <div class="card-hd"><i class="ti ti-message"></i>农事配置向导</div>
+      <div class="card-body">
+        <div style="font-size:13px;color:var(--text2);margin-bottom:8px;">输入你村种植的作物，系统自动匹配农事规则：</div>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="cropInput" placeholder="例：我村种植早稻、油菜、茶叶" style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:7px;font-size:14px;" onkeydown="if(event.key==='Enter')parseCrops()">
+          <button class="btn btn-primary" onclick="parseCrops()">解析</button>
+        </div>
+        <div id="parseResult" style="margin-top:8px;font-size:12px;"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><i class="ti ti-list"></i>已配置作物
+        <div class="actions"><button class="btn btn-primary btn-sm" onclick="openAddCrop()"><i class="ti ti-plus"></i>手动添加</button></div>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="tbl-wrap">
+          <table><thead><tr><th>作物名称</th><th>播种日期</th><th>操作</th></tr></thead><tbody id="cropsTbody"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 作物编辑弹窗 -->
+  <div class="modal-overlay" id="cropModal">
+    <div class="modal">
+      <div class="modal-hd" id="cropModalTitle">添加作物<span class="modal-close" onclick="closeModal('cropModal')">x</span></div>
+      <div class="modal-bd">
+        <div class="form-row"><label>作物名称</label><select id="cropName" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:7px;"><option>早稻</option><option>晚稻</option><option>中稻</option><option>油菜</option><option>柑橘</option><option>茶叶</option><option>烟草</option><option>黄蜀葵</option><option>玉米</option><option>大棚番茄</option><option>大棚辣椒</option><option>棉花</option></select></div>
+        <div class="form-row"><label>播种日期</label><input type="date" id="cropDate"></div>
+      </div>
+      <div class="modal-ft">
+        <button class="btn btn-outline" onclick="closeModal('cropModal')">取消</button>
+        <button class="btn btn-primary" onclick="saveCrop()">保存</button>
+      </div>
+    </div>
+  </div>
 
   <!-- 农事分析 -->
   <div class="page" id="page-farming">
@@ -1133,9 +1175,9 @@ function switchPage(name) {
   const sbItem = document.querySelector(`.sb-item[onclick="switchPage('${name}')"]`);
   if (sbItem) sbItem.classList.add('active');
   currentPage = name;
-  const titles = {dashboard:'数据总览',villagers:'村民管理',scores:'积分管理',exchange:'兑换管理',goods:'物资管理',events:'积分规则',checkin:'签到管理',farming:'农事分析',feedback:'村民反馈',settings:'系统设置',export:'数据导出',notices:'公告管理',admins:'账号管理'};
+  const titles = {dashboard:'数据总览',villagers:'村民管理',scores:'积分管理',exchange:'兑换管理',goods:'物资管理',events:'积分规则',checkin:'签到管理',farming:'农事分析',crops:'作物配置',feedback:'村民反馈',settings:'系统设置',export:'数据导出',notices:'公告管理',admins:'账号管理'};
   document.getElementById('pageTitle').textContent = titles[name]||name;
-  const loaders = {dashboard:loadDashboard,villagers:loadVillagers,scores:loadScores,exchange:()=>{loadExchangeSwitch();loadExchange();},goods:loadGoods,events:loadEvents,checkin:loadCheckins,farming:loadFarming,feedback:loadFeedback,settings:loadSettings,notices:loadNotices,admins:loadAdmins};
+  const loaders = {dashboard:loadDashboard,villagers:loadVillagers,scores:loadScores,exchange:()=>{loadExchangeSwitch();loadExchange();},goods:loadGoods,events:loadEvents,checkin:loadCheckins,farming:loadFarming,crops:loadCrops,feedback:loadFeedback,settings:loadSettings,notices:loadNotices,admins:loadAdmins};
   if (loaders[name]) loaders[name]();
 }
 
