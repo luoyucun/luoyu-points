@@ -801,6 +801,8 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 
 <script>
 const BASE = '';
+var vc={name:"罗峪村",short:"罗峪",location:"桑植县凉水口镇罗峪村"};
+(async function(){try{var r=await fetch(BASE+"/api/admin/village-config").then(function(r2){return r2.json()});if(r.data){vc.name=r.data.village_name;vc.short=r.data.village_short;vc.location=r.data.village_location}}catch(e){}})();
 let token = localStorage.getItem('luoyu_token') || '';
 let adminInfo = JSON.parse(localStorage.getItem('luoyu_admin') || 'null');
 let isAdmin = false;
@@ -911,7 +913,7 @@ async function doVillagerLogin() {
 function initVillagerApp() {
   document.getElementById('pubNav').style.display = 'flex';
   document.getElementById('aNav').style.display = 'none';
-  document.getElementById('headerSub').textContent = (villagerInfo.group_no||'').replace('罗峪村','') + ' · ' + villagerInfo.name;
+  document.getElementById('headerSub').textContent = (villagerInfo.group_no||'').replace(vc.name,'') + ' · ' + villagerInfo.name;
   vTab('home');
 }
 
@@ -1243,7 +1245,7 @@ async function loadHome() {
 
     el.innerHTML = `
       <div class="hero">
-        <div class="uname">${(v.group_no||'').replace('罗峪村','')||'--'} · ${v.name} &nbsp;<span style="font-size:12px;opacity:.7;">${v.gender||''} · ****${v.id_last4||'----'}</span></div>
+        <div class="uname">${(v.group_no||'').replace(vc.name,'')||'--'} · ${v.name} &nbsp;<span style="font-size:12px;opacity:.7;">${v.gender||''} · ****${v.id_last4||'----'}</span></div>
         <div class="srow">
           <div style="text-align:center;flex:1;">
             <div class="snum">${v.total_score||0}</div>
@@ -1303,7 +1305,7 @@ async function loadHonorBoard() {
         return '<div class="honor-row">' +
           '<div class="honor-rank ' + ranks[i] + '">' + medals[i] + '</div>' +
           '<span class="honor-name">' + v.name + '</span>' +
-          '<span class="honor-group">' + (v.group_no||'').replace('罗峪村','') + '</span>' +
+          '<span class="honor-group">' + (v.group_no||'').replace(vc.name,'') + '</span>' +
           '<span class="honor-score">+' + v.month_score + '分</span>' +
         '</div>';
       }).join('') + '</div>';
@@ -1630,7 +1632,7 @@ async function loadRank() {
         if (gres && gres.data && gres.data.length) {
           gres.data.forEach(g => {
             const opt = document.createElement('option');
-            opt.value = g; opt.textContent = g.replace('罗峪村','');
+            opt.value = g; opt.textContent = g.replace(vc.name,'');
             sel.appendChild(opt);
           });
           if (adminInfo.role === 'group_leader' && adminInfo.group_no) sel.value = adminInfo.group_no;
@@ -1641,7 +1643,7 @@ async function loadRank() {
         if (gres && gres.data && gres.data.length) {
           gres.data.forEach(g => {
             const opt = document.createElement('option');
-            opt.value = g; opt.textContent = g.replace('罗峪村','');
+            opt.value = g; opt.textContent = g.replace(vc.name,'');
             sel.appendChild(opt);
           });
           if (villagerInfo && villagerInfo.group_no) sel.value = villagerInfo.group_no;
@@ -1670,12 +1672,12 @@ async function loadRank() {
       <div class="lb-item">
         <div class="lb-rank">${ranks[i]||i+1}</div>
         <div class="lb-av">${v.name?v.name[0]:'?'}</div>
-        <div style="flex:1"><div class="lb-name">${v.name}</div><div class="lb-grp">${(v.group_no||'').replace('罗峪村','')} · 本月+${v.month_score||0}</div></div>
+        <div style="flex:1"><div class="lb-name">${v.name}</div><div class="lb-grp">${(v.group_no||'').replace(vc.name,'')} · 本月+${v.month_score||0}</div></div>
         <div class="lb-score">${rankMode==='month' ? (v.month_score||0) : v.total_score}</div>
       </div>`).join('');
     const tip = rankMode==='month'
-      ? (group ? `${group.replace('罗峪村','')}本月积分排行` : '全村本月积分排行')
-      : (group ? `${group.replace('罗峪村','')}总积分排行` : '全村总积分排行（每年1月10日清零）');
+      ? (group ? `${group.replace(vc.name,'')}本月积分排行` : '全村本月积分排行')
+      : (group ? `${group.replace(vc.name,'')}总积分排行` : '全村总积分排行（每年1月10日清零）');
     el.innerHTML = `
       <div class="info-strip"><i class="ti ti-trophy" style="font-size:15px;flex-shrink:0;"></i>${tip}</div>
       <div class="card">${rows}</div>`;
