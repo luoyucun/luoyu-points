@@ -2261,7 +2261,7 @@ async function loadFeedback() {
 // ── 系统设置 ──
 function loadSettings() { loadVillageConfig(); }
 async function loadVillageConfig() {
-  var res = await api('"GET"', '"/api/admin/village-config"');
+  var res = await api('GET', '/api/admin/village-config');
   if (!res || !res.data) return;
   document.getElementById('"setVillageName"').value = res.data.village_name || '';
   document.getElementById('"setVillageShort"').value = res.data.village_short || '';
