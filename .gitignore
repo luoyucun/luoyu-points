@@ -7,3 +7,4 @@ uploads/
 
 *.log
 
+config/qweather_private.pem
