@@ -43,7 +43,7 @@ router.get('/weather', authMiddleware, requireVillageAdmin, wrap(async (req, res
     const mock = {
       temp: 22, feels_like: 21, humidity: 65, wind_speed: 2,
       weather_type: 'cloudy', weather_text: '多云',
-      rain_3day: true, rain_5day: false, precip: 0, from_forecast: false, daily_max: 28, daily_min: 20, daily_precip: 5, daily_text_day: '多云', daily_text_night: '小雨',
+      rain_3day: true, rain_5day: false, precip: 0,  daily_max: 28, daily_min: 20, daily_precip: 5, daily_text_day: '多云', daily_text_night: '小雨',
       updated: new Date().toISOString()
     };
     weatherCache = mock;
@@ -57,7 +57,7 @@ router.get('/weather', authMiddleware, requireVillageAdmin, wrap(async (req, res
     const [nowRes, dayRes, hourRes] = await Promise.all([
       fetch(baseUrl + '/v7/weather/now?location=' + cityId, { headers: { 'Authorization': 'Bearer ' + token } }).then(r => r.json()),
       fetch(baseUrl + '/v7/weather/7d?location=' + cityId, { headers: { 'Authorization': 'Bearer ' + token } }).then(r => r.json()),
-      fetch(baseUrl + '/v7/weather/24h?location=' + cityId, { headers: { 'Authorization': 'Bearer ' + token } }).then(r => r.json())
+      // weather/24h removed
     ]);
 
     if (nowRes.code && nowRes.code !== '200') {
@@ -72,17 +72,12 @@ router.get('/weather', authMiddleware, requireVillageAdmin, wrap(async (req, res
     daily.slice(0, 5).forEach(function(d) { if (d.textDay && d.textDay.indexOf('雨') >= 0) rain5 = true; });
 
     // 使用实时观测数据
-    var currentForecast = null; // 不再使用预报
-    if (hourRes.hourly && hourRes.hourly.length) {
-      currentForecast = hourRes.hourly[0];
-    }
-
-    var nowText = currentForecast ? currentForecast.text : (nowData.text || '');
-    var nowTemp = currentForecast ? parseFloat(currentForecast.temp) : parseFloat(nowData.temp) || 0;
-    var nowHumidity = currentForecast ? parseFloat(currentForecast.humidity) : parseFloat(nowData.humidity) || 0;
-    var nowWindScale = currentForecast ? (currentForecast.windScale || '') : (parseInt(nowData.windScale) || 0);
-    var nowWindSpeed = currentForecast ? parseFloat(currentForecast.windSpeed) : parseFloat(nowData.windSpeed) || 0;
-    var nowPrecip = currentForecast ? parseFloat(currentForecast.precip) : 0;
+    var nowText = nowData.text || '';
+    var nowTemp = parseFloat(nowData.temp) || 0;
+    var nowHumidity = parseFloat(nowData.humidity) || 0;
+    var nowWindScale = parseInt(nowData.windScale) || 0;
+    var nowWindSpeed = parseFloat(nowData.windSpeed) || 0;
+    var nowPrecip = parseFloat(nowData.precip) || 0;
     var nowFeelsLike = parseFloat(nowData.feelsLike) || nowTemp;
 
     const weather = {
@@ -96,7 +91,7 @@ router.get('/weather', authMiddleware, requireVillageAdmin, wrap(async (req, res
       precip: nowPrecip,
       rain_3day: rain3,
       rain_5day: rain5,
-      from_forecast: !!currentForecast,
+      
       updated: new Date().toISOString()
     };
 
