@@ -2272,7 +2272,7 @@ async function saveVillageConfig() {
   var sh = document.getElementById('"setVillageShort"').value.trim();
   var loc = document.getElementById('"setVillageLoc"').value.trim();
   if (!name) { showToast('"请填写村名"', true); return; }
-  var res = await api('"PUT"', '"/api/admin/village-config"', { village_name:name, village_short:sh, village_location:loc });
+  var res = await api('PUT', '/api/admin/village-config', { village_name:name, village_short:sh, village_location:loc });
   if (res && res.code === 0) { showToast('"设置已保存，刷新生效"'); vc.name=name; vc.short=sh; vc.location=loc; }
   else showToast(res?.message||'"保存失败"', true);
 }
