@@ -55,6 +55,21 @@ router.get('/weather', authMiddleware, requireVillageAdmin, wrap(async (req, res
       if ((d.text_day && d.text_day.indexOf('雨') >= 0) || (d.text_night && d.text_night.indexOf('雨') >= 0)) rain5 = true;
     });
 
+    // 3日预报
+    var forecast = daily.slice(0, 3).map(function(d) {
+      return {
+        date: d.date,
+        high: parseFloat(d.high) || 0,
+        low: parseFloat(d.low) || 0,
+        text_day: d.text_day || '',
+        text_night: d.text_night || '',
+        humidity: parseFloat(d.humidity) || 0,
+        wind_scale: d.wind_scale || '',
+        wind_speed: parseFloat(d.wind_speed) || 0,
+        rainfall: parseFloat(d.rainfall) || 0
+      };
+    });
+
     var w = {
       temp: parseFloat(nd.temperature) || 0,
       feels_like: parseFloat(nd.temperature) || 0,
@@ -70,6 +85,7 @@ router.get('/weather', authMiddleware, requireVillageAdmin, wrap(async (req, res
       daily_min: parseFloat(today.low) || 0,
       daily_text_day: today.text_day || '',
       daily_text_night: today.text_night || '',
+      forecast: forecast,
       updated: new Date().toISOString()
     };
 
@@ -109,10 +125,66 @@ router.patch('/rules/:id/toggle', authMiddleware, requireVillageAdmin, wrap(asyn
   res.json({ code: 0, message: req.body.is_active?'已启用':'已禁用' });
 }));
 
+
+// ── 作物配置 CRUD ──
+router.get('/crops', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
+  var [rows] = await db.execute('SELECT id,crop_name,planting_date,notes,is_active FROM crop_config ORDER BY id');
+  rows.forEach(function(r) { if (r.planting_date) r.planting_date = r.planting_date.toISOString().slice(0,10); });
+  res.json({ code: 0, data: rows });
+}));
+
+router.post('/crops', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
+  var { crop_name, planting_date, notes } = req.body;
+  if (!crop_name) return res.status(400).json({ code: 400, message: '作物名称必填' });
+  await db.execute('INSERT INTO crop_config (crop_name,planting_date,notes) VALUES (?,?,?)',
+    [crop_name.trim(), planting_date || null, notes || null]);
+  res.json({ code: 0, message: '作物已添加' });
+}));
+
+router.put('/crops/:id', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
+  var { crop_name, planting_date, notes } = req.body;
+  await db.execute('UPDATE crop_config SET crop_name=?,planting_date=?,notes=? WHERE id=?',
+    [crop_name.trim(), planting_date || null, notes || null, req.params.id]);
+  res.json({ code: 0, message: '作物已更新' });
+}));
+
+router.delete('/crops/:id', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
+  await db.execute('DELETE FROM crop_config WHERE id=?', [req.params.id]);
+  res.json({ code: 0, message: '作物已删除' });
+}));
+
+// POST /api/farming/parse-crops — 自然语言解析作物
+router.post('/parse-crops', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
+  var text = req.body.text || '';
+  var crops = [];
+  // 匹配模式：早稻/晚稻/中稻/油菜/柑橘/茶叶/玉米/烟草 等 + 可选日期
+  var knownCrops = ['早稻','晚稻','中稻','油菜','柑橘','茶叶','烟草','黄蜀葵','玉米','大棚番茄','大棚辣椒','棉花'];
+  knownCrops.forEach(function(c) {
+    if (text.indexOf(c) >= 0) {
+      var dateMatch = text.match(new RegExp(c + '[^0-9]*(\\d{1,2})[月\\.](\\d{1,2})'));
+      var planting = null;
+      if (dateMatch) {
+        var m = dateMatch[1].padStart(2,'0'), d = dateMatch[2].padStart(2,'0');
+        planting = '2026-' + m + '-' + d;
+      }
+      crops.push({ crop_name: c, planting_date: planting });
+    }
+  });
+  if (!crops.length) return res.json({ code: 0, data: [], message: '未识别到已知作物，请手动添加' });
+  // 保存到数据库
+  for (var i = 0; i < crops.length; i++) {
+    var c = crops[i];
+    await db.execute('INSERT INTO crop_config (crop_name,planting_date) VALUES (?,?) ON DUPLICATE KEY UPDATE planting_date=VALUES(planting_date)',
+      [c.crop_name, c.planting_date]);
+  }
+  res.json({ code: 0, data: crops, message: '已识别并保存 ' + crops.length + ' 种作物' });
+}));
+
 // ── 分析引擎 ──
 router.post('/analyze', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
   var { soil_moisture, crop_stage } = req.body || {};
   var w = weatherCache || { temp: 22, humidity: 65, wind_speed: 2, weather_text: '多云', rain_3day: true, rain_5day: false };
+  var [cropRows] = await db.execute("SELECT crop_name FROM crop_config WHERE is_active=1");
   var [rules] = await db.execute('SELECT * FROM farming_rules WHERE is_active=1');
   var soil = { moisture: soil_moisture, crop_stage: crop_stage };
 
@@ -131,10 +203,13 @@ router.post('/analyze', authMiddleware, requireVillageAdmin, wrap(async (req, re
     if (c.crop_stage !== undefined && soil.crop_stage !== c.crop_stage) return false;
     return true;
   }).map(function(r) {
-    return { id: r.id, title: r.title, task_type: r.task_type, suggestion: r.suggestion, priority: r.priority };
+    return { id: r.id, title: r.title, task_type: r.task_type, suggestion: r.suggestion, priority: r.priority, source: "custom" };
   }).sort(function(a, b) { return b.priority - a.priority; });
+  var cropNames = cropRows.map(function(c){ return c.crop_name; });
+  var kbRules = matchKnowledgeBaseRules(w, soil, cropNames);
+  matched = matched.concat(kbRules);
 
-  res.json({ code: 0, data: { weather: w, soil_input: soil, matched: matched, count: matched.length } });
+  res.json({ code: 0, data: { weather: w, soil_input: soil, matched: matched, count: matched.length, crops: cropRows.map(function(c){ return c.crop_name; }) } });
 }));
 
 // ── 报告发布 ──
@@ -162,3 +237,61 @@ router.get('/report/today', wrap(async (req, res) => {
 }));
 
 module.exports = router;
+
+// ── 知识库规则匹配 ──
+function matchKnowledgeBaseRules(w, soil, cropList) {
+  var results = [];
+  if (!cropList.length) return results;
+
+  // 通用施药窗口
+  var ws = parseInt(w.wind_scale) || 0;
+  if (ws <= 3 && w.temp < 30 && w.humidity > 65 && w.forecast && w.forecast[1] && (w.forecast[1].rainfall || 0) < 10) {
+    results.push({ title: '施药窗口有效', task_type: 'other', priority: 6, suggestion: '当前天气适宜施药：风力≤3级、气温<30°C、湿度>65%、明日无中雨。', source: 'kb' });
+  }
+  if (ws >= 4 || w.temp > 33) {
+    results.push({ title: '不宜施药', task_type: 'other', priority: 5, suggestion: '风力≥4级或温度>33°C，不宜施药。请等待合适窗口。', source: 'kb' });
+  }
+
+  // 水稻类
+  var hasRice = cropList.some(function(c) { return c.indexOf('稻') >= 0; });
+  if (hasRice) {
+    if (w.temp < 20) results.push({ title: '低温僵苗风险', task_type: 'other', priority: 9, suggestion: '日均温低于20°C，水稻分蘖迟缓。浅水层保温（3-5cm），暂缓晒田，叶面喷施磷酸二氢钾。', source: 'kb' });
+    if (w.temp > 35) results.push({ title: '高温热害风险', task_type: 'irrigate', priority: 10, suggestion: '高温>35°C抑制水稻分蘖。加深水层至7-10cm降温，避开正午施肥，叶面喷施钾肥。', source: 'kb' });
+    if (w.temp >= 28 && w.temp <= 32 && w.humidity >= 80 && ws <= 3) results.push({ title: '稻飞虱迁入风险', task_type: 'pest', priority: 10, suggestion: '气温28-32°C+高湿+低风，稻飞虱迁入沉降概率极高。用吡虱酮/呋虫胺喷防，浅水层降低田间湿度。', source: 'kb' });
+    if (w.temp >= 22 && w.temp <= 28 && w.humidity >= 90 && w.rain_3day) results.push({ title: '叶瘟暴发风险', task_type: 'pest', priority: 10, suggestion: '气温22-28°C+高湿+连续阴雨，叶瘟暴发风险高。喷施三环唑/硫磺灵，排水降湿。', source: 'kb' });
+    if (ws >= 6) results.push({ title: '倒伏风险', task_type: 'other', priority: 10, suggestion: '风力≥6级，水稻倒伏风险急升。风前加强浅水层护根，风后排水扶正倒伏株，补施粒肥。', source: 'kb' });
+    if (w.temp >= 35 && w.humidity <= 40 && ws >= 4) results.push({ title: '干热风危害', task_type: 'irrigate', priority: 10, suggestion: '高温+低湿+大风，干热风危害。及时灌水保持水层，叶面喷施抗早衰剂+钾肥。', source: 'kb' });
+    if (!w.rain_3day && w.temp >= 18 && w.temp <= 28 && w.humidity < 75) results.push({ title: '收获晾晒窗口', task_type: 'harvest', priority: 7, suggestion: '连续无降水+温度适宜+湿度低，适合收获晾晒。排水晾田，择晴天收割。', source: 'kb' });
+  }
+
+  // 油菜
+  if (cropList.indexOf('油菜') >= 0) {
+    if (w.temp < 5) results.push({ title: '油菜低温冻害', task_type: 'other', priority: 10, suggestion: '低温<5°C，花器受冻风险。叶面喷施磷酸二氢钾+硼肥保花，排除田间积水。', source: 'kb' });
+    if (w.temp >= 15 && w.temp <= 22 && w.humidity >= 85 && w.rain_3day) results.push({ title: '菌核病暴发', task_type: 'pest', priority: 10, suggestion: '气温15-22°C+高湿+连续阴雨，菌核病暴发。喷施菌核净/多抗灵，清沟排水降湿。', source: 'kb' });
+  }
+
+  // 茶叶
+  if (cropList.indexOf('茶叶') >= 0) {
+    if (w.temp >= 25 && w.temp <= 30 && w.humidity >= 80 && ws <= 3) results.push({ title: '茶小绿叶蝉风险', task_type: 'pest', priority: 8, suggestion: '气温25-30°C+高湿+低风，茶小绿叶蝉上升。喷施吡虫啉/联苯菊酯，及时采摘受害茶叶。', source: 'kb' });
+  }
+
+  // 柑橘
+  if (cropList.indexOf('柑橘') >= 0) {
+    if (w.temp < 10) results.push({ title: '柑橘花芽受阻', task_type: 'other', priority: 9, suggestion: '低温<10°C，花芽分化受阻。根部培土保温，叶面喷施氯化钾+蜻蜓素。', source: 'kb' });
+    if (w.temp >= 25 && w.temp <= 30 && w.precip > 25 && ws >= 5) results.push({ title: '溃疡病风雨传播', task_type: 'pest', priority: 9, suggestion: '高温+暴雨+大风，溃疡病风雨传播风险。风雨前喷施波尔多液预防，雨后补喷。', source: 'kb' });
+  }
+
+  // 玉米
+  if (cropList.indexOf('玉米') >= 0) {
+    if (w.temp < 18) results.push({ title: '玉米生长迟缓', task_type: 'other', priority: 7, suggestion: '低温<18°C，生长迟缓。叶面喷施磷酸二氢钾+蜻蜓素促进生长。', source: 'kb' });
+    if (w.temp > 33) results.push({ title: '玉米花粉败育', task_type: 'irrigate', priority: 9, suggestion: '高温>33°C，花粉活力下降。及时灌水降温，叶面喷施钾肥。', source: 'kb' });
+  }
+
+  // 大棚作物
+  var hasGreenhouse = cropList.some(function(c) { return c.indexOf('大棚') >= 0; });
+  if (hasGreenhouse && (ws >= 6)) {
+    results.push({ title: '大风棚膜风险', task_type: 'other', priority: 10, suggestion: '风力≥6级，大棚薄膜受损风险。加固骨架和压膜线，风后检查修补。', source: 'kb' });
+  }
+
+  return results;
+}
