@@ -1282,13 +1282,14 @@ async function loadHome() {
         <div class="sec-title">快捷功能</div>
         <div class="qgrid">
           <button class="qbtn cb" onclick="vTab('notice')"><i class="ti ti-bell"></i><span class="lbl">村务公告</span></button>
-          <button class="qbtn cg" onclick="vTab('log')"><i class="ti ti-clipboard-list"></i><span class="lbl">积分明细</span></button>
+          <button class="qbtn cp" onclick="openFeedback()"><i class="ti ti-message"></i><span class="lbl">我有话说</span></button>
           <button class="qbtn ca" onclick="vTab('exchange')"><i class="ti ti-gift"></i><span class="lbl">积分兑换</span></button>
-          <button class="qbtn cp" onclick="vTab('rules')"><i class="ti ti-clipboard-text"></i><span class="lbl">积分细则</span></button>
+          <button class="qbtn cg" onclick="vTab('log')"><i class="ti ti-clipboard-list"></i><span class="lbl">积分明细</span></button>
+          <button class="qbtn cp" onclick="vTab('rules')" style="grid-column:1/-1;"><i class="ti ti-clipboard-text"></i><span class="lbl">积分细则</span></button>
           <button class="qbtn ct" onclick="vTab('rank')" style="grid-column:1/-1;"><i class="ti ti-trophy"></i><span class="lbl">积分排行</span></button>
         </div>
       </div>
-      <button class="feedback-btn" onclick="openFeedback()"><i class="ti ti-message"></i>我有话说 · 向村委会提建议</button>
+      <!-- feedback moved into qgrid -->
       <div class="card honor-card" style="margin-top:10px;" id="honorBoardCard">
         <div class="sec-title">月度光荣榜</div>
         <div id="honorBoardContent" style="padding:0 0 4px;"><div style="text-align:center;color:var(--text3);font-size:12px;padding:8px;">加载中…</div></div>

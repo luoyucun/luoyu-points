@@ -246,10 +246,10 @@ function matchKnowledgeBaseRules(w, soil, cropList) {
   // 通用施药窗口
   var ws = parseInt(w.wind_scale) || 0;
   if (ws <= 3 && w.temp < 30 && w.humidity > 65 && w.forecast && w.forecast[1] && (w.forecast[1].rainfall || 0) < 10) {
-    results.push({ title: '施药窗口有效', task_type: 'other', priority: 6, suggestion: '当前天气适宜施药：风力≤3级、气温<30°C、湿度>65%、明日无中雨。', source: 'kb' });
+    results.push({ title: '施药窗口有效', task_type: 'other', priority: 6, suggestion: '适宜施药', source: 'kb' });
   }
   if (ws >= 4 || w.temp > 33) {
-    results.push({ title: '不宜施药', task_type: 'other', priority: 5, suggestion: '不宜施药，等待窗口', source: 'kb' });
+    results.push({ title: '不宜施药', task_type: 'other', priority: 5, suggestion: '不宜施药', source: 'kb' });
   }
 
   // 水稻类
@@ -272,7 +272,7 @@ function matchKnowledgeBaseRules(w, soil, cropList) {
 
   // 茶叶
   if (cropList.indexOf('茶叶') >= 0) {
-    if (w.temp >= 25 && w.temp <= 30 && w.humidity >= 80 && ws <= 3) results.push({ title: '茶小绿叶蝉风险', task_type: 'pest', priority: 8, suggestion: '茶小绿叶蝉，请及时喷防', source: 'kb' });
+    if (w.temp >= 25 && w.temp <= 30 && w.humidity >= 80 && ws <= 3) results.push({ title: '茶小绿叶蝉风险', task_type: 'pest', priority: 8, suggestion: '小绿叶蝉高发', source: 'kb' });
   }
 
   // 柑橘
@@ -283,7 +283,7 @@ function matchKnowledgeBaseRules(w, soil, cropList) {
 
   // 玉米
   if (cropList.indexOf('玉米') >= 0) {
-    if (w.temp < 18) results.push({ title: '玉米生长迟缓', task_type: 'other', priority: 7, suggestion: '玉米低温生长慢，喷施促长', source: 'kb' });
+    if (w.temp < 18) results.push({ title: '玉米生长迟缓', task_type: 'other', priority: 7, suggestion: '玉米低温促长', source: 'kb' });
     if (w.temp > 33) results.push({ title: '玉米花粉败育', task_type: 'irrigate', priority: 9, suggestion: '玉米高温，灌水降温', source: 'kb' });
   }
 
