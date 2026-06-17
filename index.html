@@ -574,13 +574,16 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 <div class="feedback-modal" id="feedbackModal" onclick="if(event.target===this)closeFeedback()">
   <div class="feedback-sheet">
     <h3>我有话说</h3>
-    <div class="fb-sub">对积分制度有什么建议？告诉村委会</div>
+    <div class="fb-sub">对积分制度或者村支两委有什么建议，请您建言献策。</div>
     <input type="text" class="fb-name" id="fbName" placeholder="您的姓名（选填，可匿名）" maxlength="20">
-    <textarea id="fbContent" placeholder="请输入您的建议或意见…" maxlength="500" oninput="document.getElementById('fbChars').textContent=this.value.length"></textarea>
+    <textarea id="fbContent" placeholder="请输入您的建议或意见，或点击下方麦克风语音输入…" maxlength="500" oninput="document.getElementById('fbChars').textContent=this.value.length"></textarea>
     <div class="fb-chars"><span id="fbChars">0</span>/500</div>
+    <button class="fb-voice-btn" id="fbVoiceBtn" onclick="startVoiceInput()" style="width:100%;padding:14px;margin:8px 0;background:#f0f4ff;border:1.5px solid #c0d0f0;border-radius:12px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;color:#4a6fa0;">
+      <i class="ti ti-microphone"></i> 按住说话
+    </button>
     <div class="fb-actions">
-      <button class="fb-cancel" onclick="closeFeedback()">取消</button>
-      <button class="fb-submit" id="fbSubmit" onclick="submitFeedback()">提交反馈</button>
+      <button class="fb-cancel" onclick="closeFeedback()" style="padding:16px;font-size:18px;">取消</button>
+      <button class="fb-submit" id="fbSubmit" onclick="submitFeedback()" style="padding:16px;font-size:18px;">提交反馈</button>
     </div>
   </div>
 </div>
@@ -1428,6 +1431,47 @@ async function loadFarmingWidget() {
     }
     el.innerHTML = html;
   } catch(e) { el.innerHTML = '<div class="fw-row"><div class="fw-icon">📅</div><div><div class="fw-lunar" style="font-size:14px;">📅 ' + lunarInfo + '</div><div class="fw-desc">农事信息加载失败</div></div></div>'; }
+}
+
+
+// ── 语音输入 ──
+var _recognition = null;
+function startVoiceInput() {
+  var btn = document.getElementById('fbVoiceBtn');
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    showToast('您的浏览器不支持语音输入', true); return;
+  }
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!_recognition) {
+    _recognition = new SR();
+    _recognition.lang = 'zh-CN';
+    _recognition.continuous = false;
+    _recognition.interimResults = false;
+    _recognition.onresult = function(e) {
+      var text = e.results[0][0].transcript;
+      var ta = document.getElementById('fbContent');
+      ta.value = ta.value ? ta.value + ' ' + text : text;
+      document.getElementById('fbChars').textContent = ta.value.length;
+      btn.innerHTML = '<i class="ti ti-microphone"></i> 按住说话';
+      btn.style.background = '#f0f4ff';
+    };
+    _recognition.onerror = function(e) {
+      btn.innerHTML = '<i class="ti ti-microphone"></i> 按住说话';
+      btn.style.background = '#f0f4ff';
+    };
+    _recognition.onend = function() {
+      btn.innerHTML = '<i class="ti ti-microphone"></i> 按住说话';
+      btn.style.background = '#f0f4ff';
+    };
+  }
+  try {
+    _recognition.start();
+    btn.innerHTML = '<i class="ti ti-microphone"></i> 正在聆听…';
+    btn.style.background = '#ffe0e0';
+  } catch(e) {
+    btn.innerHTML = '<i class="ti ti-microphone"></i> 按住说话';
+    showToast('语音启动失败，请重试', true);
+  }
 }
 
 // ── 简易农历计算 ──
