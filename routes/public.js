@@ -4,6 +4,26 @@ const db = require('../config/db');
 const { authMiddleware, requireVillageAdmin } = require('../middleware/auth');
 
 const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const FB_UPLOAD_DIR = path.join(__dirname, '../uploads/feedback');
+if (!fs.existsSync(FB_UPLOAD_DIR)) fs.mkdirSync(FB_UPLOAD_DIR, { recursive: true });
+const fbUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, FB_UPLOAD_DIR),
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname) || '.webm';
+      cb(null, 'fb_' + Date.now() + '_' + Math.random().toString(36).slice(2,6) + ext);
+    }
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['audio/webm','audio/mp4','audio/mpeg','audio/ogg','audio/wav','audio/mp3'];
+    cb(null, allowed.includes(file.mimetype) || file.originalname.endsWith('.webm'));
+  }
+});
+
 
 // GET /api/public/honorboard — 红黑榜数据（公开）
 // 返回：月度光荣榜前5名 + 近期扣分公示（匿名）
@@ -48,13 +68,17 @@ router.get('/top10', wrap(async (req, res) => {
 }));
 
 // POST /api/public/feedback — 村民提交反馈（公开）
-router.post('/feedback', wrap(async (req, res) => {
+router.post('/feedback', fbUpload.single('audio'), wrap(async (req, res) => {
   const { content, villager_name } = req.body;
-  if (!content || !content.trim()) return res.status(400).json({ code: 400, message: '请输入反馈内容' });
-  if (content.trim().length > 500) return res.status(400).json({ code: 400, message: '内容不能超过500字' });
+  var audio_url = null;
+  if (req.file) {
+    audio_url = '/uploads/feedback/' + req.file.filename;
+  }
+  if (!content && !audio_url) return res.status(400).json({ code: 400, message: '请输入反馈内容或录制语音' });
+  if (content && content.trim().length > 500) return res.status(400).json({ code: 400, message: '内容不能超过500字' });
   await db.execute(
-    'INSERT INTO feedback (villager_name, content) VALUES (?,?)',
-    [(villager_name||'').trim()||null, content.trim()]
+    'INSERT INTO feedback (villager_name, content, audio_url) VALUES (?,?,?)',
+    [(villager_name||'').trim()||null, (content||'').trim()||null, audio_url]
   );
   res.json({ code: 0, message: '感谢您的反馈！村委会将及时查看处理。' });
 }));

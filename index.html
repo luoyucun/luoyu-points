@@ -578,8 +578,13 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
     <input type="text" class="fb-name" id="fbName" placeholder="您的姓名（选填，可匿名）" maxlength="20">
     <textarea id="fbContent" placeholder="请输入您的建议或意见，或点击下方麦克风语音输入…" maxlength="500" oninput="document.getElementById('fbChars').textContent=this.value.length"></textarea>
     <div class="fb-chars"><span id="fbChars">0</span>/500</div>
-    <button class="fb-voice-btn" id="fbVoiceBtn" onclick="startVoiceInput()" style="width:100%;padding:14px;margin:8px 0;background:#f0f4ff;border:1.5px solid #c0d0f0;border-radius:12px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;color:#4a6fa0;">
-      <i class="ti ti-microphone"></i> 按住说话
+    <div id="fbAudioBar" style="display:none;padding:8px 12px;background:#f0f4ff;border-radius:10px;margin:8px 0;align-items:center;gap:8px;">
+      <i class="ti ti-volume" style="font-size:20px;color:#4a6fa0;"></i>
+      <span style="flex:1;font-size:13px;color:#333;">语音留言已录制</span>
+      <button onclick="removeAudio()" style="background:none;border:none;color:var(--red);font-size:13px;cursor:pointer;">删除</button>
+    </div>
+    <button class="fb-voice-btn" id="fbRecordBtn" onclick="toggleRecording()" style="width:100%;padding:16px;margin:8px 0;background:#f0f4ff;border:1.5px solid #c0d0f0;border-radius:14px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;color:#4a6fa0;transition:all .2s;">
+      <i class="ti ti-microphone"></i> 点击开始录音
     </button>
     <div class="fb-actions">
       <button class="fb-cancel" onclick="closeFeedback()" style="padding:16px;font-size:18px;">取消</button>
@@ -1353,7 +1358,7 @@ async function loadHonorBoard() {
 // ── 反馈 ──
 function openFeedback() {
   document.getElementById('feedbackModal').classList.add('open');
-  document.getElementById('fbContent').value = '';
+  document.getElementById('fbContent').value = ''; removeAudio();
   document.getElementById('fbChars').textContent = '0';
   var nameInput = document.getElementById('fbName');
   nameInput.value = villagerInfo ? villagerInfo.name : '';
@@ -1434,45 +1439,68 @@ async function loadFarmingWidget() {
 }
 
 
-// ── 语音输入 ──
-var _recognition = null;
-function startVoiceInput() {
-  var btn = document.getElementById('fbVoiceBtn');
-  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-    showToast('您的浏览器不支持语音输入', true); return;
+// ── 录音功能 ──
+var _mediaRecorder = null;
+var _audioChunks = [];
+var _audioBlob = null;
+
+async function toggleRecording() {
+  var btn = document.getElementById('fbRecordBtn');
+  if (_mediaRecorder && _mediaRecorder.state === 'recording') {
+    // 停止录音
+    _mediaRecorder.stop();
+    btn.innerHTML = '<i class="ti ti-microphone"></i> 点击开始录音';
+    btn.style.background = '#f0f4ff';
+    btn.style.color = '#4a6fa0';
+    return;
   }
-  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!_recognition) {
-    _recognition = new SR();
-    _recognition.lang = 'zh-CN';
-    _recognition.continuous = false;
-    _recognition.interimResults = false;
-    _recognition.onresult = function(e) {
-      var text = e.results[0][0].transcript;
-      var ta = document.getElementById('fbContent');
-      ta.value = ta.value ? ta.value + ' ' + text : text;
-      document.getElementById('fbChars').textContent = ta.value.length;
-      btn.innerHTML = '<i class="ti ti-microphone"></i> 按住说话';
-      btn.style.background = '#f0f4ff';
-    };
-    _recognition.onerror = function(e) {
-      btn.innerHTML = '<i class="ti ti-microphone"></i> 按住说话';
-      btn.style.background = '#f0f4ff';
-    };
-    _recognition.onend = function() {
-      btn.innerHTML = '<i class="ti ti-microphone"></i> 按住说话';
-      btn.style.background = '#f0f4ff';
-    };
-  }
+  // 开始录音
   try {
-    _recognition.start();
-    btn.innerHTML = '<i class="ti ti-microphone"></i> 正在聆听…';
+    var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    _audioChunks = [];
+    _mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+    _mediaRecorder.ondataavailable = function(e) { if (e.data.size > 0) _audioChunks.push(e.data); };
+    _mediaRecorder.onstop = function() {
+      _audioBlob = new Blob(_audioChunks, { type: 'audio/webm' });
+      document.getElementById('fbAudioBar').style.display = 'flex';
+      stream.getTracks().forEach(function(t) { t.stop(); });
+    };
+    _mediaRecorder.start();
+    btn.innerHTML = '<i class="ti ti-microphone"></i> 🔴 正在录音，点击停止';
     btn.style.background = '#ffe0e0';
+    btn.style.color = '#c0392b';
   } catch(e) {
-    btn.innerHTML = '<i class="ti ti-microphone"></i> 按住说话';
-    showToast('语音启动失败，请重试', true);
+    showToast('无法访问麦克风，请检查权限', true);
   }
 }
+
+function removeAudio() {
+  _audioBlob = null;
+  _audioChunks = [];
+  document.getElementById('fbAudioBar').style.display = 'none';
+}
+
+// 更新 submitFeedback 发送 FormData
+var _origSubmitFeedback = submitFeedback;
+submitFeedback = async function() {
+  var content = document.getElementById('fbContent').value.trim();
+  if (!content && !_audioBlob) { showToast('请输入反馈内容或录制语音'); return; }
+  if (content.length > 500) { showToast('内容不能超过500字'); return; }
+  var btn = document.getElementById('fbSubmit');
+  btn.disabled = true; btn.textContent = '提交中…';
+  try {
+    var form = new FormData();
+    var name = document.getElementById('fbName').value.trim();
+    if (name) form.append('villager_name', name);
+    if (content) form.append('content', content);
+    if (_audioBlob) form.append('audio', _audioBlob, 'feedback.webm');
+    var res = await fetch(BASE + '/api/public/feedback', { method: 'POST', body: form });
+    var data = await res.json();
+    if (data.code === 0) { showToast('感谢您的反馈！'); closeFeedback(); _audioBlob = null; _audioChunks = []; }
+    else showToast(data.message || '提交失败', true);
+  } catch(e) { showToast('网络错误', true); }
+  btn.disabled = false; btn.textContent = '提交反馈';
+};
 
 // ── 简易农历计算 ──
 function getLunarInfo() {
