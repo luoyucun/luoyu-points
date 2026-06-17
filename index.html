@@ -1403,10 +1403,12 @@ async function loadFarmingWidget() {
     }
     html += '<div class="fw-lunar" style="font-size:14px;">📅 ' + lunarInfo + '</div>';
     html += '</div></div>';
-    if (tips.length) {
-      html += tips.map(function(t) {
-        return '<div class="farm-tip" style="font-size:14px;"><span class="ft-icon" style="font-size:22px;">' + (icons[t.task_type]||'📋') + '</span><span>' + t.suggestion + '</span></div>';
-      }).join('');
+    var topTips = tips.slice(0, 2);
+    if (topTips.length) {
+      html += '<div style="font-size:11px;color:var(--amber);margin:8px 0 4px;">⚡ 重要农事提醒</div>';
+      topTips.forEach(function(t, i) {
+        html += '<div class="farm-tip" style="font-size:15px;font-weight:600;padding:10px 0;"><span class="ft-icon" style="font-size:26px;">' + (icons[t.task_type]||'📋') + '</span><span>' + t.suggestion + '</span></div>';
+      });
     }
     el.innerHTML = html;
   } catch(e) { el.innerHTML = '<div class="fw-row"><div class="fw-icon">📅</div><div><div class="fw-lunar" style="font-size:14px;">📅 ' + lunarInfo + '</div><div class="fw-desc">农事信息加载失败</div></div></div>'; }

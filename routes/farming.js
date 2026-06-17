@@ -249,48 +249,48 @@ function matchKnowledgeBaseRules(w, soil, cropList) {
     results.push({ title: '施药窗口有效', task_type: 'other', priority: 6, suggestion: '当前天气适宜施药：风力≤3级、气温<30°C、湿度>65%、明日无中雨。', source: 'kb' });
   }
   if (ws >= 4 || w.temp > 33) {
-    results.push({ title: '不宜施药', task_type: 'other', priority: 5, suggestion: '风力≥4级或温度>33°C，不宜施药。请等待合适窗口。', source: 'kb' });
+    results.push({ title: '不宜施药', task_type: 'other', priority: 5, suggestion: '不宜施药，等待窗口', source: 'kb' });
   }
 
   // 水稻类
   var hasRice = cropList.some(function(c) { return c.indexOf('稻') >= 0; });
   if (hasRice) {
-    if (w.temp < 20) results.push({ title: '低温僵苗风险', task_type: 'other', priority: 9, suggestion: '日均温低于20°C，水稻分蘖迟缓。浅水层保温（3-5cm），暂缓晒田，叶面喷施磷酸二氢钾。', source: 'kb' });
-    if (w.temp > 35) results.push({ title: '高温热害风险', task_type: 'irrigate', priority: 10, suggestion: '高温>35°C抑制水稻分蘖。加深水层至7-10cm降温，避开正午施肥，叶面喷施钾肥。', source: 'kb' });
-    if (w.temp >= 28 && w.temp <= 32 && w.humidity >= 80 && ws <= 3) results.push({ title: '稻飞虱迁入风险', task_type: 'pest', priority: 10, suggestion: '气温28-32°C+高湿+低风，稻飞虱迁入沉降概率极高。用吡虱酮/呋虫胺喷防，浅水层降低田间湿度。', source: 'kb' });
-    if (w.temp >= 22 && w.temp <= 28 && w.humidity >= 90 && w.rain_3day) results.push({ title: '叶瘟暴发风险', task_type: 'pest', priority: 10, suggestion: '气温22-28°C+高湿+连续阴雨，叶瘟暴发风险高。喷施三环唑/硫磺灵，排水降湿。', source: 'kb' });
-    if (ws >= 6) results.push({ title: '倒伏风险', task_type: 'other', priority: 10, suggestion: '风力≥6级，水稻倒伏风险急升。风前加强浅水层护根，风后排水扶正倒伏株，补施粒肥。', source: 'kb' });
-    if (w.temp >= 35 && w.humidity <= 40 && ws >= 4) results.push({ title: '干热风危害', task_type: 'irrigate', priority: 10, suggestion: '高温+低湿+大风，干热风危害。及时灌水保持水层，叶面喷施抗早衰剂+钾肥。', source: 'kb' });
-    if (!w.rain_3day && w.temp >= 18 && w.temp <= 28 && w.humidity < 75) results.push({ title: '收获晾晒窗口', task_type: 'harvest', priority: 7, suggestion: '连续无降水+温度适宜+湿度低，适合收获晾晒。排水晾田，择晴天收割。', source: 'kb' });
+    if (w.temp < 20) results.push({ title: '低温僵苗风险', task_type: 'other', priority: 9, suggestion: '低温僵苗，浅水保温', source: 'kb' });
+    if (w.temp > 35) results.push({ title: '高温热害风险', task_type: 'irrigate', priority: 10, suggestion: '高温热害，加深水层降温', source: 'kb' });
+    if (w.temp >= 28 && w.temp <= 32 && w.humidity >= 80 && ws <= 3) results.push({ title: '稻飞虱迁入风险', task_type: 'pest', priority: 10, suggestion: '稻飞虱高发，请杀灭虫害', source: 'kb' });
+    if (w.temp >= 22 && w.temp <= 28 && w.humidity >= 90 && w.rain_3day) results.push({ title: '叶瘟暴发风险', task_type: 'pest', priority: 10, suggestion: '叶瘟风险，喷药排水', source: 'kb' });
+    if (ws >= 6) results.push({ title: '倒伏风险', task_type: 'other', priority: 10, suggestion: '大风倒伏风险，加固护根', source: 'kb' });
+    if (w.temp >= 35 && w.humidity <= 40 && ws >= 4) results.push({ title: '干热风危害', task_type: 'irrigate', priority: 10, suggestion: '干热风危害，灌水保墒', source: 'kb' });
+    if (!w.rain_3day && w.temp >= 18 && w.temp <= 28 && w.humidity < 75) results.push({ title: '收获晾晒窗口', task_type: 'harvest', priority: 7, suggestion: '适宜收割晾晒', source: 'kb' });
   }
 
   // 油菜
   if (cropList.indexOf('油菜') >= 0) {
-    if (w.temp < 5) results.push({ title: '油菜低温冻害', task_type: 'other', priority: 10, suggestion: '低温<5°C，花器受冻风险。叶面喷施磷酸二氢钾+硼肥保花，排除田间积水。', source: 'kb' });
-    if (w.temp >= 15 && w.temp <= 22 && w.humidity >= 85 && w.rain_3day) results.push({ title: '菌核病暴发', task_type: 'pest', priority: 10, suggestion: '气温15-22°C+高湿+连续阴雨，菌核病暴发。喷施菌核净/多抗灵，清沟排水降湿。', source: 'kb' });
+    if (w.temp < 5) results.push({ title: '油菜低温冻害', task_type: 'other', priority: 10, suggestion: '油菜冻害风险，喷施保花', source: 'kb' });
+    if (w.temp >= 15 && w.temp <= 22 && w.humidity >= 85 && w.rain_3day) results.push({ title: '菌核病暴发', task_type: 'pest', priority: 10, suggestion: '菌核病高发，喷药排水', source: 'kb' });
   }
 
   // 茶叶
   if (cropList.indexOf('茶叶') >= 0) {
-    if (w.temp >= 25 && w.temp <= 30 && w.humidity >= 80 && ws <= 3) results.push({ title: '茶小绿叶蝉风险', task_type: 'pest', priority: 8, suggestion: '气温25-30°C+高湿+低风，茶小绿叶蝉上升。喷施吡虫啉/联苯菊酯，及时采摘受害茶叶。', source: 'kb' });
+    if (w.temp >= 25 && w.temp <= 30 && w.humidity >= 80 && ws <= 3) results.push({ title: '茶小绿叶蝉风险', task_type: 'pest', priority: 8, suggestion: '茶小绿叶蝉，请及时喷防', source: 'kb' });
   }
 
   // 柑橘
   if (cropList.indexOf('柑橘') >= 0) {
-    if (w.temp < 10) results.push({ title: '柑橘花芽受阻', task_type: 'other', priority: 9, suggestion: '低温<10°C，花芽分化受阻。根部培土保温，叶面喷施氯化钾+蜻蜓素。', source: 'kb' });
-    if (w.temp >= 25 && w.temp <= 30 && w.precip > 25 && ws >= 5) results.push({ title: '溃疡病风雨传播', task_type: 'pest', priority: 9, suggestion: '高温+暴雨+大风，溃疡病风雨传播风险。风雨前喷施波尔多液预防，雨后补喷。', source: 'kb' });
+    if (w.temp < 10) results.push({ title: '柑橘花芽受阻', task_type: 'other', priority: 9, suggestion: '柑橘低温，培土保温', source: 'kb' });
+    if (w.temp >= 25 && w.temp <= 30 && w.precip > 25 && ws >= 5) results.push({ title: '溃疡病风雨传播', task_type: 'pest', priority: 9, suggestion: '溃疡病风险，喷药预防', source: 'kb' });
   }
 
   // 玉米
   if (cropList.indexOf('玉米') >= 0) {
-    if (w.temp < 18) results.push({ title: '玉米生长迟缓', task_type: 'other', priority: 7, suggestion: '低温<18°C，生长迟缓。叶面喷施磷酸二氢钾+蜻蜓素促进生长。', source: 'kb' });
-    if (w.temp > 33) results.push({ title: '玉米花粉败育', task_type: 'irrigate', priority: 9, suggestion: '高温>33°C，花粉活力下降。及时灌水降温，叶面喷施钾肥。', source: 'kb' });
+    if (w.temp < 18) results.push({ title: '玉米生长迟缓', task_type: 'other', priority: 7, suggestion: '玉米低温生长慢，喷施促长', source: 'kb' });
+    if (w.temp > 33) results.push({ title: '玉米花粉败育', task_type: 'irrigate', priority: 9, suggestion: '玉米高温，灌水降温', source: 'kb' });
   }
 
   // 大棚作物
   var hasGreenhouse = cropList.some(function(c) { return c.indexOf('大棚') >= 0; });
   if (hasGreenhouse && (ws >= 6)) {
-    results.push({ title: '大风棚膜风险', task_type: 'other', priority: 10, suggestion: '风力≥6级，大棚薄膜受损风险。加固骨架和压膜线，风后检查修补。', source: 'kb' });
+    results.push({ title: '大风棚膜风险', task_type: 'other', priority: 10, suggestion: '大风风险，加固大棚', source: 'kb' });
   }
 
   return results;
