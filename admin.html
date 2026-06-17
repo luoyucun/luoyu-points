@@ -1721,16 +1721,18 @@ async function loadNotices() {
       n.audio_type==='tts' ? '<span style="font-size:11px;color:var(--green);margin-left:4px;"><i class="ti ti-speakerphone"></i>TTS</span>' : '',
       n.audio_type==='record' ? '<span style="font-size:11px;color:var(--green);margin-left:4px;"><i class="ti ti-microphone"></i>录音</span>' : ''
     ].join('');
-    const viewBtn = '<button class="btn btn-outline btn-sm" onclick="viewNotice('+n.id+')"><i class="ti ti-eye"></i>查看</button>';
-    const revokeBtn = n.is_active
-      ? '<button class="btn btn-danger btn-sm" onclick="revokeNotice('+n.id+')"><i class="ti ti-trash"></i><i class="ti ti-trash"></i>撤回</button>'
-      : '-';
+    var btns = '<button class="btn btn-outline btn-sm" onclick="viewNotice('+n.id+')" title="查看"><i class="ti ti-eye"></i></button> ';
+    btns += '<button class="btn btn-outline btn-sm" onclick="editNotice('+n.id+')" title="编辑"><i class="ti ti-pencil"></i></button> ';
+    btns += n.is_active
+      ? '<button class="btn btn-outline btn-sm" onclick="revokeNotice('+n.id+')" title="撤回"><i class="ti ti-arrow-back-up"></i></button> '
+      : '';
+    btns += '<button class="btn btn-danger btn-sm" onclick="deleteNotice('+n.id+')" title="删除"><i class="ti ti-trash"></i></button>';
     return '<tr>'
       + '<td data-label="标题"><strong>'+n.title+'</strong><div style="display:flex;flex-wrap:wrap;">'+mediaTag+'</div></td>'
       + '<td data-label="类型"><span class="tag tag-blue">'+n.tag_type+'</span></td>'
       + '<td data-label="状态"><span class="tag '+(n.is_active?'tag-green':'tag-gray')+'">'+(n.is_active?'已发布':'已撤回')+'</span></td>'
       + '<td data-label="发布时间" style="color:var(--text3);">'+(n.created_at?n.created_at.slice(0,10):'')+'</td>'
-      + '<td class="td-ops">'+viewBtn+revokeBtn+'</td>'
+      + '<td class="td-ops">'+btns+'</td>'
       + '</tr>';
   }).join('') || '<tr><td colspan="5"><div class="empty-state"><i class="ti ti-bell-off"></i>暂无公告</div></td></tr>';
 }
@@ -1845,11 +1847,34 @@ async function viewNotice(id) {
   document.getElementById('noticeDetailView').style.display = '';
 }
 
+var _editNoticeId = null;
+function editNotice(id) {
+  var n = _noticesData.find(function(x) { return x.id === id; });
+  if (!n) return;
+  _editNoticeId = id;
+  document.getElementById('noticeTitle').value = n.title;
+  document.getElementById('noticeContent').value = n.content;
+  document.getElementById('noticeTag').value = n.tag_type;
+  _noticeImgs = [];
+  _noticeAudioFile = null;
+  document.getElementById('noticeImgPreview').innerHTML = '';
+  document.getElementById('noticeImgs').value = '';
+  document.getElementById('recordPreview').style.display = 'none';
+  document.getElementById('addNoticeTitle').innerHTML = '编辑公告<span class="modal-close" onclick="closeModal(\'addNoticeModal\')">×</span>';
+  openModal('addNoticeModal');
+}
+async function deleteNotice(id) {
+  if (!confirm('确定永久删除此公告？此操作不可恢复。')) return;
+  var res = await api('PATCH', '/api/admin/announcements/' + id + '/revoke');
+  if (res && res.code === 0) { showToast('公告已删除'); loadNotices(); }
+  else showToast(res && res.message || '删除失败', true);
+}
+
 async function revokeNotice(id) {
   if (!confirm('确认撤回该公告？')) return;
   try {
     const res = await api('DELETE', `/api/announcements/${id}`);
-    if (res && res.code===0) { showToast('公告已撤回'); loadNotices(); }
+    if (res && res.code===0) { showToast('公告已撤回'); loadNotices(); loadNotices(); }
     else showToast(res?.message||'操作失败', true);
   } catch(e) { showToast('网络错误，请重试', true); }
 }

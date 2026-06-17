@@ -246,10 +246,25 @@ router.post('/announcements', authMiddleware, requireSuper,
   })
 );
 
-// DELETE /api/admin/announcements/:id
-router.delete('/announcements/:id', authMiddleware, requireSuper, wrap(async (req, res) => {
+// PATCH /api/admin/announcements/:id/revoke — 撤回公告
+router.patch('/announcements/:id/revoke', authMiddleware, requireSuper, wrap(async (req, res) => {
   await db.execute('UPDATE announcements SET is_active=0 WHERE id=?', [req.params.id]);
   res.json({ code: 0, message: '公告已撤回' });
+}));
+
+// DELETE /api/admin/announcements/:id — 永久删除
+router.delete('/announcements/:id', authMiddleware, requireSuper, wrap(async (req, res) => {
+  await db.execute('DELETE FROM announcements WHERE id=?', [req.params.id]);
+  res.json({ code: 0, message: '公告已删除' });
+}));
+
+// PUT /api/admin/announcements/:id — 编辑公告
+router.put('/announcements/:id', authMiddleware, requireSuper, wrap(async (req, res) => {
+  const { title, content, tag_type } = req.body;
+  if (!title || !content) return res.status(400).json({ code: 400, message: '标题和内容必填' });
+  await db.execute('UPDATE announcements SET title=?, content=?, tag_type=? WHERE id=?',
+    [title.trim(), content.trim(), tag_type||'全村告示', req.params.id]);
+  res.json({ code: 0, message: '公告已更新' });
 }));
 
 // GET /api/admin/exchange/switch — 查询兑换开关状态（公开，村民端也需要读）
