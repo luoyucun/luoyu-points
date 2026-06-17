@@ -483,6 +483,11 @@ tr:last-child td{border-bottom:none;}
         <div class="form-row"><label>村名全称</label><input type="text" id="setVillageName" placeholder="例：罗峪村"></div>
         <div class="form-row"><label>村名简称（Logo用）</label><input type="text" id="setVillageShort" placeholder="例：罗峪"></div>
         <div class="form-row"><label>村所在位置</label><input type="text" id="setVillageLoc" placeholder="例：桑植县凉水口镇罗峪村"></div>
+        <div class="form-row"><label>首页默认显示</label>
+          <select id="setHomeTab" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;">
+            <option value="my">我的（登录页）</option><option value="notice">村务公告</option><option value="rank">积分排行</option><option value="feed">积分动态</option><option value="rules">积分细则</option>
+          </select>
+        </div>
         <button class="btn btn-primary" onclick="saveVillageConfig()" style="width:100%;"><i class="ti ti-device-floppy"></i>保存设置</button>
         <div style="font-size:11px;color:var(--text3);margin-top:12px;">修改后刷新页面生效。影响页面标题、Logo、组名显示、导出文件名等所有涉及村名的地方。</div>
       </div>
@@ -2316,13 +2321,14 @@ async function loadVillageConfig() {
   document.getElementById('"setVillageName"').value = res.data.village_name || '';
   document.getElementById('"setVillageShort"').value = res.data.village_short || '';
   document.getElementById('"setVillageLoc"').value = res.data.village_location || '';
+  var ht = document.getElementById('"setHomeTab"'); if(ht && res.data.home_tab) ht.value = res.data.home_tab;
 }
 async function saveVillageConfig() {
   var name = document.getElementById('"setVillageName"').value.trim();
   var sh = document.getElementById('"setVillageShort"').value.trim();
   var loc = document.getElementById('"setVillageLoc"').value.trim();
   if (!name) { showToast('"请填写村名"', true); return; }
-  var res = await api('PUT', '/api/admin/village-config', { village_name:name, village_short:sh, village_location:loc });
+  var res = await api('PUT', '/api/admin/village-config', { village_name:name, village_short:sh, village_location:loc, home_tab: document.getElementById('"setHomeTab"').value });
   if (res && res.code === 0) { showToast('"设置已保存，刷新生效"'); vc.name=name; vc.short=sh; vc.location=loc; }
   else showToast(res?.message||'"保存失败"', true);
 }

@@ -429,10 +429,10 @@ router.get('/scores/reset/log', authMiddleware, requireVillageAdmin, wrap(async 
 }));
 
 // ── 村名/位置配置（服务端缓存） ──
-let villageConfig = { village_name: '罗峪村', village_short: '罗峪', village_location: '桑植县凉水口镇罗峪村' };
+let villageConfig = { village_name: '罗峪村', village_short: '罗峪', village_location: '桑植县凉水口镇罗峪村', home_tab: 'my' };
 (async function() {
   try {
-    const [rows] = await db.execute("SELECT cfg_key, cfg_value FROM system_config WHERE cfg_key IN ('village_name','village_short','village_location')");
+    const [rows] = await db.execute("SELECT cfg_key, cfg_value FROM system_config WHERE cfg_key IN ('village_name','village_short','village_location','home_tab')");
     rows.forEach(function(r) { if (r.cfg_value) villageConfig[r.cfg_key] = r.cfg_value; });
   } catch(e) {}
 })();
@@ -441,6 +441,7 @@ router.put('/village-config', authMiddleware, requireSuper, wrap(async (req, res
   const { village_name, village_short, village_location } = req.body;
   if (village_name) { await db.execute("INSERT INTO system_config (cfg_key,cfg_value) VALUES ('village_name',?) ON DUPLICATE KEY UPDATE cfg_value=?", [village_name.trim(), village_name.trim()]); villageConfig.village_name = village_name.trim(); }
   if (village_short) { await db.execute("INSERT INTO system_config (cfg_key,cfg_value) VALUES ('village_short',?) ON DUPLICATE KEY UPDATE cfg_value=?", [village_short.trim(), village_short.trim()]); villageConfig.village_short = village_short.trim(); }
+  if (req.body.home_tab) { await db.execute("INSERT INTO system_config (cfg_key,cfg_value) VALUES ('home_tab',?) ON DUPLICATE KEY UPDATE cfg_value=?", [req.body.home_tab, req.body.home_tab]); villageConfig.home_tab = req.body.home_tab; }
   if (village_location) { await db.execute("INSERT INTO system_config (cfg_key,cfg_value) VALUES ('village_location',?) ON DUPLICATE KEY UPDATE cfg_value=?", [village_location.trim(), village_location.trim()]); villageConfig.village_location = village_location.trim(); }
   res.json({ code: 0, message: '村名配置已更新', data: villageConfig });
 }));

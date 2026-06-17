@@ -801,8 +801,8 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 
 <script>
 const BASE = '';
-var vc={name:"罗峪村",short:"罗峪",location:"桑植县凉水口镇罗峪村"};
-(async function(){try{var r=await fetch(BASE+"/api/admin/village-config").then(function(r2){return r2.json()});if(r.data){vc.name=r.data.village_name;vc.short=r.data.village_short;vc.location=r.data.village_location}}catch(e){}})();
+var vc={name:"罗峪村",short:"罗峪",location:"桑植县凉水口镇罗峪村",home_tab:"my"};
+(async function(){try{var r=await fetch(BASE+"/api/admin/village-config").then(function(r2){return r2.json()});if(r.data){vc.name=r.data.village_name;vc.short=r.data.village_short;vc.location=r.data.village_location;vc.home_tab=r.data.home_tab||"my"}}catch(e){}})();
 let token = localStorage.getItem('luoyu_token') || '';
 let adminInfo = JSON.parse(localStorage.getItem('luoyu_admin') || 'null');
 let isAdmin = false;
@@ -1062,7 +1062,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initVillagerApp();
   } else {
     // Anonymous: show public tab
-    pubTab('notice');
+    pubTab(vc.home_tab||'notice');
   }
 });
 
@@ -1077,7 +1077,7 @@ function doLogout() {
   document.getElementById('aNav').style.display = 'none';
   document.getElementById('appHeader').style.display = 'none'; document.getElementById('pubBanner').style.display = 'flex';
   document.getElementById('pubNav').style.display = 'flex';
-  pubTab('notice');
+  pubTab(vc.home_tab||'notice');
   document.getElementById('loginUser').value = '';
   document.getElementById('loginPass').value = '';
   document.getElementById('loginErr').textContent = '';
