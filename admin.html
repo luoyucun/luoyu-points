@@ -789,6 +789,15 @@ tr:last-child td{border-bottom:none;}
   </div>
 </div>
 
+
+<!-- 反馈详情弹窗 -->
+<div class="modal-overlay" id="feedbackDetailModal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-hd">反馈详情<span class="modal-close" onclick="closeModal('feedbackDetailModal')">×</span></div>
+    <div class="modal-bd" id="feedbackDetailContent"></div>
+  </div>
+</div>
+
 <!-- 积分撤回模态框 -->
 <div class="modal-overlay" id="revokeModal">
   <div class="modal">
@@ -2352,22 +2361,46 @@ async function loadResetLog() {
 
 
 // ── 村民反馈管理 ──
+var _feedbackData = [];
 async function loadFeedback() {
   var res = await api('GET', '/api/public/admin/feedback');
   if (!res || res.code !== 0) return;
-  var list = res.data || [];
-  var unread = list.filter(function(f){ return !f.is_read; }).length;
+  _feedbackData = res.data || [];
+  var unread = _feedbackData.filter(function(f){ return !f.is_read; }).length;
   var badge = document.getElementById('feedbackBadge');
   if (badge) { badge.style.display = unread > 0 ? 'inline' : 'none'; badge.textContent = unread; }
-  document.getElementById('feedbackTbody').innerHTML = list.map(function(f) {
-    return '<tr style="' + (f.is_read ? '' : 'background:#fffde7;') + '">' +
-      '<td data-label="留言人" style="color:' + (f.villager_name ? 'var(--text1)' : 'var(--text3)') + ';">' + (f.villager_name || '匿名') + '</td>' +
-      '<td data-label="内容" style="max-width:300px;word-break:break-word;">' + f.content + '</td>' +
+  document.getElementById('feedbackTbody').innerHTML = _feedbackData.map(function(f) {
+    var hasAudio = f.audio_url ? '<span style="font-size:11px;color:var(--green);margin-left:4px;"><i class="ti ti-microphone"></i></span>' : '';
+    return '<tr style="cursor:pointer;' + (f.is_read ? '' : 'background:#fffde7;') + '" onclick="viewFeedback(' + f.id + ')">' +
+      '<td data-label="留言人" style="color:' + (f.villager_name ? 'var(--text1)' : 'var(--text3)') + ';">' + (f.villager_name || '匿名') + hasAudio + '</td>' +
+      '<td data-label="内容" style="max-width:300px;word-break:break-word;">' + (f.content || '(语音留言)') + '</td>' +
       '<td data-label="时间" style="color:var(--text3);font-size:12px;">' + (f.created_at ? f.created_at.slice(0,16) : '') + '</td>' +
       '<td data-label="状态"><span class="tag ' + (f.is_read ? 'tag-gray' : 'tag-amber') + '">' + (f.is_read ? '已读' : '未读') + '</span></td>' +
     '</tr>';
   }).join('') || '<tr><td colspan="4"><div class="empty-state"><i class="ti ti-message"></i>暂无反馈</div></td></tr>';
 }
+
+function viewFeedback(id) {
+  var f = _feedbackData.find(function(x) { return x.id === id; });
+  if (!f) return;
+  var audioHtml = '';
+  if (f.audio_url) {
+    audioHtml = '<div style="margin:12px 0;"><div style="font-size:12px;color:var(--text3);margin-bottom:4px;">🎙 语音留言</div><audio controls src="' + f.audio_url + '" style="width:100%;"></audio></div>';
+  }
+  document.getElementById('feedbackDetailContent').innerHTML =
+    '<div style="font-size:13px;color:var(--text3);margin-bottom:4px;">' + (f.villager_name || '匿名') + ' · ' + (f.created_at ? f.created_at.slice(0,16) : '') + '</div>' +
+    audioHtml +
+    (f.content ? '<div style="font-size:15px;color:var(--text1);line-height:1.8;white-space:pre-wrap;">' + f.content + '</div>' : '') +
+    '<div style="margin-top:12px;"><span class="tag ' + (f.is_read ? 'tag-gray' : 'tag-amber') + '">' + (f.is_read ? '已读' : '未读') + '</span></div>';
+  openModal('feedbackDetailModal');
+  // 自动标记已读
+  if (!f.is_read) {
+    api('PATCH', '/api/public/admin/feedback/' + f.id + '/read');
+    f.is_read = 1;
+    loadFeedback();
+  }
+}
+
 
 
 // ── 系统设置 ──
