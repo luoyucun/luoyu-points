@@ -578,10 +578,10 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
     <input type="text" class="fb-name" id="fbName" placeholder="您的姓名（选填，可匿名）" maxlength="20">
     <textarea id="fbContent" placeholder="请输入您的建议或意见，或点击下方麦克风语音输入…" maxlength="500" oninput="document.getElementById('fbChars').textContent=this.value.length"></textarea>
     <div class="fb-chars"><span id="fbChars">0</span>/500</div>
-    <div id="fbAudioBar" style="display:none;padding:8px 12px;background:#f0f4ff;border-radius:10px;margin:8px 0;align-items:center;gap:8px;">
-      <i class="ti ti-volume" style="font-size:20px;color:#4a6fa0;"></i>
-      <span style="flex:1;font-size:13px;color:#333;">语音留言已录制</span>
-      <button onclick="removeAudio()" style="background:none;border:none;color:var(--red);font-size:13px;cursor:pointer;">删除</button>
+    <div id="fbAudioBar" style="display:none;padding:8px 12px;background:#e8f5e9;border-radius:10px;margin:8px 0;align-items:center;gap:8px;">
+      <button id="fbPlayBtn" onclick="togglePlayAudio()" style="width:36px;height:36px;border-radius:50%;background:var(--green);color:white;border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="ti ti-player-play"></i></button>
+      <span style="flex:1;font-size:14px;color:#333;">语音留言已录制</span>
+      <button onclick="removeAudio()" style="background:none;border:none;color:var(--red);font-size:14px;cursor:pointer;flex-shrink:0;">删除</button>
     </div>
     <button class="fb-voice-btn" id="fbRecordBtn" onclick="toggleRecording()" style="width:100%;padding:16px;margin:8px 0;background:#f0f4ff;border:1.5px solid #c0d0f0;border-radius:14px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;color:#4a6fa0;transition:all .2s;">
       <i class="ti ti-microphone"></i> 点击开始录音
@@ -1463,6 +1463,7 @@ async function toggleRecording() {
     _mediaRecorder.onstop = function() {
       _audioBlob = new Blob(_audioChunks, { type: 'audio/webm' });
       document.getElementById('fbAudioBar').style.display = 'flex';
+      document.getElementById('fbPlayBtn').innerHTML = '<i class="ti ti-player-play"></i>';
       stream.getTracks().forEach(function(t) { t.stop(); });
     };
     _mediaRecorder.start();
@@ -1474,7 +1475,19 @@ async function toggleRecording() {
   }
 }
 
+var _audioPlayer = null;
+function togglePlayAudio() {
+  var btn = document.getElementById('fbPlayBtn');
+  if (_audioPlayer) { _audioPlayer.pause(); _audioPlayer = null; btn.innerHTML = '<i class="ti ti-player-play"></i>'; return; }
+  if (!_audioBlob) return;
+  var url = URL.createObjectURL(_audioBlob);
+  _audioPlayer = new Audio(url);
+  _audioPlayer.onended = function() { _audioPlayer = null; btn.innerHTML = '<i class="ti ti-player-play"></i>'; };
+  _audioPlayer.play();
+  btn.innerHTML = '<i class="ti ti-player-pause"></i>';
+}
 function removeAudio() {
+  if (_audioPlayer) { _audioPlayer.pause(); _audioPlayer = null; }
   _audioBlob = null;
   _audioChunks = [];
   document.getElementById('fbAudioBar').style.display = 'none';
