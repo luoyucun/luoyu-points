@@ -1865,7 +1865,7 @@ function editNotice(id) {
 }
 async function deleteNotice(id) {
   if (!confirm('确定永久删除此公告？此操作不可恢复。')) return;
-  var res = await api('PATCH', '/api/admin/announcements/' + id + '/revoke');
+  var res = await api('DELETE', '/api/admin/announcements/' + id);
   if (res && res.code === 0) { showToast('公告已删除'); loadNotices(); }
   else showToast(res && res.message || '删除失败', true);
 }
