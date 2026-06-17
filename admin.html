@@ -981,7 +981,7 @@ tr:last-child td{border-bottom:none;}
 <!-- 新增公告模态框 -->
 <div class="modal-overlay" id="addNoticeModal">
   <div class="modal" style="width:520px;max-height:90vh;display:flex;flex-direction:column;">
-    <div class="modal-hd">发布公告<span class="modal-close" onclick="closeModal('addNoticeModal')">×</span></div>
+    <div class="modal-hd" id="addNoticeTitle">发布公告<span class="modal-close" onclick="closeModal('addNoticeModal')">×</span></div>
     <div class="modal-bd" style="overflow-y:auto;flex:1;">
       <div class="form-row"><label>标题 <span style="color:var(--red)">*</span></label><input type="text" id="noticeTitle" placeholder="公告标题"></div>
       <div class="form-row"><label>类型</label>
