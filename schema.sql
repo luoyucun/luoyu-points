@@ -1,222 +1,326 @@
--- ============================================================
--- 罗峪村村民积分系统 · 数据库建表脚本
--- 数据库：MySQL 8.0
--- 更新日期：2026-06-08
--- ============================================================
+-- 罗峪村村民积分系统 - 数据库建表脚本
+-- 15张表，导出日期 2026-06-15
 
-CREATE DATABASE IF NOT EXISTS luoyu_points
-  DEFAULT CHARACTER SET utf8mb4
-  DEFAULT COLLATE utf8mb4_unicode_ci;
+DROP TABLE IF EXISTS `admins`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `admins` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `username` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '登录用户名',
+  `password` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'bcrypt 哈希密码',
+  `name` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '真实姓名',
+  `role` enum('super','village_admin','group_leader') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'group_leader' COMMENT 'super=超管, village_admin=村干部, group_leader=组长',
+  `group_no` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '组长所属组（村干部填NULL）',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `username` (`username`)
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='管理员账户';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
-USE luoyu_points;
+--
+-- Table structure for table `announcements`
+--
 
--- ------------------------------------------------------------
--- 1. 管理员表
--- ------------------------------------------------------------
-CREATE TABLE admins (
-  id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  username    VARCHAR(50)  NOT NULL UNIQUE COMMENT '登录用户名',
-  password    VARCHAR(255) NOT NULL       COMMENT 'bcrypt 哈希密码',
-  name        VARCHAR(30)  NOT NULL       COMMENT '真实姓名',
-  role        ENUM('super','village_admin','group_leader') NOT NULL DEFAULT 'group_leader',
-  group_no    VARCHAR(20)  DEFAULT NULL   COMMENT '组长所属组（村干部填NULL）',
-  is_active   TINYINT(1)   NOT NULL DEFAULT 1,
-  created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) COMMENT '管理员账户';
+DROP TABLE IF EXISTS `announcements`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `announcements` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `title` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `content` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `image_urls` text COLLATE utf8mb4_unicode_ci,
+  `audio_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `audio_type` enum('record','tts') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `tag_type` enum('活动通知','体育活动','政策宣传','全村告示') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '全村告示',
+  `created_by` int(10) unsigned NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `created_by` (`created_by`),
+  CONSTRAINT `announcements_ibfk_1` FOREIGN KEY (`created_by`) REFERENCES `admins` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='公告表';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- ------------------------------------------------------------
--- 2. 村民表
--- ------------------------------------------------------------
-CREATE TABLE villagers (
-  id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  name        VARCHAR(30)  NOT NULL       COMMENT '姓名',
-  gender      ENUM('男','女') NOT NULL,
-  group_no    VARCHAR(20)  NOT NULL       COMMENT '村民小组',
-  id_last4    CHAR(4)      NOT NULL       COMMENT '身份证后4位',
-  first_login_bonus TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否已领取首次登录积分',
-  total_score INT          NOT NULL DEFAULT 0 COMMENT '兑换积分（可用于兑换，年度清零）',
-  honor_score INT          NOT NULL DEFAULT 0 COMMENT '荣誉积分（累计不扣减，不清零）',
-  is_active   TINYINT(1)   NOT NULL DEFAULT 1,
-  created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  INDEX idx_group (group_no),
-  INDEX idx_name  (name)
-) COMMENT '村民信息';
+--
+-- Table structure for table `checkin_events`
+--
 
--- ------------------------------------------------------------
--- 3. 积分事件配置表
--- ------------------------------------------------------------
-CREATE TABLE score_events (
-  id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  name          VARCHAR(50)  NOT NULL COMMENT '事件名称',
-  category      VARCHAR(20)  NOT NULL COMMENT '类别',
-  points        INT          NOT NULL COMMENT '正数=加分，负数=扣分',
-  verify_method VARCHAR(100) DEFAULT NULL COMMENT '验证方式说明',
-  is_active     TINYINT(1)   NOT NULL DEFAULT 1,
-  sort_order    INT          NOT NULL DEFAULT 0
-) COMMENT '积分事件配置';
+DROP TABLE IF EXISTS `checkin_events`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `checkin_events` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `title` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '签到活动名称',
+  `score_event_id` int(10) unsigned DEFAULT NULL COMMENT '关联的积分事件',
+  `score_points` int(11) NOT NULL DEFAULT '5' COMMENT '签到成功加分值',
+  `qr_token` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '二维码唯一标识',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_by` int(10) unsigned NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `expired_at` datetime DEFAULT NULL COMMENT '签到截止时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `qr_token` (`qr_token`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='签到活动';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
-INSERT INTO score_events (name, category, points, verify_method, sort_order) VALUES
-('党日活动签到',   '党建引领', 5,   '扫码或管理员确认', 1),
-('组织生活参与',   '党建引领', 10,  '管理员确认',       2),
-('志愿服务',       '党建引领', 15,  '照片或管理员确认', 3),
-('参加体育活动',   '体育特色', 10,  '签到或管理员确认', 4),
-('组织体育活动',   '体育特色', 20,  '活动通知+照片',    5),
-('指导体育练习',   '体育特色', 15,  '活动通知+照片',    6),
-('参加环境清扫',   '生态保护', 5,   '管理员确认',       7),
-('参加植树造林',   '生态保护', 10,  '照片或管理员确认', 8),
-('庭院美化示范户', '生态保护', 15,  '村干部评定',       9),
-('参加村级活动',   '公共参与', 5,   '管理员确认',       10),
-('参加公共劳动',   '公共参与', 8,   '管理员确认',       11),
-('邻里帮扶',       '互帮互助', 10,  '照片或双方确认',   12),
-('关爱老人',       '互帮互助', 10,  '照片或管理员确认', 13),
-('配合调解',       '纠纷调解', 10,  '调解档案签字',     14),
-('见义勇为',       '特殊贡献', 50,  '村委确认',         15),
-('参与建设项目',   '特殊贡献', 5,   '项目组织者确认',   16),
-('参与赌博',       '扣分项目', -20, '经村委确认',       17),
-('传播邪教',       '扣分项目', -30, '经村委确认',       18),
-('乱占耕地',       '扣分项目', -30, '经村委确认',       19),
-('乱堆垃圾不整治', '扣分项目', -10, '经教育不改',       20),
-('优秀学生（校级）', '教育积分', 10, '奖状或学校证明',   21),
-('优秀学生（区级）', '教育积分', 20, '奖状或教育局证明', 22),
-('考上大学（本科）', '教育积分', 30, '录取通知书',       23),
-('考上大学（专科）', '教育积分', 20, '录取通知书',       24),
-('应征入伍',        '军旅积分', 30, '入伍通知书',         25),
-('部队立功（三等功）','军旅积分', 50, '立功证书',         26),
-('部队立功（二等功及以上）','军旅积分', 100, '立功证书',  27),
-('光荣退伍',        '军旅积分', 10, '退伍证',             28);
+--
+-- Table structure for table `checkin_records`
+--
 
--- ------------------------------------------------------------
--- 4. 积分记录表
--- ------------------------------------------------------------
-CREATE TABLE score_records (
-  id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  villager_id   INT UNSIGNED NOT NULL,
-  event_id      INT UNSIGNED DEFAULT NULL COMMENT '自定义积分时为NULL',
-  event_name    VARCHAR(50)  NOT NULL   COMMENT '冗余存储，防止事件改名后记录失真',
-  points        INT          NOT NULL   COMMENT '实际分值（含正负）',
-  description   VARCHAR(500) DEFAULT NULL COMMENT '情况文字说明',
-  image_urls    JSON         DEFAULT NULL COMMENT '图片URL数组',
-  submitted_by  INT UNSIGNED NOT NULL   COMMENT '录入人admin.id',
-  status        ENUM('pending','approved','rejected') NOT NULL DEFAULT 'approved',
-  reviewed_by   INT UNSIGNED DEFAULT NULL COMMENT '审核人admin.id',
-  reviewed_at   DATETIME     DEFAULT NULL,
-  is_revoked    TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '是否已撤回',
-  revoked_by    INT UNSIGNED DEFAULT NULL COMMENT '撤回操作人',
-  revoked_at    DATETIME     DEFAULT NULL,
-  revoke_reason VARCHAR(200) DEFAULT NULL COMMENT '撤回原因',
-  created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_villager   (villager_id),
-  INDEX idx_status     (status),
-  INDEX idx_created_at (created_at),
-  FOREIGN KEY (villager_id) REFERENCES villagers(id)
-) COMMENT '积分变动记录';
+DROP TABLE IF EXISTS `checkin_records`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `checkin_records` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `checkin_event_id` int(10) unsigned NOT NULL,
+  `villager_id` int(10) unsigned NOT NULL,
+  `score_record_id` int(10) unsigned DEFAULT NULL COMMENT '关联的积分记录',
+  `photo_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '签到现场照片',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_ev_villager` (`checkin_event_id`,`villager_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='签到记录';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- ------------------------------------------------------------
--- 5. 兑换物资表
--- ------------------------------------------------------------
-CREATE TABLE goods (
-  id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  name        VARCHAR(50)  NOT NULL,
-  icon        VARCHAR(10)  DEFAULT '🎁' COMMENT 'emoji图标',
-  points_cost INT UNSIGNED NOT NULL COMMENT '兑换所需积分',
-  stock       INT UNSIGNED NOT NULL DEFAULT 0,
-  is_active   TINYINT(1)   NOT NULL DEFAULT 1,
-  sort_order  INT          NOT NULL DEFAULT 0
-) COMMENT '可兑换物资';
+--
+-- Table structure for table `crop_config`
+--
 
-INSERT INTO goods (name, icon, points_cost, stock, sort_order) VALUES
-('洗衣液', '🧴', 20,  48, 1),
-('挂面礼包','🍜',30,  36, 2),
-('香皂套装','🛁', 25,  60, 3),
-('茶苗5株', '🌱',50,  20, 4),
-('运动水壶','⚽', 60,  15, 5),
-('运动背包','🎒',120,  8, 6);
+DROP TABLE IF EXISTS `crop_config`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `crop_config` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `crop_name` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '作物名称',
+  `planting_date` date DEFAULT NULL COMMENT '播种日期',
+  `notes` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '备注',
+  `is_active` tinyint(1) DEFAULT '1',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='村庄作物配置';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- ------------------------------------------------------------
--- 6. 兑换记录表
--- ------------------------------------------------------------
-CREATE TABLE exchange_records (
-  id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  villager_id INT UNSIGNED NOT NULL,
-  goods_id    INT UNSIGNED NOT NULL,
-  goods_name  VARCHAR(50)  NOT NULL,
-  points_cost INT UNSIGNED NOT NULL,
-  status      ENUM('pending','done','cancelled') NOT NULL DEFAULT 'pending',
-  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (villager_id) REFERENCES villagers(id),
-  FOREIGN KEY (goods_id)    REFERENCES goods(id)
-) COMMENT '兑换记录';
+--
+-- Table structure for table `exchange_records`
+--
 
--- ------------------------------------------------------------
--- 7. 公告表
--- ------------------------------------------------------------
-CREATE TABLE announcements (
-  id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  title       VARCHAR(100) NOT NULL,
-  content     TEXT         NOT NULL,
-  tag_type    ENUM('活动通知','体育活动','政策宣传','全村告示') NOT NULL DEFAULT '全村告示',
-  image_urls  TEXT         DEFAULT NULL COMMENT '图片URL JSON数组',
-  audio_url   VARCHAR(255) DEFAULT NULL COMMENT '音频文件URL',
-  audio_type  ENUM('record','tts') DEFAULT NULL COMMENT '音频类型',
-  created_by  INT UNSIGNED NOT NULL,
-  is_active   TINYINT(1)   NOT NULL DEFAULT 1,
-  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (created_by) REFERENCES admins(id)
-) COMMENT '公告表';
+DROP TABLE IF EXISTS `exchange_records`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `exchange_records` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `villager_id` int(10) unsigned NOT NULL,
+  `goods_id` int(10) unsigned NOT NULL,
+  `goods_name` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `points_cost` int(10) unsigned NOT NULL,
+  `status` enum('pending','done','cancelled') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `villager_id` (`villager_id`),
+  KEY `goods_id` (`goods_id`),
+  CONSTRAINT `exchange_records_ibfk_1` FOREIGN KEY (`villager_id`) REFERENCES `villagers` (`id`),
+  CONSTRAINT `exchange_records_ibfk_2` FOREIGN KEY (`goods_id`) REFERENCES `goods` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='兑换记录';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- ------------------------------------------------------------
--- 8. 系统配置表
--- ------------------------------------------------------------
-CREATE TABLE system_config (
-  cfg_key    VARCHAR(50)  NOT NULL PRIMARY KEY,
-  cfg_value  VARCHAR(255) NOT NULL,
-  updated_at DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) COMMENT '系统KV配置';
+--
+-- Table structure for table `farming_reports`
+--
 
--- ------------------------------------------------------------
--- 9. 签到活动表
--- ------------------------------------------------------------
-CREATE TABLE checkin_events (
-  id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  title          VARCHAR(100) NOT NULL COMMENT '签到活动名称',
-  score_event_id INT UNSIGNED DEFAULT NULL COMMENT '关联积分事件',
-  score_points   INT          NOT NULL DEFAULT 5 COMMENT '签到加分值',
-  qr_token       VARCHAR(32)  NOT NULL UNIQUE COMMENT '二维码唯一标识',
-  is_active      TINYINT(1)   NOT NULL DEFAULT 1,
-  created_by     INT UNSIGNED NOT NULL,
-  created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  expired_at     DATETIME     DEFAULT NULL COMMENT '签到截止时间'
-) COMMENT '签到活动';
+DROP TABLE IF EXISTS `farming_reports`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `farming_reports` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `report_date` date NOT NULL,
+  `weather` json DEFAULT NULL COMMENT '天气数据快照',
+  `soil_input` json DEFAULT NULL COMMENT '管理员土壤输入',
+  `suggestions` json DEFAULT NULL COMMENT '匹配建议列表',
+  `status` enum('draft','published') COLLATE utf8mb4_unicode_ci DEFAULT 'draft',
+  `created_by` int(10) unsigned DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `report_date` (`report_date`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='每日农事报告';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- ------------------------------------------------------------
--- 10. 签到记录表
--- ------------------------------------------------------------
-CREATE TABLE checkin_records (
-  id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  checkin_event_id INT UNSIGNED NOT NULL,
-  villager_id      INT UNSIGNED NOT NULL,
-  score_record_id  INT UNSIGNED DEFAULT NULL COMMENT '关联积分记录',
-  photo_url      VARCHAR(255) DEFAULT NULL COMMENT '签到现场照片',
-  created_at       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uk_ev_villager (checkin_event_id, villager_id)
-) COMMENT '签到记录';
+--
+-- Table structure for table `farming_rules`
+--
 
--- ------------------------------------------------------------
--- 11. 积分清零日志表
--- ------------------------------------------------------------
-CREATE TABLE reset_log (
-  id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  reset_year      INT UNSIGNED NOT NULL COMMENT '清零年份',
-  villagers_count INT UNSIGNED NOT NULL COMMENT '影响村民数',
-  triggered_by    ENUM('auto','manual') NOT NULL,
-  admin_id        INT UNSIGNED DEFAULT NULL COMMENT '手动触发者',
-  created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
-) COMMENT '年度清零日志';
+DROP TABLE IF EXISTS `farming_rules`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `farming_rules` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `title` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '建议标题',
+  `task_type` enum('plant','pest','weed','harvest','irrigate','other') COLLATE utf8mb4_unicode_ci DEFAULT 'other',
+  `conditions` json NOT NULL COMMENT '触发条件JSON',
+  `suggestion` text COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '农事建议内容',
+  `priority` int(11) DEFAULT '0',
+  `is_active` tinyint(1) DEFAULT '1',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='农事规则';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- ------------------------------------------------------------
--- 初始超管账户（密码：luoyu2026）
--- ------------------------------------------------------------
-INSERT INTO admins (username, password, name, role) VALUES
-('admin', '$2b$10$shihDNwnG/ZV0uyKqinYQeaGxe6I6INccmYjZgH/z.Azqyx9WVSDm', '系统管理员', 'super');
+--
+-- Table structure for table `feedback`
+--
+
+DROP TABLE IF EXISTS `feedback`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `feedback` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `villager_name` varchar(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '留言人姓名（可匿名）',
+  `content` text COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '反馈内容',
+  `is_read` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='村民反馈建议';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `goods`
+--
+
+DROP TABLE IF EXISTS `goods`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `goods` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `icon` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '?' COMMENT 'emoji图标',
+  `points_cost` int(10) unsigned NOT NULL COMMENT '兑换所需积分',
+  `stock` int(10) unsigned NOT NULL DEFAULT '0',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `sort_order` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='可兑换物资';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `reset_log`
+--
+
+DROP TABLE IF EXISTS `reset_log`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `reset_log` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `reset_year` int(10) unsigned NOT NULL COMMENT '清零年份',
+  `villagers_count` int(10) unsigned NOT NULL COMMENT '影响的村民数',
+  `triggered_by` enum('auto','manual') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `admin_id` int(10) unsigned DEFAULT NULL COMMENT '手动触发者',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='年度清零日志';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `score_events`
+--
+
+DROP TABLE IF EXISTS `score_events`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `score_events` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '事件名称',
+  `category` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '党建引领/体育特色/生态保护/公共参与/互帮互助/特殊贡献/扣分项目',
+  `points` int(11) NOT NULL COMMENT '正数=加分，负数=扣分',
+  `verify_method` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '验证方式说明',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `sort_order` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='积分事件配置';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `score_records`
+--
+
+DROP TABLE IF EXISTS `score_records`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `score_records` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `villager_id` int(10) unsigned NOT NULL,
+  `event_id` int(10) unsigned DEFAULT NULL,
+  `event_name` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '冗余存储，防止事件改名后记录失真',
+  `points` int(11) NOT NULL COMMENT '实际分值（含正负）',
+  `show_in_feed` tinyint(1) NOT NULL DEFAULT '1' COMMENT '是否在村民端动态/明细中展示',
+  `description` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '情况文字说明',
+  `image_urls` json DEFAULT NULL COMMENT '图片URL数组，存OSS路径',
+  `submitted_by` int(10) unsigned NOT NULL COMMENT '录入人admin.id',
+  `status` enum('pending','approved','rejected') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'approved' COMMENT 'village_admin录入直接approved；group_leader录入为pending',
+  `reviewed_by` int(10) unsigned DEFAULT NULL COMMENT '审核人admin.id',
+  `reviewed_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `is_revoked` tinyint(1) NOT NULL DEFAULT '0',
+  `revoked_by` int(10) unsigned DEFAULT NULL,
+  `revoked_at` datetime DEFAULT NULL,
+  `revoke_reason` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_villager` (`villager_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_created_at` (`created_at`),
+  KEY `event_id` (`event_id`),
+  CONSTRAINT `score_records_ibfk_1` FOREIGN KEY (`villager_id`) REFERENCES `villagers` (`id`),
+  CONSTRAINT `score_records_ibfk_2` FOREIGN KEY (`event_id`) REFERENCES `score_events` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='积分变动记录';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `system_config`
+--
+
+DROP TABLE IF EXISTS `system_config`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `system_config` (
+  `cfg_key` varchar(50) NOT NULL,
+  `cfg_value` varchar(255) NOT NULL,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`cfg_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `villagers`
+--
+
+DROP TABLE IF EXISTS `villagers`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `villagers` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '姓名',
+  `gender` enum('男','女') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `group_no` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '村民小组，如：第一组',
+  `id_last4` char(4) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '身份证后4位',
+  `first_login_bonus` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否已领取首次登录积分',
+  `total_score` int(11) NOT NULL DEFAULT '0' COMMENT '当前累计积分',
+  `honor_score` int(11) NOT NULL DEFAULT '0',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_group` (`group_no`),
+  KEY `idx_name` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=1757 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='村民信息';
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2026-06-17 10:20:49
