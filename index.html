@@ -820,6 +820,14 @@ let currentVillager = null;
 let uploadedPhotos = [];
 
 
+
+// ── WeChat swipe / browser back ──
+window.addEventListener('popstate', function(e) {
+  if (e.state && e.state.tab) {
+    pubTab(e.state.tab);
+  }
+});
+
 // ── Public tab navigation ──
 function pubTab(name) {
   // Hide login screen
@@ -829,15 +837,22 @@ function pubTab(name) {
   document.getElementById('pubNav').style.display = 'flex';
   document.getElementById('vNav').style.display = 'none';
   document.getElementById('aNav').style.display = 'none';
+  // Keep header visible for logged-in users
+  var isLoggedIn = !!(villagerInfo || (token && adminInfo));
+  document.getElementById('appHeader').style.display = isLoggedIn ? 'block' : 'none';
+  document.getElementById('pubBanner').style.display = isLoggedIn ? 'none' : 'flex';
   // Update pubNav
   document.querySelectorAll('#pubNav .nav-item').forEach(function(i){i.classList.remove('active');});
   var ni = document.querySelector('#pubNav [data-t="'+name+'"]');
   if (ni) ni.classList.add('active');
-  // Show pubBanner if not logged in
-  var isLoggedIn = !!(villagerInfo || (token && adminInfo));
-  document.getElementById('pubBanner').style.display = isLoggedIn ? 'none' : 'flex';
+  // (pubBanner already set above)
+  // Browser history for WeChat swipe-back
+  var tabTitles = {notice:'村务公告',rank:'积分排行',feed:'积分动态',rules:'积分细则',my:'我的'};
+  var tabState = {tab: name, title: tabTitles[name] || name};
+  try { history.pushState(tabState, tabTitles[name] || name); } catch(e) {}
+
   // Navigate
-  if (name==='my') { if (villagerInfo || (token && adminInfo)) { vTab('home'); return; } showLogin(); return; }
+  if (name==='my') { if (isLoggedIn) { vTab('home'); return; } showLogin(); return; }
   if (name==='notice') loadNotice();
   else if (name==='rank') loadRank();
   else if (name==='feed') loadPublicFeed();
@@ -1221,6 +1236,7 @@ function setRole(r) {
 
 // ── Villager tabs ──
 function vTab(t) {
+  try { history.pushState({tab: t, title: t}, t); } catch(e) {}
   document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.style.display='none';});
   const el = document.getElementById('sv-'+t);
   if (el) { el.style.display='flex'; el.classList.add('active'); }
