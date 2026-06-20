@@ -1092,8 +1092,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ── 超时自动退出（30分钟无操作）──
 var _logoutTimer = null;
-var LOGOUT_TIMEOUT = 30 * 60 * 1000;
+var LOGOUT_TIMEOUT = 10 * 60 * 1000;
+(function(){
+  var la = parseInt(localStorage.getItem(_lastActiveKey)||'0');
+  if (la && (Date.now()-la > LOGOUT_TIMEOUT) && (villagerInfo||token)) {
+    if (villagerInfo) { villagerInfo=null; localStorage.removeItem('luoyu_villager'); }
+    if (token) { token=''; adminInfo=null; localStorage.removeItem('luoyu_token'); localStorage.removeItem('luoyu_admin'); }
+    localStorage.removeItem(_lastActiveKey);
+  }
+})(); var _lastActiveKey = "luoyu_last_active";
 function resetLogoutTimer() {
+  localStorage.setItem(_lastActiveKey, Date.now());
   if (_logoutTimer) clearTimeout(_logoutTimer);
   _logoutTimer = setTimeout(function() {
     if (villagerInfo || (token && adminInfo)) doLogout();
@@ -1103,6 +1112,7 @@ document.addEventListener('click', resetLogoutTimer);
 document.addEventListener('touchstart', resetLogoutTimer);
 document.addEventListener('keydown', resetLogoutTimer);
 resetLogoutTimer();
+  // heartbeat in resetLogoutTimer
 
 function doLogout() {
   token = ''; adminInfo = null; villagerInfo = null;
