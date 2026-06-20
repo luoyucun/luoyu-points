@@ -924,7 +924,7 @@ async function doVillagerLogin() {
     }).then(r=>r.json());
     if (res.code === 0) {
       villagerInfo = res.data.villager;
-      if (res.first_login) { showToast('欢迎您，我们共建罗峪家园。+'20分！'); }
+      if (res.first_login) { showToast('欢迎您，我们共建罗峪家园！+20分'); }
       localStorage.setItem('luoyu_villager', JSON.stringify(villagerInfo));
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('pubBanner').style.display = 'none';
