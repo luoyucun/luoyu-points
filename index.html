@@ -832,6 +832,8 @@ window.addEventListener('popstate', function(e) {
 function pubTab(name) {
   // Hide login screen
   document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('pubBanner').style.display = 'none';
+      document.getElementById('appHeader').style.display = 'block';
   document.getElementById('mainApp').style.display = 'block';
   // Show pubNav, hide vNav/aNav
   document.getElementById('pubNav').style.display = 'flex';
@@ -922,8 +924,11 @@ async function doVillagerLogin() {
     }).then(r=>r.json());
     if (res.code === 0) {
       villagerInfo = res.data.villager;
+      if (res.first_login) { showToast('欢迎您，我们共建罗峪家园。+'20分！'); }
       localStorage.setItem('luoyu_villager', JSON.stringify(villagerInfo));
       document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('pubBanner').style.display = 'none';
+      document.getElementById('appHeader').style.display = 'block';
       document.getElementById('mainApp').style.display = 'block';
       initVillagerApp();
     } else {
@@ -955,6 +960,8 @@ async function doLogin() {
       localStorage.setItem('luoyu_token', token);
       localStorage.setItem('luoyu_admin', JSON.stringify(adminInfo));
       document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('pubBanner').style.display = 'none';
+      document.getElementById('appHeader').style.display = 'block';
       document.getElementById('mainApp').style.display = 'block';
       initApp();
     } else {
@@ -973,6 +980,8 @@ async function doLogin() {
   var checkinToken = params.get('checkin');
   if (checkinToken) {
     document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('pubBanner').style.display = 'none';
+      document.getElementById('appHeader').style.display = 'block';
     document.getElementById('checkinScreen').style.display = 'flex';
     loadCheckinInfo(checkinToken);
   }
@@ -1122,6 +1131,8 @@ function doLogout() {
   localStorage.removeItem(_lastActiveKey);
   document.getElementById('mainApp').style.display = 'block';
   document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('pubBanner').style.display = 'none';
+      document.getElementById('appHeader').style.display = 'block';
   document.getElementById('vNav').style.display = 'none';
   document.getElementById('aNav').style.display = 'none';
   document.getElementById('appHeader').style.display = 'none'; document.getElementById('pubBanner').style.display = 'flex';
@@ -1135,6 +1146,8 @@ function doLogout() {
 // ── Query screen ──
 function showQueryScreen() {
   document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('pubBanner').style.display = 'none';
+      document.getElementById('appHeader').style.display = 'block';
   document.getElementById('queryScreen').style.display = 'flex';
   document.getElementById('queryResult').innerHTML = '';
   document.getElementById('queryErr').textContent = '';

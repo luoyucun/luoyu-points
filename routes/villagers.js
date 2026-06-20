@@ -22,22 +22,22 @@ router.post('/login', async (req, res) => {
 
   const villager = rows[0];
 
-  // 首次登录赠送10基础分
+  // 首次登录赠送20基础分
   if (!villager.first_login_bonus) {
     const conn = await db.getConnection();
     try {
       await conn.beginTransaction();
       await conn.execute(
         'INSERT INTO score_records (villager_id, event_id, event_name, points, show_in_feed, submitted_by, status) VALUES (?,NULL,?,?,0,1,"approved")',
-        [villager.id, '首次登录基础积分', 10]
+        [villager.id, '首次登录基础积分', 20]
       );
       await conn.execute(
         'UPDATE villagers SET total_score=total_score+10, honor_score=honor_score+10, first_login_bonus=1 WHERE id=?',
         [villager.id]
       );
       await conn.commit();
-      villager.total_score += 10;
-      villager.honor_score += 10;
+      villager.total_score += 20;
+      villager.honor_score += 20;
       villager.first_login_bonus = 1;
     } catch(e) { await conn.rollback(); throw e; }
     finally { conn.release(); }
@@ -50,7 +50,7 @@ router.post('/login', async (req, res) => {
   );
   villager.group_rank = rankRows[0].rank_no;
 
-  res.json({ code: 0, message: '登录成功', data: { villager } });
+  res.json({ code: 0, message: '登录成功', first_login: true, data: { villager } });
 });
 
 // GET /api/villagers/query — 村民公开查询（无需登录，姓名+身份证后4位）
