@@ -1109,6 +1109,7 @@ function doLogout() {
   localStorage.removeItem('luoyu_token');
   localStorage.removeItem('luoyu_admin');
   localStorage.removeItem('luoyu_villager');
+  localStorage.removeItem(_lastActiveKey);
   document.getElementById('mainApp').style.display = 'block';
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('vNav').style.display = 'none';
