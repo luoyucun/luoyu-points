@@ -167,7 +167,7 @@ router.patch('/admins/:id/reset-password', authMiddleware, requireSuper, require
 }));
 
 // GET /api/admin/announcements（后台，含已撤回）
-router.get('/announcements', authMiddleware, requireSuper, wrap(async (req, res) => {
+router.get('/announcements', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
   const [rows] = await db.execute(
     'SELECT id,title,content,tag_type,image_urls,audio_url,audio_type,is_active,created_at FROM announcements ORDER BY created_at DESC'
   );

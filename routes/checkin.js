@@ -130,7 +130,7 @@ router.post('/:token/checkin', checkinUpload.single('photo'), wrap(async (req, r
 }));
 
 // GET /api/checkin/list — 签到活动列表（村干部+）
-router.get('/list', authMiddleware, requireVillageAdmin, requireEdit, wrap(async (req, res) => {
+router.get('/list', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
   const [rows] = await db.execute(
     'SELECT ce.id, ce.title, ce.score_points, ce.qr_token, ce.is_active, ce.created_at, ce.expired_at, ' +
     '(SELECT COUNT(*) FROM checkin_records cr WHERE cr.checkin_event_id=ce.id) AS checkin_count ' +
@@ -140,7 +140,7 @@ router.get('/list', authMiddleware, requireVillageAdmin, requireEdit, wrap(async
 }));
 
 // GET /api/checkin/:id/records — 查看某活动的签到名单（村干部+）
-router.get('/:id/records', authMiddleware, requireVillageAdmin, requireEdit, wrap(async (req, res) => {
+router.get('/:id/records', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
   const [rows] = await db.execute(
     'SELECT cr.id, cr.created_at, cr.photo_url, v.name AS villager_name, v.group_no ' +
     'FROM checkin_records cr ' +

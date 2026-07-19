@@ -18,7 +18,7 @@ function seniverseSign(params, secret) {
 }
 
 // GET /api/farming/weather — 心知天气
-router.get('/weather', authMiddleware, requireVillageAdmin, requireEdit, wrap(async (req, res) => {
+router.get('/weather', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
   var now = Date.now();
   if (weatherCache && (now - weatherCacheTime) < WEATHER_TTL) {
     return res.json({ code: 0, data: weatherCache, cached: true });
@@ -99,7 +99,7 @@ router.get('/weather', authMiddleware, requireVillageAdmin, requireEdit, wrap(as
 }));
 
 // ── 规则 CRUD ──
-router.get('/rules', authMiddleware, requireVillageAdmin, requireEdit, wrap(async (req, res) => {
+router.get('/rules', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
   var [rows] = await db.execute('SELECT id,title,task_type,conditions,suggestion,priority,is_active FROM farming_rules ORDER BY priority DESC');
   rows.forEach(function(r) { try { r.conditions = JSON.parse(r.conditions); } catch(e) {} });
   res.json({ code: 0, data: rows });
@@ -127,7 +127,7 @@ router.patch('/rules/:id/toggle', authMiddleware, requireVillageAdmin, requireEd
 
 
 // ── 作物配置 CRUD ──
-router.get('/crops', authMiddleware, requireVillageAdmin, requireEdit, wrap(async (req, res) => {
+router.get('/crops', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
   var [rows] = await db.execute('SELECT id,crop_name,planting_date,notes,is_active FROM crop_config ORDER BY id');
   rows.forEach(function(r) { if (r.planting_date) r.planting_date = r.planting_date.toISOString().slice(0,10); });
   res.json({ code: 0, data: rows });

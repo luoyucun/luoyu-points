@@ -38,8 +38,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST — 仅超管，支持图片+录音
-router.post('/', authMiddleware, requireSuper, requireEdit,
-  upload.fields([{ name: 'images', maxCount: 9 }, { name: 'audio', maxCount: 1 }]),
+router.post('/', authMiddleware, requireSuper, requireEdit, requireEdit, upload.fields([{ name: 'images', maxCount: 9 }, { name: 'audio', maxCount: 1 }]),
   async (req, res) => {
     const { title, content, tag_type, audio_type } = req.body;
     if (!title || !content) return res.status(400).json({ code: 400, message: '标题和内容必填' });

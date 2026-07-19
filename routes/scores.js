@@ -103,7 +103,7 @@ router.get('/events/public', async (req, res) => {
 });
 
 // PATCH /api/scores/:id/review — 审核（同步更新双积分）
-router.patch('/:id/review', authMiddleware, requireVillageAdmin, async (req, res) => {
+router.patch('/:id/review', authMiddleware, requireVillageAdmin, requireEdit, async (req, res) => {
   const approved = req.body.approved === true || req.body.approved === 'true';
   const status = approved ? 'approved' : 'rejected';
   const [rows] = await db.execute('SELECT * FROM score_records WHERE id=?', [req.params.id]);
