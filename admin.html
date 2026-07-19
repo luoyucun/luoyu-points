@@ -1182,7 +1182,7 @@ async function doLogin() {
     body: JSON.stringify({username, password})
   }).then(r=>r.json());
   if (res.code !== 0) { err.textContent = res.message || '登录失败'; return; }
-  if (!['super','village_admin'].includes(res.data.admin.role)) {
+  if (!['super','village_admin','viewer'].includes(res.data.admin.role)) {
     err.textContent = '权限不足，此后台仅限管理员和村干部访问'; return;
   }
   token = res.data.token;
