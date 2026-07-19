@@ -1,7 +1,7 @@
 // routes/villagers.js — 村民管理
 const router = require('express').Router();
 const db = require('../config/db');
-const { authMiddleware, requireVillageAdmin, requireSuper } = require('../middleware/auth');
+const { authMiddleware, requireVillageAdmin, requireSuper, requireEdit } = require('../middleware/auth');
 
 // ⚠️ 具名路由必须在 /:id 之前，否则会被当作 id 参数匹配
 

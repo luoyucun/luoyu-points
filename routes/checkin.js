@@ -5,7 +5,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const db = require('../config/db');
-const { authMiddleware, requireVillageAdmin } = require('../middleware/auth');
+const { authMiddleware, requireVillageAdmin, requireEdit } = require('../middleware/auth');
 
 const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
 
@@ -28,7 +28,7 @@ const checkinUpload = multer({
 });
 
 // POST /api/checkin/create — 创建签到活动
-router.post('/create', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
+router.post('/create', authMiddleware, requireVillageAdmin, requireEdit, wrap(async (req, res) => {
   const { title, score_event_id, score_points } = req.body;
   if (!title || !title.trim()) return res.status(400).json({ code: 400, message: '活动标题不能为空' });
   const pts = parseInt(score_points);
@@ -130,7 +130,7 @@ router.post('/:token/checkin', checkinUpload.single('photo'), wrap(async (req, r
 }));
 
 // GET /api/checkin/list — 签到活动列表（村干部+）
-router.get('/list', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
+router.get('/list', authMiddleware, requireVillageAdmin, requireEdit, wrap(async (req, res) => {
   const [rows] = await db.execute(
     'SELECT ce.id, ce.title, ce.score_points, ce.qr_token, ce.is_active, ce.created_at, ce.expired_at, ' +
     '(SELECT COUNT(*) FROM checkin_records cr WHERE cr.checkin_event_id=ce.id) AS checkin_count ' +
@@ -140,7 +140,7 @@ router.get('/list', authMiddleware, requireVillageAdmin, wrap(async (req, res) =
 }));
 
 // GET /api/checkin/:id/records — 查看某活动的签到名单（村干部+）
-router.get('/:id/records', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
+router.get('/:id/records', authMiddleware, requireVillageAdmin, requireEdit, wrap(async (req, res) => {
   const [rows] = await db.execute(
     'SELECT cr.id, cr.created_at, cr.photo_url, v.name AS villager_name, v.group_no ' +
     'FROM checkin_records cr ' +
@@ -152,7 +152,7 @@ router.get('/:id/records', authMiddleware, requireVillageAdmin, wrap(async (req,
 }));
 
 // PATCH /api/checkin/:id/close — 关闭签到活动（村干部+）
-router.patch('/:id/close', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
+router.patch('/:id/close', authMiddleware, requireVillageAdmin, requireEdit, wrap(async (req, res) => {
   await db.execute('UPDATE checkin_events SET is_active=0 WHERE id=?', [req.params.id]);
   res.json({ code: 0, message: '签到活动已关闭' });
 }));

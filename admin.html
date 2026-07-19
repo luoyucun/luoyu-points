@@ -63,6 +63,23 @@ body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg)
 .topbar-sub{font-size:12px;color:var(--text3);}
 .topbar-actions{margin-left:auto;display:flex;gap:8px;}
 
+
+/* ── 演示模式横幅 ── */
+.demo-banner{display:none;background:linear-gradient(90deg,#1a6fa8,#2196f3);color:white;padding:6px 16px;font-size:13px;text-align:center;}
+.demo-banner.show{display:block;}
+.viewer-mode .btn-primary:not(.viewer-allow),
+.viewer-mode .btn-danger:not(.viewer-allow),
+.viewer-mode .td-ops .btn-danger{display:none!important;}
+.viewer-mode .td-ops .btn-outline[onclick*="edit"],
+.viewer-mode .td-ops .btn-outline[onclick*="Edit"],
+.viewer-mode .td-ops .btn-outline[onclick*="delete"],
+.viewer-mode .td-ops .btn-outline[onclick*="Delete"],
+.viewer-mode .td-ops .btn-outline[onclick*="revoke"],
+.viewer-mode .td-ops .btn-outline[onclick*="Revoke"],
+.viewer-mode .card-hd .actions .btn-primary{display:none!important;}
+.viewer-mode #submitBtn{display:none!important;}
+.viewer-mode #publishBtn{display:none!important;}
+
 /* ── 页面内容 ── */
 .page{padding:24px;display:none;}
 .page.active{display:block;}
@@ -337,6 +354,7 @@ tr:last-child td{border-bottom:none;}
     <div class="sb-user">
       <div class="sb-user-av" id="userAv">管</div>
       <div id="userName">管理员</div>
+      <div style="font-size:10px;opacity:.6;" id="userRole"></div>
       <div class="sb-logout" onclick="doLogout()" title="退出登录"><i class="ti ti-logout"></i></div>
     </div>
   </div>
@@ -1188,8 +1206,13 @@ function initApp() {
   document.getElementById('loginPage').style.display = 'none';
   document.getElementById('sidebar').style.display = 'flex';
   document.getElementById('mainArea').style.display = 'flex';
-  
+  // Viewer mode
+  if (adminInfo.role === 'viewer') {
+    document.body.classList.add('viewer-mode');
+    document.getElementById('demoBanner').classList.add('show');
+  }
   document.getElementById('userName').textContent = adminInfo.name;
+  document.getElementById('userRole').textContent = {super:'超管',village_admin:'村干部',group_leader:'组长',viewer:'仅查看'}[adminInfo.role]||'';
   document.getElementById('userAv').textContent = adminInfo.name[0];
   document.getElementById('pageTime').textContent = new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric'});
   loadGroups();

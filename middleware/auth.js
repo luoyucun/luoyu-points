@@ -15,7 +15,7 @@ function authMiddleware(req, res, next) {
 }
 
 function requireVillageAdmin(req, res, next) {
-  if (['super', 'village_admin'].includes(req.admin.role)) return next();
+  if (['super', 'village_admin'].includes(req.admin.role) || req.admin.role === 'viewer') return next();
   return res.status(403).json({ code: 403, message: '权限不足，需要村干部以上角色' });
 }
 
@@ -24,4 +24,9 @@ function requireSuper(req, res, next) {
   return res.status(403).json({ code: 403, message: '权限不足，需要超级管理员' });
 }
 
-module.exports = { authMiddleware, requireVillageAdmin, requireSuper };
+function requireEdit(req, res, next) {
+  if (req.admin.role === 'viewer') return res.status(403).json({ code: 403, message: '演示账号仅可查看，不支持编辑操作' });
+  return next();
+}
+
+module.exports = { authMiddleware, requireVillageAdmin, requireSuper, requireEdit };

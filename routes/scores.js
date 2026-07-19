@@ -4,7 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const db = require('../config/db');
-const { authMiddleware, requireVillageAdmin } = require('../middleware/auth');
+const { authMiddleware, requireVillageAdmin, requireEdit } = require('../middleware/auth');
 
 const UPLOAD_DIR = path.join(__dirname, '../uploads');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -128,7 +128,7 @@ router.patch('/:id/review', authMiddleware, requireVillageAdmin, async (req, res
 });
 
 // POST /api/scores — 提交积分（同步更新双积分）
-router.post('/', authMiddleware, upload.array('images', 4), async (req, res) => {
+router.post('/', authMiddleware, requireEdit, upload.array('images', 4), async (req, res) => {
   const { villager_id, event_id, description, custom, custom_points, custom_name } = req.body;
   if (!villager_id) return res.status(400).json({ code: 400, message: 'villager_id 必填' });
 

@@ -1,7 +1,7 @@
 // routes/admin.js
 const router = require('express').Router();
 const db = require('../config/db');
-const { authMiddleware, requireVillageAdmin, requireSuper } = require('../middleware/auth');
+const { authMiddleware, requireVillageAdmin, requireSuper, requireEdit } = require('../middleware/auth');
 
 // Express 4 不自动捕获 async 路由异常
 // wrap 确保任何 await 抛出的错误都传给全局错误处理器，返回 500 而不是挂起
@@ -31,7 +31,7 @@ router.get('/dashboard', authMiddleware, requireVillageAdmin, wrap(async (req, r
 }));
 
 // PATCH /api/admin/scores/:id/revoke
-router.patch('/scores/:id/revoke', authMiddleware, requireSuper, wrap(async (req, res) => {
+router.patch('/scores/:id/revoke', authMiddleware, requireSuper, requireEdit, wrap(async (req, res) => {
   const { reason } = req.body;
   if (!reason || !reason.trim()) return res.status(400).json({ code: 400, message: '撤回原因不能为空' });
   const [rows] = await db.execute('SELECT * FROM score_records WHERE id=?', [req.params.id]);
@@ -58,7 +58,7 @@ router.patch('/scores/:id/revoke', authMiddleware, requireSuper, wrap(async (req
 }));
 
 // POST /api/admin/goods
-router.post('/goods', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
+router.post('/goods', authMiddleware, requireVillageAdmin, requireEdit, wrap(async (req, res) => {
   const { name, icon, points_cost, stock } = req.body;
   if (!name || !points_cost) return res.status(400).json({ code: 400, message: '名称和积分为必填' });
   const [rows] = await db.execute('SELECT MAX(sort_order) AS max_order FROM goods');
@@ -71,7 +71,7 @@ router.post('/goods', authMiddleware, requireVillageAdmin, wrap(async (req, res)
 }));
 
 // PUT /api/admin/goods/:id
-router.put('/goods/:id', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
+router.put('/goods/:id', authMiddleware, requireVillageAdmin, requireEdit, wrap(async (req, res) => {
   const { name, icon, points_cost, stock } = req.body;
   if (!name || !points_cost) return res.status(400).json({ code: 400, message: '名称和积分为必填' });
   await db.execute(
@@ -82,7 +82,7 @@ router.put('/goods/:id', authMiddleware, requireVillageAdmin, wrap(async (req, r
 }));
 
 // PATCH /api/admin/goods/:id/stock
-router.patch('/goods/:id/stock', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
+router.patch('/goods/:id/stock', authMiddleware, requireVillageAdmin, requireEdit, wrap(async (req, res) => {
   const { stock } = req.body;
   if (stock === undefined || stock < 0) return res.status(400).json({ code: 400, message: '库存数量不能为负数' });
   await db.execute('UPDATE goods SET stock=? WHERE id=?', [parseInt(stock), req.params.id]);
@@ -110,7 +110,7 @@ router.get('/exchange/records', authMiddleware, requireVillageAdmin, wrap(async 
 }));
 
 // PATCH /api/admin/exchange/:id/deliver
-router.patch('/exchange/:id/deliver', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
+router.patch('/exchange/:id/deliver', authMiddleware, requireVillageAdmin, requireEdit, wrap(async (req, res) => {
   const [result] = await db.execute(
     'UPDATE exchange_records SET status=? WHERE id=?', ['done', req.params.id]
   );
@@ -156,7 +156,7 @@ router.get('/export/scores', authMiddleware, requireVillageAdmin, wrap(async (re
 }));
 
 // PATCH /api/admin/admins/:id/reset-password
-router.patch('/admins/:id/reset-password', authMiddleware, requireSuper, wrap(async (req, res) => {
+router.patch('/admins/:id/reset-password', authMiddleware, requireSuper, requireEdit, wrap(async (req, res) => {
   const { new_password } = req.body;
   if (!new_password || new_password.length < 8)
     return res.status(400).json({ code: 400, message: '密码不能少于8位' });
@@ -221,7 +221,7 @@ const noticeUpload = multer({
 });
 
 // POST /api/admin/announcements（发布公告）
-router.post('/announcements', authMiddleware, requireSuper,
+router.post('/announcements', authMiddleware, requireSuper, requireEdit,
   noticeUpload.fields([{ name: 'images', maxCount: 9 }, { name: 'audio', maxCount: 1 }]),
   wrap(async (req, res) => {
     const { title, content, tag_type, audio_type } = req.body;
@@ -247,19 +247,19 @@ router.post('/announcements', authMiddleware, requireSuper,
 );
 
 // PATCH /api/admin/announcements/:id/revoke — 撤回公告
-router.patch('/announcements/:id/revoke', authMiddleware, requireSuper, wrap(async (req, res) => {
+router.patch('/announcements/:id/revoke', authMiddleware, requireSuper, requireEdit, wrap(async (req, res) => {
   await db.execute('UPDATE announcements SET is_active=0 WHERE id=?', [req.params.id]);
   res.json({ code: 0, message: '公告已撤回' });
 }));
 
 // DELETE /api/admin/announcements/:id — 永久删除
-router.delete('/announcements/:id', authMiddleware, requireSuper, wrap(async (req, res) => {
+router.delete('/announcements/:id', authMiddleware, requireSuper, requireEdit, wrap(async (req, res) => {
   await db.execute('DELETE FROM announcements WHERE id=?', [req.params.id]);
   res.json({ code: 0, message: '公告已删除' });
 }));
 
 // PUT /api/admin/announcements/:id — 编辑公告
-router.put('/announcements/:id', authMiddleware, requireSuper, wrap(async (req, res) => {
+router.put('/announcements/:id', authMiddleware, requireSuper, requireEdit, wrap(async (req, res) => {
   const { title, content, tag_type } = req.body;
   if (!title || !content) return res.status(400).json({ code: 400, message: '标题和内容必填' });
   await db.execute('UPDATE announcements SET title=?, content=?, tag_type=? WHERE id=?',
@@ -277,7 +277,7 @@ router.get('/exchange/switch', wrap(async (req, res) => {
 }));
 
 // PATCH /api/admin/exchange/switch — 切换兑换开关（仅超管）
-router.patch('/exchange/switch', authMiddleware, requireSuper, wrap(async (req, res) => {
+router.patch('/exchange/switch', authMiddleware, requireSuper, requireEdit, wrap(async (req, res) => {
   const { open } = req.body;
   const val = open ? '1' : '0';
   await db.execute(
@@ -298,7 +298,7 @@ router.get('/events', authMiddleware, requireVillageAdmin, wrap(async (req, res)
 }));
 
 // POST /api/admin/events — 新增积分事件
-router.post('/events', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
+router.post('/events', authMiddleware, requireVillageAdmin, requireEdit, wrap(async (req, res) => {
   const { name, category, points, verify_method } = req.body;
   if (!name || !name.trim()) return res.status(400).json({ code: 400, message: '事件名称不能为空' });
   if (!category || !category.trim()) return res.status(400).json({ code: 400, message: '类别不能为空' });
@@ -315,7 +315,7 @@ router.post('/events', authMiddleware, requireVillageAdmin, wrap(async (req, res
 }));
 
 // PUT /api/admin/events/:id — 编辑积分事件
-router.put('/events/:id', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
+router.put('/events/:id', authMiddleware, requireVillageAdmin, requireEdit, wrap(async (req, res) => {
   const { name, category, points, verify_method } = req.body;
   if (!name || !name.trim()) return res.status(400).json({ code: 400, message: '事件名称不能为空' });
   if (!category || !category.trim()) return res.status(400).json({ code: 400, message: '类别不能为空' });
@@ -332,7 +332,7 @@ router.put('/events/:id', authMiddleware, requireVillageAdmin, wrap(async (req, 
 }));
 
 // PATCH /api/admin/events/:id/toggle — 启用/禁用积分事件
-router.patch('/events/:id/toggle', authMiddleware, requireVillageAdmin, wrap(async (req, res) => {
+router.patch('/events/:id/toggle', authMiddleware, requireVillageAdmin, requireEdit, wrap(async (req, res) => {
   const { is_active } = req.body;
   const [rows] = await db.execute('SELECT id FROM score_events WHERE id=?', [req.params.id]);
   if (!rows.length) return res.status(404).json({ code: 404, message: '积分事件不存在' });
@@ -414,7 +414,7 @@ router.post('/scores/batch', authMiddleware, requireVillageAdmin, upload.array('
 
 // ── 年度积分清零 ──
 // POST /api/admin/scores/reset — 手动触发清零（仅超管）
-router.post('/scores/reset', authMiddleware, requireSuper, wrap(async (req, res) => {
+router.post('/scores/reset', authMiddleware, requireSuper, requireEdit, wrap(async (req, res) => {
   const currentYear = new Date().getFullYear();
   const conn = await db.getConnection();
   try {
@@ -452,7 +452,7 @@ let villageConfig = { village_name: '罗峪村', village_short: '罗峪', villag
   } catch(e) {}
 })();
 router.get('/village-config', wrap(async (req, res) => { res.json({ code: 0, data: villageConfig }); }));
-router.put('/village-config', authMiddleware, requireSuper, wrap(async (req, res) => {
+router.put('/village-config', authMiddleware, requireSuper, requireEdit, wrap(async (req, res) => {
   const { village_name, village_short, village_location } = req.body;
   if (village_name) { await db.execute("INSERT INTO system_config (cfg_key,cfg_value) VALUES ('village_name',?) ON DUPLICATE KEY UPDATE cfg_value=?", [village_name.trim(), village_name.trim()]); villageConfig.village_name = village_name.trim(); }
   if (village_short) { await db.execute("INSERT INTO system_config (cfg_key,cfg_value) VALUES ('village_short',?) ON DUPLICATE KEY UPDATE cfg_value=?", [village_short.trim(), village_short.trim()]); villageConfig.village_short = village_short.trim(); }

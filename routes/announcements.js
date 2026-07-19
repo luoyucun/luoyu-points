@@ -4,7 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const db = require('../config/db');
-const { authMiddleware, requireSuper } = require('../middleware/auth');
+const { authMiddleware, requireSuper, requireEdit } = require('../middleware/auth');
 
 // 上传目录
 const NOTICE_DIR = path.join(__dirname, '../uploads/notices');
@@ -38,7 +38,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST — 仅超管，支持图片+录音
-router.post('/', authMiddleware, requireSuper,
+router.post('/', authMiddleware, requireSuper, requireEdit,
   upload.fields([{ name: 'images', maxCount: 9 }, { name: 'audio', maxCount: 1 }]),
   async (req, res) => {
     const { title, content, tag_type, audio_type } = req.body;
@@ -69,7 +69,7 @@ router.post('/', authMiddleware, requireSuper,
 );
 
 // DELETE — 仅超管
-router.delete('/:id', authMiddleware, requireSuper, async (req, res) => {
+router.delete('/:id', authMiddleware, requireSuper, requireEdit, async (req, res) => {
   await db.execute('UPDATE announcements SET is_active=0 WHERE id=?', [req.params.id]);
   res.json({ code: 0, message: '公告已撤回' });
 });
