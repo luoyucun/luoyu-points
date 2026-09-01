@@ -1012,17 +1012,43 @@ async function loadCheckinInfo(token) {
 
 var checkinPhotoFile = null;
 
+// 图片压缩：手机照片太大(10MB+)，压缩到 ~800KB 再上传
+function compressImage(file, maxW, quality, callback) {
+  var img = new Image();
+  var url = URL.createObjectURL(file);
+  img.onload = function() {
+    var w = img.width, h = img.height;
+    if (w > maxW) { h = h * maxW / w; w = maxW; }
+    var canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    URL.revokeObjectURL(url);
+    canvas.toBlob(function(blob) {
+      callback(blob);
+    }, 'image/jpeg', quality);
+  };
+  img.src = url;
+}
+
 function previewCheckinPhoto(input) {
   if (input.files && input.files[0]) {
-    checkinPhotoFile = input.files[0];
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      document.getElementById('ciPhotoPreview').src = e.target.result;
-      document.getElementById('ciPhotoPreview').style.display = 'block';
-      document.getElementById('ciPhotoPlaceholder').style.display = 'none';
-      document.getElementById('ciRetakeBtn').style.display = 'block';
-    };
-    reader.readAsDataURL(input.files[0]);
+    var rawFile = input.files[0];
+    // 压缩：最大1280px，质量0.7（若压缩后反而更大则用原图）
+    compressImage(rawFile, 1280, 0.7, function(blob) {
+      if (!blob || blob.size >= rawFile.size) {
+        checkinPhotoFile = rawFile;  // 压缩无益，用原图
+      } else {
+        checkinPhotoFile = new File([blob], 'checkin.jpg', { type: 'image/jpeg' });
+      }
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('ciPhotoPreview').src = e.target.result;
+        document.getElementById('ciPhotoPreview').style.display = 'block';
+        document.getElementById('ciPhotoPlaceholder').style.display = 'none';
+        document.getElementById('ciRetakeBtn').style.display = 'block';
+      };
+      reader.readAsDataURL(checkinPhotoFile);
+    });
   }
 }
 

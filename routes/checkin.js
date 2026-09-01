@@ -20,7 +20,7 @@ const checkinUpload = multer({
       cb(null, 'checkin_' + Date.now() + '_' + Math.random().toString(36).slice(2,6) + ext);
     }
   }),
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 15 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = ['image/jpeg','image/png','image/webp','image/gif'];
     cb(null, allowed.includes(file.mimetype));
