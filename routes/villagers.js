@@ -6,7 +6,7 @@ const { authMiddleware, requireVillageAdmin, requireSuper, requireEdit } = requi
 // ⚠️ 具名路由必须在 /:id 之前，否则会被当作 id 参数匹配
 
 // POST /api/villagers/login — 村民登录（姓名+身份证后4位）
-router.post('/login', requireEdit, async (req, res) => {
+router.post('/login', async (req, res) => {
   const { name, id_last4 } = req.body;
   if (!name || !id_last4)
     return res.status(400).json({ code: 400, message: '姓名和身份证后4位不能为空' });
