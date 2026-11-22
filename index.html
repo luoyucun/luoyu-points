@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>罗峪村村民积分系统</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27><text y=%2726%27 font-size=%2726%27>🌾</text></svg>">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<link rel="stylesheet" href="/vendor/tabler/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 :root{
@@ -21,13 +21,18 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 .app{max-width:480px;margin:0 auto;min-height:100vh;background:var(--bg);position:relative;padding-bottom:68px;}
 
 /* ── Login ── */
+/* 注意：不设置任何 overflow，滚动交给 body，兼容旧 iOS Safari / 微信 WebView
+   （overflow-x:hidden + overflow-y:auto 组合在部分手机浏览器会被误算为双向 hidden） */
 .login-screen{
   min-height:100vh;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:32px 24px;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  padding:10px 20px 16px;
   background:linear-gradient(175deg,#0d1f06 0%,#1a3a0a 25%,#2d5c10 55%,#4a7c1f 75%,#7a9a3a 90%,#b8a050 100%);
-  position:relative;overflow:hidden;
+  position:relative;
 }
+/* 小屏内容超高时从顶部排列可滚动；大屏不足一屏时上下auto边距保持居中 */
+.login-screen > .login-quotebanner{margin-top:auto;}
+.login-screen > .admin-entry-wrap{margin-bottom:auto;}
 .login-bg-deco{position:absolute;inset:0;pointer-events:none;}
 /* 稻田 + 山林 SVG层 */
 .login-bg-landscape{
@@ -38,41 +43,41 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 .login-quotebanner{
   position:relative;z-index:3;
   width:100%;max-width:340px;
-  margin-bottom:20px;
-  padding:14px 16px;
+  margin-bottom:10px;
+  padding:8px 12px;
   background:rgba(0,0,0,0.35);
   border-left:3px solid #f5c518;
   border-radius:0 8px 8px 0;
   backdrop-filter:blur(4px);
 }
 .login-quotebanner .q-text{
-  font-size:15px;line-height:1.8;color:rgba(255,255,255,0.92);
+  font-size:13px;line-height:1.6;color:rgba(255,255,255,0.92);
   letter-spacing:0.5px;font-family:STKaiti,KaiTi,华文楷体,serif;
 }
 .login-quotebanner .q-author{
-  font-size:13px;color:#f5c518;margin-top:6px;letter-spacing:2px;text-align:right;
+  font-size:11px;color:#f5c518;margin-top:2px;letter-spacing:2px;text-align:right;
 }
-.login-header{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;margin-bottom:20px;}
-.login-logo-wrap{margin-bottom:10px;filter:drop-shadow(0 4px 16px rgba(0,0,0,0.5));}
-.login-place{font-size:13px;color:rgba(255,255,255,.75);letter-spacing:2px;margin-bottom:4px;}
-.login-sysname{font-size:24px;font-weight:700;color:white;letter-spacing:3px;text-shadow:0 2px 8px rgba(0,0,0,.4);}
-.login-motto{font-size:12px;color:rgba(255,255,255,.55);margin-top:6px;letter-spacing:4px;font-style:italic;}
-.login-main-action{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;margin-bottom:28px;width:100%;max-width:320px;}
+.login-header{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;margin-bottom:10px;}
+.login-logo-wrap{margin-bottom:6px;filter:drop-shadow(0 4px 16px rgba(0,0,0,0.5));}
+.login-place{font-size:12px;color:rgba(255,255,255,.75);letter-spacing:2px;margin-bottom:2px;}
+.login-sysname{font-size:20px;font-weight:700;color:white;letter-spacing:3px;text-shadow:0 2px 8px rgba(0,0,0,.4);}
+.login-motto{font-size:11px;color:rgba(255,255,255,.55);margin-top:2px;letter-spacing:4px;font-style:italic;}
+.login-main-action{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;margin-bottom:12px;width:100%;max-width:320px;}
 .query-main-btn{width:100%;padding:16px;background:rgba(255,255,255,.95);border:none;border-radius:14px;color:#2d5c10;font-size:17px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,.25);transition:transform .15s,box-shadow .15s;}
 .query-main-btn:active{transform:scale(.97);box-shadow:0 2px 10px rgba(0,0,0,.2);}
 .query-main-btn i{font-size:20px;color:#2d5c10;}
 .query-main-hint{font-size:12px;color:rgba(255,255,255,.55);margin-top:8px;}
 .admin-entry-wrap{position:relative;z-index:1;width:100%;max-width:320px;}
-.admin-entry-toggle{font-size:15px;color:rgba(255,255,255,.5);text-align:center;cursor:pointer;padding:6px;}
+.admin-entry-toggle{font-size:13px;color:rgba(255,255,255,.5);text-align:center;cursor:pointer;padding:3px;}
 .admin-entry-toggle:hover{color:rgba(255,255,255,.6);}
-.admin-login-box{margin-top:10px;background:rgba(255,255,255,.1);border-radius:12px;padding:16px;backdrop-filter:blur(8px);}
-.admin-login-box .field{margin-bottom:10px;}
-.admin-login-box input{width:100%;padding:10px 12px;border:1px solid rgba(255,255,255,.25);border-radius:8px;font-size:14px;outline:none;background:rgba(255,255,255,.15);color:white;transition:border .2s;}
+.admin-login-box{margin-top:4px;background:rgba(255,255,255,.1);border-radius:12px;padding:10px;backdrop-filter:blur(8px);}
+.admin-login-box .field{margin-bottom:6px;}
+.admin-login-box input{width:100%;padding:8px 10px;border:1px solid rgba(255,255,255,.25);border-radius:8px;font-size:14px;outline:none;background:rgba(255,255,255,.15);color:white;transition:border .2s;}
 .admin-login-box input::placeholder{color:rgba(255,255,255,.45);}
 .admin-login-box input:focus{border-color:rgba(255,255,255,.6);}
-.admin-login-btn{width:100%;padding:10px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:8px;color:white;font-size:14px;cursor:pointer;transition:background .2s;}
+.admin-login-btn{width:100%;padding:8px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:8px;color:white;font-size:14px;cursor:pointer;transition:background .2s;}
 .admin-login-btn:hover{background:rgba(255,255,255,.3);}
-.query-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:24px 20px 40px;background:linear-gradient(170deg,#1a3a0a 0%,#2d5c10 35%,#4a7c1f 60%,#c8a84b 100%);position:relative;overflow-x:hidden;}
+.query-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:24px 20px 40px;background:linear-gradient(170deg,#1a3a0a 0%,#2d5c10 35%,#4a7c1f 60%,#c8a84b 100%);position:relative;}
 .query-top{position:relative;z-index:1;width:100%;max-width:400px;margin-bottom:16px;}
 .back-link{color:rgba(255,255,255,.7);font-size:13px;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;gap:4px;}
 .back-link:hover{color:white;}
@@ -304,11 +309,12 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 .nd-img-grid.g2{grid-template-columns:1fr 1fr;}
 .nd-img-grid.g3,.nd-img-grid.g4,.nd-img-grid.g5,.nd-img-grid.g6,.nd-img-grid.g7,.nd-img-grid.g8,.nd-img-grid.g9{grid-template-columns:1fr 1fr 1fr;}
 .nd-img-grid img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;cursor:pointer;}
-.nd-audio{display:flex;align-items:center;gap:10px;background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin:14px 0;}
-.nd-audio-btn{width:40px;height:40px;border-radius:50%;background:var(--green);color:white;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.nd-audio{display:flex;align-items:center;gap:14px;background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin:16px 0;}
+.nd-audio-btn{width:52px;height:52px;border-radius:50%;background:linear-gradient(180deg,#5a9a26,var(--green));color:white;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;box-shadow:0 4px 0 var(--green-dark),0 6px 14px rgba(0,0,0,.25),inset 0 2px 0 rgba(255,255,255,.35);transition:transform .1s,box-shadow .1s;}
+.nd-audio-btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--green-dark),0 2px 6px rgba(0,0,0,.2),inset 0 2px 0 rgba(255,255,255,.3);}
 .nd-audio-info{flex:1;min-width:0;}
-.nd-audio-label{font-size:13px;font-weight:600;color:var(--text1);}
-.nd-audio-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+.nd-audio-label{font-size:18px;font-weight:700;color:var(--text1);}
+.nd-audio-sub{font-size:15px;color:var(--text2);margin-top:4px;}
 /* 图片全屏预览 */
 .img-viewer{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:999;display:none;align-items:center;justify-content:center;}
 .img-viewer.open{display:flex;}
@@ -439,7 +445,7 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 
   <div class="login-header">
     <div class="login-logo-wrap">
-      <svg viewBox="0 0 100 100" width="96" height="96" xmlns="http://www.w3.org/2000/svg">
+      <svg viewBox="0 0 100 100" width="56" height="56" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <clipPath id="circle-clip">
             <circle cx="50" cy="50" r="48"/>
@@ -495,17 +501,17 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 
   <!-- 村民登录（主入口） -->
   <div class="login-main-action" style="width:100%;max-width:340px;">
-    <div class="login-card" style="width:100%;background:white;border-radius:14px;padding:20px;">
-      <div class="field" style="margin-bottom:14px;">
-        <label style="font-size:15px;display:block;margin-bottom:6px;color:#444;font-weight:500;">姓名</label>
-        <input type="text" id="vLoginName" placeholder="请输入您的姓名" style="width:100%;padding:12px 14px;border:1px solid #ddd;border-radius:10px;font-size:16px;outline:none;">
+    <div class="login-card" style="width:100%;background:white;border-radius:14px;padding:12px;">
+      <div class="field" style="margin-bottom:8px;">
+        <label style="font-size:14px;display:block;margin-bottom:4px;color:#444;font-weight:500;">姓名</label>
+        <input type="text" id="vLoginName" placeholder="请输入您的姓名" style="width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:10px;font-size:16px;outline:none;">
       </div>
-      <div class="field" style="margin-bottom:16px;">
-        <label style="font-size:15px;display:block;margin-bottom:6px;color:#444;font-weight:500;">身份证后4位</label>
-        <input type="text" id="vLoginId4" placeholder="请输入身份证后4位" maxlength="4" inputmode="numeric" style="width:100%;padding:12px 14px;border:1px solid #ddd;border-radius:10px;font-size:16px;outline:none;">
+      <div class="field" style="margin-bottom:10px;">
+        <label style="font-size:14px;display:block;margin-bottom:4px;color:#444;font-weight:500;">身份证后4位</label>
+        <input type="text" id="vLoginId4" placeholder="请输入身份证后4位" maxlength="4" inputmode="numeric" style="width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:10px;font-size:16px;outline:none;">
       </div>
-      <button onclick="doVillagerLogin()" id="vLoginBtn" style="width:100%;padding:14px;background:#3B6D11;border:none;border-radius:10px;color:white;font-size:17px;font-weight:600;cursor:pointer;">进入积分系统</button>
-      <div id="vLoginErr" style="color:#E24B4A;font-size:13px;text-align:center;margin-top:8px;min-height:16px;"></div>
+      <button onclick="doVillagerLogin()" id="vLoginBtn" style="width:100%;padding:11px;background:#3B6D11;border:none;border-radius:10px;color:white;font-size:16px;font-weight:600;cursor:pointer;">进入积分系统</button>
+      <div id="vLoginErr" style="color:#E24B4A;font-size:12px;text-align:center;margin-top:4px;min-height:14px;"></div>
     </div>
   </div>
 
@@ -686,6 +692,7 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
     <div class="nd-header">
       <button class="nd-back" onclick="closeNoticeDetail()"><i class="ti ti-arrow-left"></i></button>
       <div class="nd-header-title">村务公告</div>
+      <button class="nd-back" onclick="shareNotice()" style="font-size:20px;"><i class="ti ti-share"></i></button>
     </div>
     <div class="nd-body" id="noticeDetailBody"></div>
   </div>
@@ -848,13 +855,10 @@ function pubTab(name) {
   var ni = document.querySelector('#pubNav [data-t="'+name+'"]');
   if (ni) ni.classList.add('active');
   // (pubBanner already set above)
-  // Browser history for WeChat swipe-back
-  var tabTitles = {notice:'村务公告',rank:'积分排行',feed:'积分动态',rules:'积分细则',my:'我的'};
-  var tabState = {tab: name, title: tabTitles[name] || name};
-  try { history.pushState(tabState, tabTitles[name] || name); } catch(e) {}
 
   // Navigate
   if (name==='my') { if (isLoggedIn) { vTab('home'); return; } showLogin(); return; }
+  setTabHash(name);
   if (name==='notice') loadNotice();
   else if (name==='rank') loadRank();
   else if (name==='feed') loadPublicFeed();
@@ -1094,7 +1098,86 @@ async function doCheckin() {
   }
 }
 
+// ── 页面分享：hash 深链接路由（2026-10-27）──
+var _bootHash = '';
+var _bootDone = false;
+var _hashSuppress = false;
+var _curNotice = null;
+var _ndPushed = false;
+var _noticeLoadedCb = null;
+var _defaultTitle = document.title;
+function setTabHash(h) {
+  if (_hashSuppress) return;
+  try {
+    if (_bootDone) history.pushState({tab: h}, '', '#' + h);
+    else history.replaceState({tab: h}, '', '#' + h);
+  } catch(e) {}
+}
+function routeFromHash(h, suppress) {
+  if (!h) return;
+  var m = h.match(/^notice=(\d+)$/);
+  var prev = _hashSuppress;
+  _hashSuppress = suppress === true;
+  try {
+    if (m) {
+      var nid = m[1];
+      var openById = function() {
+        var idx = -1;
+        for (var i = 0; i < noticesCache.length; i++) {
+          if (String(noticesCache[i].id) === String(nid)) { idx = i; break; }
+        }
+        if (idx >= 0) openNoticeDetail(idx, true);
+        else showToast('公告不存在或已删除', true);
+      };
+      if (noticesCache.length) openById(); else _noticeLoadedCb = openById;
+      if (villagerInfo) vTab('notice'); else pubTab('notice');
+      return;
+    }
+    var vt = ['home','log','rank','rules','notice','exchange'];
+    if (villagerInfo) { if (vt.indexOf(h) >= 0) vTab(h); else if (['notice','rank','feed','rules'].indexOf(h) >= 0) pubTab(h); }
+    else if (token && adminInfo) { if (['home','record','review'].indexOf(h) >= 0) aTab(h); else pubTab(['notice','rank','feed','rules','my'].indexOf(h) >= 0 ? h : (vc.home_tab || 'notice')); }
+    else pubTab(['notice','rank','feed','rules','my'].indexOf(h) >= 0 ? h : (vc.home_tab || 'notice'));
+  } finally {
+    _hashSuppress = prev;
+  }
+}
+function finishBoot() {
+  var h = _bootHash.replace(/^#/, '');
+  if (h) routeFromHash(h);
+  _bootDone = true;
+}
+window.addEventListener('popstate', function() {
+  if (!_bootDone) return;
+  var h = (location.hash || '').replace(/^#/, '');
+  if (h) routeFromHash(h, true);
+});
+function shareNotice() {
+  if (!_curNotice) return;
+  if (!/^#notice=/.test(location.hash)) {
+    try { history.pushState({notice: _curNotice.id}, _curNotice.title, '#notice=' + _curNotice.id); _ndPushed = true; } catch(e) {}
+  }
+  var url = location.origin + location.pathname + '#notice=' + _curNotice.id;
+  copyText(url);
+}
+function copyText(t) {
+  function ok() { showToast('链接已复制，去粘贴分享吧'); }
+  function bad() { showToast('复制失败，请长按地址栏复制', true); }
+  function fb() {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = t; ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+      document.body.appendChild(ta); ta.select();
+      var r = document.execCommand('copy');
+      document.body.removeChild(ta);
+      r ? ok() : bad();
+    } catch(e) { bad(); }
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(ok, fb);
+  else fb();
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+  _bootHash = location.hash;
   document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
   document.getElementById('queryId4').addEventListener('keydown', e => { if(e.key==='Enter') doQuery(); });
   document.getElementById('vLoginId4').addEventListener('keydown', e => { if(e.key==='Enter') doVillagerLogin(); });
@@ -1107,6 +1190,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('pubNav').style.display='none';
     document.getElementById('appHeader').style.display='block';
     initApp();
+    finishBoot();
     return;
   }
   // 恢复村民会话
@@ -1118,9 +1202,11 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('appHeader').style.display='block';
     document.getElementById('appHeader').style.display='block';
     initVillagerApp();
+    finishBoot();
   } else {
     // Anonymous: show public tab
     pubTab(vc.home_tab||'notice');
+    finishBoot();
   }
 });
 
@@ -1286,7 +1372,7 @@ function setRole(r) {
 
 // ── Villager tabs ──
 function vTab(t) {
-  try { history.pushState({tab: t, title: t}, t); } catch(e) {}
+  setTabHash(t);
   document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.style.display='none';});
   const el = document.getElementById('sv-'+t);
   if (el) { el.style.display='flex'; el.classList.add('active'); }
@@ -1304,6 +1390,7 @@ function vTab(t) {
 
 // ── Admin tabs ──
 function aTab(t) {
+  setTabHash(t);
   document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.style.display='none';});
   const el = document.getElementById('sa-'+t);
   if (el) { el.style.display='flex'; el.classList.add('active'); }
@@ -1775,10 +1862,16 @@ function logItemHtml(r) {
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+      <button onclick="event.stopPropagation();shareScore(${r.id})" title="分享这条动态" style="width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:#fff;color:var(--text2);font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;">📤</button>
       <div class="log-pts ${add?'add':'sub'}">${add?'+':''}${r.points}</div>
       <i class="ti ti-chevron-right" style="font-size:14px;color:var(--text3);"></i>
     </div>
   </div>`;
+}
+
+// 分享单条积分动态：打开独立分享页（含海报生成与复制链接）
+function shareScore(id) {
+  location.href = '/f/' + id;
 }
 
 // ── Load rank ──
@@ -2000,8 +2093,9 @@ async function loadNotice() {
   el.innerHTML = '<div class="loading"><i class="ti ti-loader"></i>加载中…</div>';
   try {
     const res = await fetch(BASE + '/api/announcements').then(r=>r.json());
-    if (!res.data || !res.data.length) { el.innerHTML = '<div class="empty"><i class="ti ti-bell-off"></i>暂无公告</div>'; return; }
+    if (!res.data || !res.data.length) { el.innerHTML = '<div class="empty"><i class="ti ti-bell-off"></i>暂无公告</div>'; if (_noticeLoadedCb) { var _cb = _noticeLoadedCb; _noticeLoadedCb = null; _cb(); } return; }
     noticesCache = res.data;
+    if (_noticeLoadedCb) { var _cb = _noticeLoadedCb; _noticeLoadedCb = null; _cb(); }
     const tagColors = {'活动通知':'tt','体育活动':'tg','政策宣传':'tb','全村告示':'ta','积分通知':'tg','兑换通知':'ta','活动公告':'tb'};
     const items = res.data.map((n,i)=>`
       <div class="ni" onclick="openNoticeDetail(${i})">
@@ -2017,10 +2111,10 @@ async function loadNotice() {
         <div class="ni-arrow"><i class="ti ti-chevron-right"></i></div>
       </div>`).join('');
     el.innerHTML = `<div class="card">${items}</div>`;
-  } catch(e) { el.innerHTML = '<div class="empty"><i class="ti ti-wifi-off"></i>加载失败</div>'; }
+  } catch(e) { el.innerHTML = '<div class="empty"><i class="ti ti-wifi-off"></i>加载失败</div>'; if (_noticeLoadedCb) { var _cb = _noticeLoadedCb; _noticeLoadedCb = null; _cb(); } }
 }
 
-function openNoticeDetail(idx) {
+function openNoticeDetail(idx, direct) {
   const n = noticesCache[idx];
   if (!n) return;
   const tagColors = {'活动通知':'tt','体育活动':'tg','政策宣传':'tb','全村告示':'ta','积分通知':'tg','兑换通知':'ta','活动公告':'tb'};
@@ -2069,6 +2163,12 @@ function openNoticeDetail(idx) {
     <div class="nd-content">${n.content}</div>
     ${imgHtml}`;
   document.getElementById('noticeDetail').classList.add('open');
+  _curNotice = n;
+  document.title = n.title + ' · 罗峪村';
+  try {
+    if (direct) history.replaceState({notice: n.id}, n.title, '#notice=' + n.id);
+    else { history.pushState({notice: n.id}, n.title, '#notice=' + n.id); _ndPushed = true; }
+  } catch(e) {}
 }
 
 // 图片全屏查看
@@ -2112,6 +2212,17 @@ function playRecordAudio(id, url) {
 
 function closeNoticeDetail() {
   document.getElementById('noticeDetail').classList.remove('open');
+  _curNotice = null;
+  document.title = _defaultTitle;
+  if (_ndPushed) {
+    _ndPushed = false;
+    try { history.back(); } catch(e) {}
+    setTimeout(function() {
+      if (/^#notice=/.test(location.hash)) { try { history.replaceState({tab:'notice'}, '', '#notice'); } catch(e) {} }
+    }, 300);
+  } else {
+    try { history.replaceState({tab:'notice'}, '', '#notice'); } catch(e) {}
+  }
 }
 
 // ── Admin home ──

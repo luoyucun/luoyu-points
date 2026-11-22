@@ -258,14 +258,48 @@ router.delete('/announcements/:id', authMiddleware, requireSuper, requireEdit, w
   res.json({ code: 0, message: '公告已删除' });
 }));
 
-// PUT /api/admin/announcements/:id — 编辑公告
-router.put('/announcements/:id', authMiddleware, requireSuper, requireEdit, wrap(async (req, res) => {
-  const { title, content, tag_type } = req.body;
-  if (!title || !content) return res.status(400).json({ code: 400, message: '标题和内容必填' });
-  await db.execute('UPDATE announcements SET title=?, content=?, tag_type=? WHERE id=?',
-    [title.trim(), content.trim(), tag_type||'全村告示', req.params.id]);
-  res.json({ code: 0, message: '公告已更新' });
-}));
+// PUT /api/admin/announcements/:id — 编辑公告（保留 id/状态/创建时间；仅在传新文件时替换图片/音频）
+router.put('/announcements/:id', authMiddleware, requireSuper, requireEdit,
+  noticeUpload.fields([{ name: 'images', maxCount: 9 }, { name: 'audio', maxCount: 1 }]),
+  wrap(async (req, res) => {
+    const { title, content, tag_type, audio_type } = req.body;
+    if (!title || !content) return res.status(400).json({ code: 400, message: '标题和内容必填' });
+
+    const [rows] = await db.execute('SELECT id FROM announcements WHERE id=?', [req.params.id]);
+    if (!rows.length) return res.status(404).json({ code: 404, message: '公告不存在' });
+
+    const sets = ['title=?', 'content=?', 'tag_type=?'];
+    const params = [title.trim(), content.trim(), tag_type || '全村告示'];
+
+    // 图片：keep_images（编辑页保留的已有图）+ 本次新上传，合并后去重限 9 张
+    const newImgs = (req.files && req.files.images) ? req.files.images.map(f => `/uploads/notices/${f.filename}`) : [];
+    if (req.body.keep_images !== undefined) {
+      let keep = [];
+      try { keep = JSON.parse(req.body.keep_images); } catch (e) { keep = []; }
+      keep = (Array.isArray(keep) ? keep : [])
+        .filter(u => typeof u === 'string' && /^\/uploads\/notices\/[\w.\-]+$/.test(u));
+      const allImgs = keep.concat(newImgs).slice(0, 9);
+      sets.push('image_urls=?');
+      params.push(allImgs.length ? JSON.stringify(allImgs) : null);
+    } else if (newImgs.length) {
+      sets.push('image_urls=?');
+      params.push(JSON.stringify(newImgs));
+    }
+
+    // 音频：新录音替换 > tts > none（清除）> record 且无新文件（保留原录音）
+    if (req.files && req.files.audio && req.files.audio.length) {
+      sets.push('audio_url=?', 'audio_type=?');
+      params.push(`/uploads/notices/${req.files.audio[0].filename}`, 'record');
+    } else if (audio_type === 'tts') {
+      sets.push('audio_url=NULL', 'audio_type=?');
+      params.push('tts');
+    } else if (audio_type === 'none') {
+      sets.push('audio_url=NULL', 'audio_type=NULL');
+    }
+    params.push(req.params.id);
+    await db.execute(`UPDATE announcements SET ${sets.join(',')} WHERE id=?`, params);
+    res.json({ code: 0, message: '公告已更新' });
+  }));
 
 // GET /api/admin/exchange/switch — 查询兑换开关状态（公开，村民端也需要读）
 router.get('/exchange/switch', wrap(async (req, res) => {

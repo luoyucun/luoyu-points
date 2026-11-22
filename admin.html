@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>罗峪村积分系统 · 后台管理</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🌾</text></svg>">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<link rel="stylesheet" href="/vendor/tabler/tabler-icons.min.css">
+<script src="/vendor/qrcode.min.js"></script>
 <style>
 :root {
   --green:      #2d6a1f;
@@ -178,8 +178,8 @@ tr:last-child td{border-bottom:none;}
 .empty-state i{font-size:40px;opacity:.3;display:block;margin-bottom:8px;}
 
 /* ── 登录页 ── */
-#loginPage{position:fixed;inset:0;background:linear-gradient(160deg,var(--green-dark),var(--green));display:flex;align-items:center;justify-content:center;z-index:9999;}
-.login-box{background:white;border-radius:16px;padding:36px;width:360px;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+#loginPage{position:fixed;inset:0;background:linear-gradient(160deg,var(--green-dark),var(--green));display:flex;overflow-y:auto;-webkit-overflow-scrolling:touch;z-index:9999;}
+.login-box{background:white;border-radius:16px;padding:36px;width:360px;max-width:calc(100% - 32px);margin:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);}
 .login-logo{text-align:center;margin-bottom:24px;}
 .login-logo .icon{width:56px;height:56px;background:var(--green-dark);border-radius:14px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:var(--gold);font-family:STKaiti,KaiTi,serif;}
 .login-logo h2{font-size:18px;color:var(--text1);font-weight:600;}
@@ -516,6 +516,29 @@ tr:last-child td{border-bottom:none;}
         </div>
         <div class="form-row"><label>触发条件（JSON）</label><textarea id="frConditions" rows="4" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:12px;font-family:monospace;" placeholder='{"temp_min":20,"temp_max":30,"rain_3day":true}'></textarea>
           <div style="font-size:11px;color:var(--text3);margin-top:4px;">可用字段：temp_min, temp_max, humidity_min, wind_min, wind_max, rain_3day, rain_5day, weather_type, soil_moisture, crop_stage</div>
+        </div>
+        <div class="form-row"><label>生效月份（勾选月份生效，不勾选则全年）</label>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="setFarmingMonths(null)">全年</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="setFarmingMonths([3,4,5])">春季</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="setFarmingMonths([6,7,8])">夏季</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="setFarmingMonths([9,10,11])">秋季</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="setFarmingMonths([12,1,2])">冬季</button>
+          </div>
+          <div id="frMonths" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" class="fr-month" value="1" style="accent-color:var(--primary);">1月</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" class="fr-month" value="2" style="accent-color:var(--primary);">2月</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" class="fr-month" value="3" style="accent-color:var(--primary);">3月</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" class="fr-month" value="4" style="accent-color:var(--primary);">4月</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" class="fr-month" value="5" style="accent-color:var(--primary);">5月</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" class="fr-month" value="6" style="accent-color:var(--primary);">6月</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" class="fr-month" value="7" style="accent-color:var(--primary);">7月</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" class="fr-month" value="8" style="accent-color:var(--primary);">8月</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" class="fr-month" value="9" style="accent-color:var(--primary);">9月</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" class="fr-month" value="10" style="accent-color:var(--primary);">10月</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" class="fr-month" value="11" style="accent-color:var(--primary);">11月</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" class="fr-month" value="12" style="accent-color:var(--primary);">12月</label>
+          </div>
         </div>
         <div class="form-row"><label>建议内容</label><textarea id="frSuggestion" rows="3" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;" placeholder="温度适宜且近期有雨，适合水稻播种育秧"></textarea></div>
         <div class="form-row"><label>优先级（数字越大越靠前）</label><input type="number" id="frPriority" value="0" min="0" max="100"></div>
@@ -1810,15 +1833,19 @@ async function loadNotices() {
 }
 
 function openAddNotice() {
+  _editNoticeId = null;
+  document.getElementById('addNoticeTitle').innerHTML = '发布公告<span class="modal-close" onclick="closeModal(\'addNoticeModal\')">×</span>';
   document.getElementById('noticeTitle').value = '';
   document.getElementById('noticeContent').value = '';
   document.getElementById('noticeTag').value = '全村告示';
+  _existNoticeImgs = [];
   document.getElementById('noticeImgPreview').innerHTML = '';
   document.getElementById('noticeImgs').value = '';
   document.getElementById('recordPreview').style.display = 'none';
   document.getElementById('recordPreview').src = '';
   document.getElementById('recordStatus').textContent = '';
   document.getElementById('audioFileInput').value = '';
+  document.getElementById('audioTtsHint').innerHTML = '<i class="ti ti-info-circle"></i> 村民点击播放时，系统将自动朗读公告内容（普通话）';
   setAudioOpt('none');
   _noticeRecordedBlob = null;
   openModal('addNoticeModal');
@@ -1830,25 +1857,26 @@ async function confirmAddNotice() {
   const tag_type = document.getElementById('noticeTag').value;
   if (!title || !content) { showToast('标题和内容不能为空', true); return; }
 
+  const isEdit = !!_editNoticeId;
   const btn = document.getElementById('noticeSubmitBtn');
-  btn.disabled = true; btn.textContent = '发布中…';
+  btn.disabled = true; btn.textContent = isEdit ? '保存中…' : '发布中…';
 
   const fd = new FormData();
   fd.append('title', title);
   fd.append('content', content);
   fd.append('tag_type', tag_type);
 
-  // 图片
+  // 图片：编辑时把"保留的已有图片"一起提交，后端按 保留+新增 合并
   const imgInput = document.getElementById('noticeImgs');
+  if (isEdit) fd.append('keep_images', JSON.stringify(_existNoticeImgs || []));
   if (imgInput.files.length) {
     Array.from(imgInput.files).slice(0,9).forEach(f => fd.append('images', f));
   }
 
-  // 音频
+  // 音频：none=清除 / tts=普通话朗读 / record=有新录音则替换，否则保留原录音
   const audioOpt = document.querySelector('.audio-opt-active')?.dataset.opt || 'none';
-  if (audioOpt === 'tts') {
-    fd.append('audio_type', 'tts');
-  } else if (audioOpt === 'record') {
+  fd.append('audio_type', audioOpt);
+  if (audioOpt === 'record') {
     const audioFile = document.getElementById('audioFileInput').files[0];
     if (_noticeRecordedBlob) {
       fd.append('audio', _noticeRecordedBlob, 'recording.webm');
@@ -1858,15 +1886,22 @@ async function confirmAddNotice() {
   }
 
   try {
-    const r = await fetch(BASE + '/api/announcements', {
-      method: 'POST',
+    // 编辑走 PUT（保留原公告 id / 状态 / 创建时间），新建才 POST
+    const r = await fetch(BASE + (isEdit ? '/api/admin/announcements/' + _editNoticeId : '/api/announcements'), {
+      method: isEdit ? 'PUT' : 'POST',
       headers: { 'Authorization': 'Bearer ' + token },
       body: fd
     });
     const res = await r.json();
     btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> 发布';
-    if (res && res.code===0) { showToast('公告已发布'); closeModal('addNoticeModal'); loadNotices(); }
-    else showToast(res?.message||'发布失败', true);
+    if (res && res.code===0) {
+      showToast(isEdit ? '公告已更新' : '公告已发布');
+      closeModal('addNoticeModal');
+      _editNoticeId = null;
+      document.getElementById('addNoticeTitle').innerHTML = '发布公告<span class="modal-close" onclick="closeModal(\'addNoticeModal\')">×</span>';
+      loadNotices();
+    }
+    else showToast(res?.message||(isEdit?'保存失败':'发布失败'), true);
   } catch(e) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> 发布'; showToast('网络错误', true); }
 }
 
@@ -1920,6 +1955,7 @@ async function viewNotice(id) {
 }
 
 var _editNoticeId = null;
+var _existNoticeImgs = [];   // 编辑时保留的已有图片 URL
 function editNotice(id) {
   var n = _noticesData.find(function(x) { return x.id === id; });
   if (!n) return;
@@ -1927,11 +1963,27 @@ function editNotice(id) {
   document.getElementById('noticeTitle').value = n.title;
   document.getElementById('noticeContent').value = n.content;
   document.getElementById('noticeTag').value = n.tag_type;
-  _noticeImgs = [];
-  _noticeAudioFile = null;
-  document.getElementById('noticeImgPreview').innerHTML = '';
+  // 已有图片：展示为可删除的缩略图，保存时随 keep_images 提交
+  _existNoticeImgs = (n.image_urls || []).slice();
   document.getElementById('noticeImgs').value = '';
-  document.getElementById('recordPreview').style.display = 'none';
+  document.getElementById('audioFileInput').value = '';
+  _noticeRecordedBlob = null;
+  renderNoticeImgs();
+  // 已有语音：回显当前设置
+  var rp = document.getElementById('recordPreview');
+  document.getElementById('recordStatus').textContent = '';
+  if (n.audio_type === 'tts') {
+    setAudioOpt('tts');
+    rp.style.display = 'none'; rp.src = '';
+    document.getElementById('audioTtsHint').innerHTML = '<i class="ti ti-info-circle"></i> 当前为普通话 TTS 播报，保存后继续按最新内容朗读';
+  } else if (n.audio_type === 'record' && n.audio_url) {
+    setAudioOpt('record');
+    rp.src = n.audio_url; rp.style.display = 'block';
+    document.getElementById('recordStatus').textContent = '当前已有录音（可直接保存保留，或重新录制替换）';
+  } else {
+    setAudioOpt('none');
+    rp.style.display = 'none'; rp.src = '';
+  }
   document.getElementById('addNoticeTitle').innerHTML = '编辑公告<span class="modal-close" onclick="closeModal(\'addNoticeModal\')">×</span>';
   openModal('addNoticeModal');
 }
@@ -2056,8 +2108,9 @@ async function loadFarmingRules() {
   var taskTypes = {plant:'种植',pest:'防虫',weed:'除草',harvest:'收割',irrigate:'灌溉',other:'其他'};
   document.getElementById('farmingRulesTbody').innerHTML = res.data.map(function(r) {
     var cond = typeof r.conditions==='string' ? r.conditions : JSON.stringify(r.conditions);
+    var mText = (r.active_months && r.active_months.length) ? r.active_months.join('、') + '月' : '全年';
     return '<tr>' +
-      '<td><strong>' + r.title + '</strong><div style="font-size:10px;color:var(--text3);">' + cond + '</div></td>' +
+      '<td><strong>' + r.title + '</strong><div style="font-size:10px;color:var(--text3);">' + cond + '</div><div style="font-size:10px;color:var(--primary);margin-top:2px;">生效：' + mText + '</div></td>' +
       '<td>' + (taskTypes[r.task_type]||'其他') + '</td>' +
       '<td>' + r.priority + '</td>' +
       '<td><span class="tag ' + (r.is_active?'tag-green':'tag-gray') + '">' + (r.is_active?'启用':'禁用') + '</span></td>' +
@@ -2105,6 +2158,18 @@ async function publishReport() {
   else showToast(res && res.message || '发布失败', true);
 }
 
+function setFarmingMonths(months) {
+  document.querySelectorAll('.fr-month').forEach(function(cb) {
+    cb.checked = !months || months.indexOf(parseInt(cb.value)) >= 0;
+  });
+}
+
+function getFarmingMonths() {
+  var list = [];
+  document.querySelectorAll('.fr-month:checked').forEach(function(cb) { list.push(parseInt(cb.value)); });
+  return list;
+}
+
 function openFarmingRule() {
   editFarmingRuleId = null;
   document.getElementById('farmingRuleTitle').innerHTML = '新增农事规则<span class="modal-close" onclick="closeModal(&#39;farmingRuleModal&#39;)">×</span>';
@@ -2113,6 +2178,7 @@ function openFarmingRule() {
   document.getElementById('frConditions').value = '';
   document.getElementById('frSuggestion').value = '';
   document.getElementById('frPriority').value = '0';
+  setFarmingMonths(null);
   openModal('farmingRuleModal');
 }
 
@@ -2128,6 +2194,7 @@ async function editFarmingRule(id) {
   document.getElementById('frConditions').value = JSON.stringify(rule.conditions);
   document.getElementById('frSuggestion').value = rule.suggestion;
   document.getElementById('frPriority').value = rule.priority;
+  setFarmingMonths(rule.active_months || null);
   openModal('farmingRuleModal');
 }
 
@@ -2142,6 +2209,7 @@ async function saveFarmingRule() {
     title: title,
     task_type: document.getElementById('frType').value,
     conditions: conditions,
+    active_months: getFarmingMonths(),
     suggestion: sug,
     priority: parseInt(document.getElementById('frPriority').value) || 0
   };
@@ -2525,15 +2593,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── 公告富媒体函数 ──
 function previewNoticeImgs(input) {
+  renderNoticeImgs();
+}
+
+// 渲染已有图片（可删除）+ 本次新选文件
+function renderNoticeImgs() {
   const preview = document.getElementById('noticeImgPreview');
+  const input = document.getElementById('noticeImgs');
   const files = Array.from(input.files).slice(0,9);
-  preview.innerHTML = files.map((f,i) => {
-    const url = URL.createObjectURL(f);
-    return '<div style="position:relative;width:64px;height:64px;">'
-      + '<img src="'+url+'" style="width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--border);">'
-      + '<button type="button" onclick="removeNoticeImg('+i+')" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--red);color:white;border:none;cursor:pointer;font-size:10px;line-height:16px;text-align:center;">×</button>'
+  const boxStyle = 'position:relative;width:64px;height:64px;';
+  const imgStyle = 'width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--border);';
+  const delStyle = 'position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--red);color:white;border:none;cursor:pointer;font-size:11px;line-height:18px;text-align:center;';
+  let html = (_existNoticeImgs || []).map(function(url, i) {
+    return '<div style="'+boxStyle+'">'
+      + '<img src="'+url+'" style="'+imgStyle+'">'
+      + '<button type="button" title="移除这张图" onclick="removeExistingNoticeImg('+i+')" style="'+delStyle+'">×</button>'
       + '</div>';
   }).join('');
+  html += files.map(function(f,i) {
+    const url = URL.createObjectURL(f);
+    return '<div style="'+boxStyle+'">'
+      + '<img src="'+url+'" style="'+imgStyle+'">'
+      + '<button type="button" onclick="removeNoticeImg('+i+')" style="'+delStyle+'">×</button>'
+      + '</div>';
+  }).join('');
+  preview.innerHTML = html;
+}
+
+function removeExistingNoticeImg(idx) {
+  _existNoticeImgs.splice(idx, 1);
+  renderNoticeImgs();
 }
 
 function removeNoticeImg(idx) {

@@ -1,0 +1,2648 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>罗峪村积分系统 · 后台管理</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🌾</text></svg>">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<style>
+:root {
+  --green:      #2d6a1f;
+  --green-dark: #1a3d0f;
+  --green-light:#4a8f30;
+  --green-bg:   #f0f7ec;
+  --gold:       #c8a84b;
+  --gold-light: #f5e6b8;
+  --red:        #c0392b;
+  --red-bg:     #fdf0ee;
+  --blue:       #1a6fa8;
+  --blue-bg:    #eaf4fb;
+  --amber:      #d97706;
+  --amber-bg:   #fef3c7;
+  --text1:      #1a1a1a;
+  --text2:      #4a4a4a;
+  --text3:      #8a8a8a;
+  --border:     #e2e8dd;
+  --bg:         #f5f7f3;
+  --card:       #ffffff;
+  --sidebar-w:  220px;
+  --header-h:   56px;
+  --radius:     10px;
+  --shadow:     0 1px 4px rgba(0,0,0,.08);
+  --shadow-md:  0 4px 16px rgba(0,0,0,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text1);min-height:100vh;display:flex;}
+
+/* ── 侧边栏 ── */
+.sidebar{width:var(--sidebar-w);background:var(--green-dark);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;}
+.sb-logo{padding:16px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:10px;}
+.sb-logo-icon{width:36px;height:36px;background:var(--gold);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--green-dark);font-family:STKaiti,KaiTi,serif;}
+.sb-logo-text{color:white;font-size:13px;line-height:1.4;}
+.sb-logo-text .t1{font-weight:600;font-size:14px;}
+.sb-logo-text .t2{color:rgba(255,255,255,.5);font-size:11px;}
+.sb-nav{flex:1;padding:12px 8px;overflow-y:auto;}
+.sb-section{font-size:10px;color:rgba(255,255,255,.35);letter-spacing:1px;padding:8px 8px 4px;margin-top:4px;}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;color:rgba(255,255,255,.7);font-size:13px;cursor:pointer;transition:all .15s;margin-bottom:2px;}
+.sb-item:hover{background:rgba(255,255,255,.08);color:white;}
+.sb-item.active{background:var(--green-light);color:white;font-weight:500;}
+.sb-item i{font-size:17px;width:20px;text-align:center;}
+.sb-badge{background:var(--red);color:white;font-size:10px;padding:1px 5px;border-radius:10px;margin-left:auto;}
+.sb-footer{padding:12px;border-top:1px solid rgba(255,255,255,.1);}
+.sb-user{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.7);font-size:12px;}
+.sb-user-av{width:28px;height:28px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--green-dark);}
+.sb-logout{margin-left:auto;cursor:pointer;color:rgba(255,255,255,.4);font-size:14px;}
+.sb-logout:hover{color:var(--red);}
+
+/* ── 主内容区 ── */
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;}
+.topbar{height:var(--header-h);background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:16px;position:sticky;top:0;z-index:50;}
+.topbar-title{font-size:16px;font-weight:600;color:var(--text1);}
+.topbar-sub{font-size:12px;color:var(--text3);}
+.topbar-actions{margin-left:auto;display:flex;gap:8px;}
+
+
+/* ── 演示模式横幅 ── */
+.demo-banner{display:none;background:linear-gradient(90deg,#1a6fa8,#2196f3);color:white;padding:6px 16px;font-size:13px;text-align:center;}
+.demo-banner.show{display:block;}
+.viewer-mode .btn-primary:not(.viewer-allow),
+.viewer-mode .btn-danger:not(.viewer-allow),
+.viewer-mode .td-ops .btn-danger{display:none!important;}
+.viewer-mode .td-ops .btn-outline[onclick*="edit"],
+.viewer-mode .td-ops .btn-outline[onclick*="Edit"],
+.viewer-mode .td-ops .btn-outline[onclick*="delete"],
+.viewer-mode .td-ops .btn-outline[onclick*="Delete"],
+.viewer-mode .td-ops .btn-outline[onclick*="revoke"],
+.viewer-mode .td-ops .btn-outline[onclick*="Revoke"],
+.viewer-mode .card-hd .actions .btn-primary{display:none!important;}
+.viewer-mode #submitBtn{display:none!important;}
+.viewer-mode #publishBtn{display:none!important;}
+
+/* ── 页面内容 ── */
+.page{padding:24px;display:none;}
+.page.active{display:block;}
+
+/* ── 卡片 ── */
+.card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow);}
+.card-hd{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;}
+.card-hd i{color:var(--green);}
+.card-hd .actions{margin-left:auto;display:flex;gap:8px;}
+.card-body{padding:20px;}
+
+/* ── 统计卡片 ── */
+.stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:24px;}
+.stat-card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:18px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.stat-card.green::before{background:var(--green);}
+.stat-card.gold::before{background:var(--gold);}
+.stat-card.blue::before{background:var(--blue);}
+.stat-card.red::before{background:var(--red);}
+.stat-card.amber::before{background:var(--amber);}
+.stat-val{font-size:28px;font-weight:700;color:var(--text1);line-height:1.2;}
+.stat-lbl{font-size:12px;color:var(--text3);margin-top:4px;}
+.stat-icon{position:absolute;right:16px;top:16px;font-size:28px;opacity:.12;}
+
+/* ── 表格 ── */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:#f8faf6;color:var(--text3);font-weight:500;padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:10px 12px;border-bottom:1px solid #f0f0f0;vertical-align:middle;}
+tr:hover td{background:#fafcf8;}
+tr:last-child td{border-bottom:none;}
+
+/* ── 标签 ── */
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:500;white-space:nowrap;}
+.tag-green{background:var(--green-bg);color:var(--green);}
+.tag-red{background:var(--red-bg);color:var(--red);}
+.tag-amber{background:var(--amber-bg);color:var(--amber);}
+.tag-blue{background:var(--blue-bg);color:var(--blue);}
+.tag-gray{background:#f0f0f0;color:var(--text3);}
+
+/* ── 按钮 ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;white-space:nowrap;}
+.btn-primary{background:var(--green);color:white;}
+.btn-primary:hover{background:var(--green-light);}
+.btn-outline{background:white;color:var(--text2);border:1px solid var(--border);}
+.btn-outline:hover{border-color:var(--green);color:var(--green);}
+.btn-danger{background:var(--red-bg);color:var(--red);border:1px solid #fbd5d1;}
+.btn-danger:hover{background:var(--red);color:white;}
+.btn-sm{padding:4px 10px;font-size:12px;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+
+/* ── 搜索栏 ── */
+.filters{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+.filter-input{padding:7px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;outline:none;background:var(--card);transition:border .15s;}
+.filter-input:focus{border-color:var(--green);}
+.filter-sel{padding:7px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;outline:none;background:var(--card);cursor:pointer;}
+
+/* ── 分页 ── */
+.pagination{display:flex;align-items:center;gap:8px;margin-top:16px;padding-bottom:8px;font-size:13px;color:var(--text3);}
+.page-btn{padding:5px 10px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:var(--card);}
+.page-btn:hover{border-color:var(--green);color:var(--green);}
+.page-btn.active{background:var(--green);color:white;border-color:var(--green);}
+.page-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* ── 模态框 ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;display:none;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--card);border-radius:var(--radius);width:480px;max-width:90vw;box-shadow:var(--shadow-md);}
+.modal-hd{padding:16px 20px;border-bottom:1px solid var(--border);font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:space-between;}
+.modal-bd{padding:20px;}
+.modal-ft{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
+.modal-close{cursor:pointer;color:var(--text3);font-size:20px;}
+.modal-close:hover{color:var(--text1);}
+.form-row{margin-bottom:14px;}
+.form-row label{display:block;font-size:12px;color:var(--text2);margin-bottom:5px;font-weight:500;}
+.form-row input,.form-row textarea,.form-row select{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;outline:none;transition:border .15s;}
+.form-row input:focus,.form-row textarea:focus,.form-row select:focus{border-color:var(--green);}
+.form-row textarea{resize:vertical;min-height:80px;}
+
+/* ── 图表区域 ── */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+.bar-chart{display:flex;flex-direction:column;gap:8px;padding:4px 0;}
+.bar-row{display:flex;align-items:center;gap:10px;font-size:12px;}
+.bar-label{width:90px;color:var(--text2);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bar-track{flex:1;height:18px;background:#f0f0f0;border-radius:4px;overflow:hidden;}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--green-light));border-radius:4px;transition:width .6s ease;}
+.bar-val{width:50px;color:var(--text1);font-weight:500;}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:24px;right:24px;background:#1a1a1a;color:white;padding:10px 18px;border-radius:8px;font-size:13px;z-index:9999;opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+
+/* ── Loading ── */
+.loading-row td{text-align:center;color:var(--text3);padding:32px;}
+.empty-state{text-align:center;padding:48px;color:var(--text3);}
+.empty-state i{font-size:40px;opacity:.3;display:block;margin-bottom:8px;}
+
+/* ── 登录页 ── */
+#loginPage{position:fixed;inset:0;background:linear-gradient(160deg,var(--green-dark),var(--green));display:flex;overflow-y:auto;-webkit-overflow-scrolling:touch;z-index:9999;}
+.login-box{background:white;border-radius:16px;padding:36px;width:360px;max-width:calc(100% - 32px);margin:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.login-logo{text-align:center;margin-bottom:24px;}
+.login-logo .icon{width:56px;height:56px;background:var(--green-dark);border-radius:14px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:var(--gold);font-family:STKaiti,KaiTi,serif;}
+.login-logo h2{font-size:18px;color:var(--text1);font-weight:600;}
+.login-logo p{font-size:12px;color:var(--text3);margin-top:3px;}
+.login-field{margin-bottom:14px;}
+.login-field label{display:block;font-size:12px;color:var(--text2);margin-bottom:5px;font-weight:500;}
+.login-field input{width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none;transition:border .2s;}
+.login-field input:focus{border-color:var(--green);}
+.login-btn{width:100%;padding:11px;background:var(--green);border:none;border-radius:8px;color:white;font-size:15px;font-weight:500;cursor:pointer;margin-top:4px;}
+.login-err{color:var(--red);font-size:12px;text-align:center;margin-top:8px;min-height:16px;}
+
+/* ── 移动端底部导航 ── */
+.mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:62px;background:white;border-top:1px solid var(--border);z-index:200;box-shadow:0 -2px 10px rgba(0,0,0,.08);}
+.mob-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10px;color:var(--text3);cursor:pointer;padding:6px 0;position:relative;transition:color .15s;}
+.mob-nav-item i{font-size:22px;}
+.mob-nav-item.active{color:var(--green);}
+.mob-nav-item .mob-badge{position:absolute;top:4px;right:calc(50% - 18px);background:var(--red);color:white;font-size:9px;padding:0 4px;border-radius:8px;min-width:14px;text-align:center;line-height:14px;}
+/* 更多抽屉 */
+.mob-more-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;}
+.mob-more-sheet{position:fixed;bottom:0;left:0;right:0;background:white;border-radius:16px 16px 0 0;z-index:301;padding:0 0 env(safe-area-inset-bottom);}
+.mob-more-title{padding:14px 20px 10px;font-size:13px;color:var(--text3);font-weight:500;border-bottom:1px solid var(--border);}
+.mob-more-item{display:flex;align-items:center;gap:14px;padding:14px 20px;font-size:15px;color:var(--text1);cursor:pointer;border-bottom:1px solid #f5f5f5;}
+.mob-more-item i{font-size:20px;color:var(--green);width:24px;}
+.mob-more-item:last-child{border-bottom:none;}
+
+/* ── 响应式断点 ── */
+@media(max-width:1200px){.stat-grid{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:900px){.chart-grid{grid-template-columns:1fr;}}
+
+
+/* ── 移动端适配（768px及以下）── */
+@media(max-width:768px){
+  body{flex-direction:column;}
+  .sidebar{display:none;position:fixed;top:0;left:0;width:260px;height:100vh;z-index:300;overflow-y:auto;}
+  .sidebar.open{display:flex;}
+  .main{margin-left:0;width:100%;}
+  .topbar{left:0;padding:0 12px;}
+  .topbar-title{font-size:14px;}
+  .page{padding:12px 10px 24px;}
+  .stat-grid{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px;}
+  .stat-card{padding:12px;}
+  .stat-val{font-size:22px;}
+  .chart-grid{grid-template-columns:1fr;}
+  table{font-size:11px;}
+  th,td{padding:8px 6px;}
+  th{display:none;}
+  td{display:block;padding:6px 8px;border-bottom:1px solid #f5f5f5;}
+  td::before{content:attr(data-label);display:block;font-size:10px;color:var(--text3);margin-bottom:2px;font-weight:500;}
+  td:last-child{border-bottom:2px solid var(--border);}
+  tr{margin-bottom:8px;display:block;background:var(--card);border-radius:8px;overflow:hidden;box-shadow:var(--shadow);}
+  .td-ops{display:flex;gap:4px;flex-wrap:wrap;}
+  .td-ops .btn{padding:4px 8px;font-size:11px;}
+  .filters{flex-direction:column;}
+  .filter-input,.filter-sel{width:100%;}
+  .pagination{flex-wrap:wrap;justify-content:center;font-size:11px;}
+  .pagination .page-btn{padding:4px 8px;}
+  .modal{width:95vw;max-width:95vw;}
+  #page-farming>div{grid-template-columns:1fr;}
+  .hamburger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;cursor:pointer;font-size:22px;color:var(--text1);margin-right:8px;}
+}
+@media(min-width:769px){.hamburger{display:none;}}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:299;}
+.sidebar-overlay.open{display:block;}
+
+@media(max-width:480px){
+  
+  .page{padding:14px 12px 24px;}
+  /* 侧边栏隐藏，底部导航显示 */
+  .sidebar{display:none!important;}
+  .mob-nav{display:flex;}
+  .main{margin-left:0;}
+  /* 页面内边距，底部留出导航高度 */
+  .page{padding:24px;}
+  .topbar{padding:0 14px;height:50px;}
+  .topbar-title{font-size:15px;}
+  /* 统计卡片 2列 */
+  .stat-grid{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;}
+  .stat-card{padding:14px 12px;}
+  .stat-val{font-size:22px;}
+  .stat-lbl{font-size:11px;}
+  .stat-icon{font-size:22px;right:10px;top:10px;}
+  /* 图表区 1列 */
+  .chart-grid{grid-template-columns:1fr;gap:12px;}
+  /* 导出区 1列 */
+  #page-export>div{grid-template-columns:1fr!important;gap:14px;}
+  /* card-hd 过滤区换行 */
+  .card-hd{flex-wrap:wrap;padding:12px 14px;gap:8px;}
+  .card-hd .actions{width:100%;flex-wrap:wrap;gap:6px;}
+  .card-hd .actions .filter-input,.card-hd .actions .filter-sel{flex:1;min-width:100px;}
+  .card-body{padding:14px;}
+  /* 表格 → 卡片列表 */
+  .tbl-wrap{overflow-x:visible;}
+  .tbl-wrap table,.tbl-wrap tbody{display:block;}
+  .tbl-wrap thead{display:none;}
+  .tbl-wrap tr{display:block;background:white;border-radius:10px;margin-bottom:10px;border:1px solid var(--border);padding:10px 14px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+  .tbl-wrap tr.loading-row{border:none;box-shadow:none;background:transparent;margin:0;}
+  .tbl-wrap tr.loading-row td{display:block;text-align:center;border:none;}
+  .tbl-wrap tr.loading-row td::before{display:none;}
+  .tbl-wrap td{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f5f5f5;font-size:14px;min-height:34px;gap:8px;}
+  .tbl-wrap td:last-child{border-bottom:none;}
+  .tbl-wrap td[data-label]::before{content:attr(data-label);color:var(--text3);font-size:12px;font-weight:500;min-width:60px;flex-shrink:0;}
+  /* 操作按钮列 */
+  .tbl-wrap td.td-ops{flex-direction:column;align-items:stretch;gap:6px;padding-top:10px;}
+  .tbl-wrap td.td-ops::before{display:none;}
+  .tbl-wrap td.td-ops .btn{width:100%;justify-content:center;}
+  /* 模态框从底部弹出 */
+  .modal-overlay{align-items:flex-end;}
+  .modal{width:100%;max-width:100%;border-radius:16px 16px 0 0;max-height:88vh;display:flex;flex-direction:column;}
+  .modal-bd{overflow-y:auto;flex:1;}
+  /* Toast 位置 */
+  .toast{bottom:70px;left:12px;right:12px;text-align:center;}
+  /* 登录框 */
+  .login-box{width:calc(100vw - 32px);padding:28px 20px;}
+  /* bar-label 缩短 */
+  .bar-label{width:60px;font-size:11px;}
+}
+</style>
+</head>
+<body>
+
+<!-- 登录页 -->
+<div id="loginPage">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="icon">罗峪</div>
+      <h2>后台管理系统</h2>
+      <p>桑植县凉水口镇罗峪村</p>
+    </div>
+    <div class="login-field">
+      <label>管理员账号</label>
+      <input type="text" id="loginUser" placeholder="请输入账号">
+    </div>
+    <div class="login-field">
+      <label>密码</label>
+      <input type="password" id="loginPass" placeholder="请输入密码">
+    </div>
+    <button class="login-btn" onclick="doLogin()">登 录</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- 侧边栏 -->
+<nav class="sidebar" id="sidebar" style="display:none;">
+  <div class="sb-logo">
+    <div class="sb-logo-icon">罗峪</div>
+    <div class="sb-logo-text">
+      <div class="t1">罗峪村积分系统</div>
+      <div class="t2">后台管理</div>
+    </div>
+  </div>
+  <div class="sb-nav">
+    <div class="sb-section">概览</div>
+    <div class="sb-item active" onclick="switchPage('dashboard')"><i class="ti ti-dashboard"></i>数据总览</div>
+    <div class="sb-section">业务管理</div>
+    <div class="sb-item" onclick="switchPage('notices')"><i class="ti ti-bell"></i>公告管理</div>
+    <div class="sb-item" onclick="switchPage('villagers')"><i class="ti ti-users"></i>村民管理</div>
+    <div class="sb-item" onclick="switchPage('scores')"><i class="ti ti-star"></i>积分管理<span class="sb-badge" id="pendingBadge" style="display:none;">0</span></div>
+    <div class="sb-item" onclick="switchPage('exchange')"><i class="ti ti-gift"></i>兑换管理</div>
+    <div class="sb-item" onclick="switchPage('goods')"><i class="ti ti-package"></i>物资管理</div>
+    <div class="sb-item" onclick="switchPage('events')"><i class="ti ti-adjustments"></i>积分规则</div>
+    <div class="sb-item" onclick="switchPage('checkin')"><i class="ti ti-qrcode"></i>签到管理</div>
+    <div class="sb-item" onclick="switchPage('feedback')"><i class="ti ti-message"></i>村民反馈<span class="sb-badge" id="feedbackBadge" style="display:none;">0</span></div>
+    <div class="sb-section">农事</div>
+    <div class="sb-item" onclick="switchPage('farming')"><i class="ti ti-leaf"></i>农事分析</div>
+    <div class="sb-item" onclick="switchPage('crops')"><i class="ti ti-plant"></i>作物配置</div>
+    <div class="sb-item" onclick="switchPage('settings')"><i class="ti ti-settings"></i>系统设置</div>
+    <div class="sb-section">系统</div>
+    <div class="sb-item" onclick="switchPage('export')"><i class="ti ti-file-export"></i>数据导出</div>
+    <div class="sb-item" onclick="switchPage('admins')"><i class="ti ti-shield"></i>账号管理</div>
+  </div>
+  <div class="sb-footer">
+    <div class="sb-user">
+      <div class="sb-user-av" id="userAv">管</div>
+      <div id="userName">管理员</div>
+      <div style="font-size:10px;opacity:.6;" id="userRole"></div>
+      <div class="sb-logout" onclick="doLogout()" title="退出登录"><i class="ti ti-logout"></i></div>
+    </div>
+  </div>
+</nav>
+
+<!-- 主内容 -->
+<div class="main" id="mainArea" style="display:none;">
+  <div class="topbar">
+    <div>
+      <div class="hamburger" onclick="toggleSidebar()"><i class="ti ti-menu-2"></i></div><div class="topbar-title" id="pageTitle">数据总览</div>
+      <div class="topbar-sub" id="pageTime"></div>
+    </div>
+  </div>
+
+  <!-- 数据总览 -->
+  <div class="page active" id="page-dashboard">
+    <div class="stat-grid" id="statGrid">
+      <div class="stat-card green"><div class="stat-val" id="s-villagers">-</div><div class="stat-lbl">全村村民总数</div><i class="ti ti-users stat-icon"></i></div>
+      <div class="stat-card gold"><div class="stat-val" id="s-total-score">-</div><div class="stat-lbl">全村积分总量</div><i class="ti ti-trophy stat-icon"></i></div>
+      <div class="stat-card blue"><div class="stat-val" id="s-month-points">-</div><div class="stat-lbl">本月新增积分</div><i class="ti ti-trending-up stat-icon"></i></div>
+      <div class="stat-card amber"><div class="stat-val" id="s-pending">-</div><div class="stat-lbl">待审核积分</div><i class="ti ti-clock stat-icon"></i></div>
+      <div class="stat-card red"><div class="stat-val" id="s-month-records">-</div><div class="stat-lbl">本月积分记录</div><i class="ti ti-list stat-icon"></i></div>
+    </div>
+    <div class="chart-grid">
+      <div class="card">
+        <div class="card-hd"><i class="ti ti-chart-bar"></i>各组积分排行</div>
+        <div class="card-body"><div class="bar-chart" id="groupChart"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><i class="ti ti-package"></i>物资库存状态</div>
+        <div class="card-body"><div id="stockList"></div></div>
+      </div>
+    </div>
+        <div class="card" style="margin-top:16px;" id="resetCard">
+          <div class="card-hd"><i class="ti ti-refresh"></i>年度积分清零<span style="font-size:11px;color:var(--amber);margin-left:8px;">仅超管可见</span></div>
+          <div class="card-body">
+            <div style="font-size:13px;color:var(--text2);margin-bottom:12px;">每年1月10日系统自动清零所有村民的<b>兑换积分</b>（荣誉积分保留）。如需手动触发清零，请点击下方按钮。</div>
+            <div style="display:flex;gap:10px;">
+              <button class="btn btn-danger" onclick="triggerReset()"><i class="ti ti-refresh"></i>手动清零</button>
+              <button class="btn btn-outline btn-sm" onclick="loadResetLog()"><i class="ti ti-history"></i>清零历史</button>
+            </div>
+            <div id="resetLogTable" style="margin-top:12px;display:none;"></div>
+          </div>
+        </div>
+  </div>
+
+
+
+
+  <!-- 作物配置 -->
+  <div class="page" id="page-crops">
+    <div class="card" style="max-width:700px;margin-bottom:16px;">
+      <div class="card-hd"><i class="ti ti-message"></i>农事配置向导</div>
+      <div class="card-body">
+        <div style="font-size:13px;color:var(--text2);margin-bottom:8px;">输入你村种植的作物，系统自动匹配农事规则：</div>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="cropInput" placeholder="例：我村种植早稻、油菜、茶叶" style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:7px;font-size:14px;" onkeydown="if(event.key==='Enter')parseCrops()">
+          <button class="btn btn-primary" onclick="parseCrops()">解析</button>
+        </div>
+        <div id="parseResult" style="margin-top:8px;font-size:12px;"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><i class="ti ti-list"></i>已配置作物
+        <div class="actions"><button class="btn btn-primary btn-sm" onclick="openAddCrop()"><i class="ti ti-plus"></i>手动添加</button></div>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="tbl-wrap">
+          <table><thead><tr><th>作物名称</th><th>播种日期</th><th>操作</th></tr></thead><tbody id="cropsTbody"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 作物编辑弹窗 -->
+  <div class="modal-overlay" id="cropModal">
+    <div class="modal">
+      <div class="modal-hd" id="cropModalTitle">添加作物<span class="modal-close" onclick="closeModal('cropModal')">x</span></div>
+      <div class="modal-bd">
+        <div class="form-row"><label>作物名称</label><select id="cropName" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:7px;"><option>早稻</option><option>晚稻</option><option>中稻</option><option>油菜</option><option>柑橘</option><option>茶叶</option><option>烟草</option><option>黄蜀葵</option><option>玉米</option><option>大棚番茄</option><option>大棚辣椒</option><option>棉花</option></select></div>
+        <div class="form-row"><label>播种日期</label><input type="date" id="cropDate"></div>
+      </div>
+      <div class="modal-ft">
+        <button class="btn btn-outline" onclick="closeModal('cropModal')">取消</button>
+        <button class="btn btn-primary" onclick="saveCrop()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 农事分析 -->
+  <div class="page" id="page-farming">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <!-- 左侧：天气 + 手动输入 -->
+      <div>
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-hd"><i class="ti ti-cloud"></i>实时天气<span style="font-size:11px;color:var(--text3);margin-left:8px;" id="weatherTime"></span></div>
+          <div class="card-body" id="weatherCard">
+            <div style="text-align:center;padding:16px;color:var(--text3);">点击下方按钮获取天气</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><i class="ti ti-adjustments"></i>田间条件</div>
+          <div class="card-body">
+            <div class="form-row"><label>土壤墒情</label>
+              <select id="soilMoisture" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;">
+                <option value="">不设定</option><option value="dry">偏干</option><option value="normal">适中</option><option value="wet">偏湿</option>
+              </select>
+            </div>
+            <div class="form-row"><label>作物阶段</label>
+              <select id="cropStage" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;">
+                <option value="">不设定</option><option value="seedling">育苗期</option><option value="tillering">分蘖期</option><option value="heading">抽穗期</option><option value="filling">灌浆期</option><option value="mature">成熟期</option>
+              </select>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <button class="btn btn-primary" onclick="getWeather()" style="flex:1;"><i class="ti ti-cloud-download"></i>获取天气</button>
+              <button class="btn btn-primary" onclick="runAnalyze()" style="flex:1;background:var(--amber);"><i class="ti ti-search"></i>分析匹配</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- 右侧：分析结果 -->
+      <div>
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-hd"><i class="ti ti-checklist"></i>匹配建议<span style="font-size:11px;color:var(--text3);margin-left:8px;" id="matchCount"></span>
+            <div class="actions"><button class="btn btn-primary btn-sm" id="publishBtn" onclick="publishReport()" disabled><i class="ti ti-send"></i>发布报告</button></div>
+          </div>
+          <div class="card-body" id="matchResults">
+            <div style="text-align:center;padding:24px;color:var(--text3);">请先获取天气，填入田间条件，点击"分析匹配"</div>
+          </div>
+        </div>
+        <!-- 规则管理 -->
+        <div class="card">
+          <div class="card-hd"><i class="ti ti-list-check"></i>农事规则
+            <div class="actions"><button class="btn btn-primary btn-sm" onclick="openFarmingRule()"><i class="ti ti-plus"></i>新增规则</button></div>
+          </div>
+          <div class="card-body" style="padding:0;">
+            <div class="tbl-wrap">
+              <table>
+                <thead><tr><th>规则名称</th><th>类型</th><th>优先级</th><th>状态</th><th>操作</th></tr></thead>
+                <tbody id="farmingRulesTbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 农事规则编辑弹窗 -->
+  <div class="modal-overlay" id="farmingRuleModal">
+    <div class="modal" style="width:560px;">
+      <div class="modal-hd" id="farmingRuleTitle">新增农事规则<span class="modal-close" onclick="closeModal(&#39;farmingRuleModal&#39;)">x</span></div>
+      <div class="modal-bd">
+        <div class="form-row"><label>规则名称</label><input type="text" id="frTitle" placeholder="例：适宜水稻播种"></div>
+        <div class="form-row"><label>类型</label>
+          <select id="frType" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;">
+            <option value="plant">种植</option><option value="pest">防虫</option><option value="weed">除草</option><option value="harvest">收割</option><option value="irrigate">灌溉</option><option value="other">其他</option>
+          </select>
+        </div>
+        <div class="form-row"><label>触发条件（JSON）</label><textarea id="frConditions" rows="4" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:12px;font-family:monospace;" placeholder='{"temp_min":20,"temp_max":30,"rain_3day":true}'></textarea>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px;">可用字段：temp_min, temp_max, humidity_min, wind_min, wind_max, rain_3day, rain_5day, weather_type, soil_moisture, crop_stage</div>
+        </div>
+        <div class="form-row"><label>生效月份（勾选月份生效，不勾选则全年）</label>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="setFarmingMonths(null)">全年</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="setFarmingMonths([3,4,5])">春季</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="setFarmingMonths([6,7,8])">夏季</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="setFarmingMonths([9,10,11])">秋季</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="setFarmingMonths([12,1,2])">冬季</button>
+          </div>
+          <div id="frMonths" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" class="fr-month" value="1" style="accent-color:var(--primary);">1月</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" class="fr-month" value="2" style="accent-color:var(--primary);">2月</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" class="fr-month" value="3" style="accent-color:var(--primary);">3月</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" class="fr-month" value="4" style="accent-color:var(--primary);">4月</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" class="fr-month" value="5" style="accent-color:var(--primary);">5月</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" class="fr-month" value="6" style="accent-color:var(--primary);">6月</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" class="fr-month" value="7" style="accent-color:var(--primary);">7月</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" class="fr-month" value="8" style="accent-color:var(--primary);">8月</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" class="fr-month" value="9" style="accent-color:var(--primary);">9月</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" class="fr-month" value="10" style="accent-color:var(--primary);">10月</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" class="fr-month" value="11" style="accent-color:var(--primary);">11月</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" class="fr-month" value="12" style="accent-color:var(--primary);">12月</label>
+          </div>
+        </div>
+        <div class="form-row"><label>建议内容</label><textarea id="frSuggestion" rows="3" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;" placeholder="温度适宜且近期有雨，适合水稻播种育秧"></textarea></div>
+        <div class="form-row"><label>优先级（数字越大越靠前）</label><input type="number" id="frPriority" value="0" min="0" max="100"></div>
+      </div>
+      <div class="modal-ft">
+        <button class="btn btn-outline" onclick="closeModal(&#39;farmingRuleModal&#39;)">取消</button>
+        <button class="btn btn-primary" onclick="saveFarmingRule()">保存</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 系统设置 -->
+  <div class="page" id="page-settings">
+    <div class="card" style="max-width:600px;">
+      <div class="card-hd"><i class="ti ti-settings"></i>系统设置</div>
+      <div class="card-body">
+        <div class="form-row"><label>村名全称</label><input type="text" id="setVillageName" placeholder="例：罗峪村"></div>
+        <div class="form-row"><label>村名简称（Logo用）</label><input type="text" id="setVillageShort" placeholder="例：罗峪"></div>
+        <div class="form-row"><label>村所在位置</label><input type="text" id="setVillageLoc" placeholder="例：桑植县凉水口镇罗峪村"></div>
+        <div class="form-row"><label>首页默认显示</label>
+          <select id="setHomeTab" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;">
+            <option value="my">我的（登录页）</option><option value="notice">村务公告</option><option value="rank">积分排行</option><option value="feed">积分动态</option><option value="rules">积分细则</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="saveVillageConfig()" style="width:100%;"><i class="ti ti-device-floppy"></i>保存设置</button>
+        <div style="font-size:11px;color:var(--text3);margin-top:12px;">修改后刷新页面生效。影响页面标题、Logo、组名显示、导出文件名等所有涉及村名的地方。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 村民管理 -->
+  <div class="page" id="page-villagers">
+    <div class="card">
+      <div class="card-hd"><i class="ti ti-users"></i>村民列表
+        <div class="actions">
+          <input class="filter-input" id="vSearch" placeholder="搜索姓名…" oninput="debounce(loadVillagers,400)()">
+          <select class="filter-sel" id="vGroup" onchange="loadVillagers()">
+            <option value="">全部组别</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="openAddVillager()"><i class="ti ti-user-plus"></i>新增村民</button>
+        </div>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>姓名</th><th>性别</th><th>所属组</th><th>身份证后4位</th><th>兑换积分</th><th>荣誉积分</th><th>操作</th></tr></thead>
+            <tbody id="villagersTbody"></tbody>
+          </table>
+        </div>
+        <div style="padding:12px 20px;"><div class="pagination" id="vPager"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 积分管理 -->
+  <div class="page" id="page-scores">
+    <div class="card">
+      <div class="card-hd"><i class="ti ti-star"></i>积分记录
+        <div class="actions">
+          <input class="filter-input" id="sSearch" placeholder="搜索村民姓名…" oninput="debounce(loadScores,400)()">
+          <select class="filter-sel" id="sStatus" onchange="loadScores()">
+            <option value="">全部状态</option>
+            <option value="pending">待审核</option>
+            <option value="approved">已通过</option>
+            <option value="rejected">已拒绝</option>
+          </select>
+          <select class="filter-sel" id="sGroup" onchange="loadScores()">
+            <option value="">全部组别</option>
+          </select>
+        </div>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>村民</th><th>所属组</th><th>事件</th><th>分值</th><th>状态</th><th>提交人</th><th>时间</th><th>操作</th></tr></thead>
+            <tbody id="scoresTbody"></tbody>
+          </table>
+        </div>
+        <div style="padding:12px 20px;"><div class="pagination" id="sPager"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 兑换管理 -->
+  <div class="page" id="page-exchange">
+    <!-- 兑换窗口开关卡片 -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-body" style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+        <div>
+          <div style="font-size:15px;font-weight:600;color:var(--text1);margin-bottom:3px;">
+            <i class="ti ti-calendar-event" style="color:var(--green);margin-right:6px;"></i>季度兑换窗口
+          </div>
+          <div style="font-size:13px;color:var(--text3);" id="switchStatusText">加载中…</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span id="switchStatusBadge" class="tag" style="font-size:13px;padding:4px 12px;"></span>
+          <button id="exchangeSwitchBtn" class="btn btn-sm" onclick="toggleExchangeSwitch()" style="min-width:80px;">
+            加载中
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><i class="ti ti-gift"></i>兑换记录<span id="exchangePendingBadge" style="display:none;background:var(--amber);color:white;font-size:11px;padding:2px 7px;border-radius:10px;margin-left:6px;font-weight:normal;"></span>
+        <div class="actions">
+          <select class="filter-sel" id="eStatus" onchange="loadExchange()">
+            <option value="">全部状态</option>
+            <option value="pending">待发放</option>
+            <option value="done">已发放</option>
+          </select>
+        </div>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>村民</th><th>所属组</th><th>兑换物资</th><th>扣除积分</th><th>状态</th><th>时间</th><th>操作</th></tr></thead>
+            <tbody id="exchangeTbody"></tbody>
+          </table>
+        </div>
+        <div style="padding:12px 20px;"><div class="pagination" id="ePager"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 物资管理 -->
+  <div class="page" id="page-goods">
+    <div class="card">
+      <div class="card-hd"><i class="ti ti-package"></i>物资库存管理
+        <div class="actions"><button class="btn btn-primary btn-sm" onclick="openAddGoods()"><i class="ti ti-plus"></i>新增物资</button></div>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>物资名称</th><th>图标</th><th>兑换积分</th><th>当前库存</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody id="goodsTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- 村民反馈 -->
+  <div class="page" id="page-feedback">
+    <div class="card">
+      <div class="card-hd"><i class="ti ti-message"></i>村民反馈建议</div>
+      <div class="card-body" style="padding:0;">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th style="width:100px;">留言人</th><th>内容</th><th style="width:90px;">时间</th><th style="width:60px;">状态</th></tr></thead>
+            <tbody id="feedbackTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 签到管理 -->
+  <div class="page" id="page-checkin">
+    <div class="card">
+      <div class="card-hd"><i class="ti ti-qrcode"></i>签到活动管理
+        <div class="actions"><button class="btn btn-primary btn-sm" onclick="openCreateCheckin()"><i class="ti ti-plus"></i>创建签到</button></div>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>活动标题</th><th>签到分值</th><th>签到人数</th><th>创建时间</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody id="checkinTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 签到记录详情 -->
+  <div class="page" id="page-checkin-records">
+    <div class="card">
+      <div class="card-hd"><i class="ti ti-list-check"></i><span id="checkinRecTitle">签到名单</span>
+        <div class="actions"><button class="btn btn-outline btn-sm" onclick="switchPage('checkin')"><i class="ti ti-arrow-left"></i>返回</button></div>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>村民姓名</th><th>组别</th><th>签到照片</th><th>签到时间</th></tr></thead>
+            <tbody id="checkinRecTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 积分规则 -->
+  <div class="page" id="page-events">
+    <div class="card">
+      <div class="card-hd"><i class="ti ti-adjustments"></i>积分规则管理
+        <div class="actions"><button class="btn btn-primary btn-sm" onclick="openAddEvent()"><i class="ti ti-plus"></i>新增规则</button></div>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>事件名称</th><th>类别</th><th>分值</th><th>验证方式</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody id="eventsTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 数据导出 -->
+  <div class="page" id="page-export">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div class="card">
+        <div class="card-hd"><i class="ti ti-users"></i>村民积分导出</div>
+        <div class="card-body">
+          <div class="form-row"><label>筛选组别（可选）</label>
+            <select class="filter-sel" id="expVGroup" style="width:100%"><option value="">全部组别</option></select>
+          </div>
+          <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="exportVillagers()">
+            <i class="ti ti-download"></i>导出 Excel
+          </button>
+          <div style="font-size:12px;color:var(--text3);margin-top:10px;">导出字段：姓名、性别、所属组、身份证后4位、兑换积分、荣誉积分、本月积分、积分记录数</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><i class="ti ti-list"></i>积分记录导出</div>
+        <div class="card-body">
+          <div class="form-row"><label>开始日期</label><input type="date" id="expStartDate" class="filter-input" style="width:100%"></div>
+          <div class="form-row"><label>结束日期</label><input type="date" id="expEndDate" class="filter-input" style="width:100%"></div>
+          <div class="form-row"><label>筛选组别（可选）</label>
+            <select class="filter-sel" id="expSGroup" style="width:100%"><option value="">全部组别</option></select>
+          </div>
+          <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="exportScores()">
+            <i class="ti ti-download"></i>导出 Excel
+          </button>
+          <div style="font-size:12px;color:var(--text3);margin-top:10px;">最多导出5000条记录</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 公告管理 -->
+  <div class="page" id="page-notices">
+    <!-- 公告列表 -->
+    <div id="noticeListView">
+      <div class="card">
+        <div class="card-hd"><i class="ti ti-bell"></i>公告管理
+          <div class="actions"><button class="btn btn-primary btn-sm" onclick="openAddNotice()"><i class="ti ti-plus"></i>发布公告</button></div>
+        </div>
+        <div class="card-body" style="padding:0;">
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>标题</th><th>类型</th><th>状态</th><th>发布时间</th><th>操作</th></tr></thead>
+              <tbody id="noticesTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 公告详情页 -->
+    <div id="noticeDetailView" style="display:none;">
+      <div class="card">
+        <div class="card-hd">
+          <button class="btn btn-outline btn-sm" onclick="showNoticeList()" style="margin-right:8px;"><i class="ti ti-arrow-left"></i>返回列表</button>
+          <span id="noticeDetailHeadTitle">公告详情</span>
+        </div>
+        <div class="card-body" id="noticeDetailContent" style="padding:20px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 账号管理 -->
+  <div class="page" id="page-admins">
+    <div class="card">
+      <div class="card-hd"><i class="ti ti-shield"></i>管理员账号
+        <div class="actions"><button class="btn btn-primary btn-sm" onclick="openAddAdmin()"><i class="ti ti-plus"></i>新增账号</button></div>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>用户名</th><th>姓名</th><th>角色</th><th>所属组</th><th>初始密码</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody id="adminsTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- 反馈详情弹窗 -->
+<div class="modal-overlay" id="feedbackDetailModal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-hd">反馈详情<span class="modal-close" onclick="closeModal('feedbackDetailModal')">×</span></div>
+    <div class="modal-bd" id="feedbackDetailContent"></div>
+  </div>
+</div>
+
+<!-- 积分撤回模态框 -->
+<div class="modal-overlay" id="revokeModal">
+  <div class="modal">
+    <div class="modal-hd">撤回积分记录<span class="modal-close" onclick="closeModal('revokeModal')">×</span></div>
+    <div class="modal-bd">
+      <div id="revokeInfo" style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;color:var(--text2);"></div>
+      <div class="form-row"><label>撤回原因 <span style="color:var(--red);">*</span></label>
+        <textarea id="revokeReason" placeholder="请说明撤回原因…"></textarea>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal('revokeModal')">取消</button>
+      <button class="btn btn-danger" onclick="confirmRevoke()">确认撤回</button>
+    </div>
+  </div>
+</div>
+
+<!-- 库存调整模态框 -->
+<div class="modal-overlay" id="stockModal">
+  <div class="modal">
+    <div class="modal-hd">调整库存<span class="modal-close" onclick="closeModal('stockModal')">×</span></div>
+    <div class="modal-bd">
+      <div class="form-row"><label>物资名称</label><input type="text" id="stockGoodsName" readonly style="background:var(--bg);"></div>
+      <div class="form-row"><label>新库存数量</label><input type="number" id="stockQty" min="0" placeholder="输入新的库存数量"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal('stockModal')">取消</button>
+      <button class="btn btn-primary" onclick="confirmStock()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 新增管理员模态框 -->
+<div class="modal-overlay" id="addAdminModal">
+  <div class="modal">
+    <div class="modal-hd">新增管理员<span class="modal-close" onclick="closeModal('addAdminModal')">×</span></div>
+    <div class="modal-bd">
+      <div class="form-row"><label>用户名</label><input type="text" id="newUsername" placeholder="登录账号"></div>
+      <div class="form-row"><label>密码（至少8位）</label><input type="password" id="newPassword" placeholder="初始密码"></div>
+      <div class="form-row"><label>真实姓名</label><input type="text" id="newName" placeholder="姓名"></div>
+      <div class="form-row"><label>角色</label>
+        <select id="newRole" onchange="toggleGroupField()">
+          <option value="village_admin">村干部</option>
+          <option value="group_leader">小组长</option>
+          <option value="super">超管</option>
+        </select>
+      </div>
+      <div class="form-row" id="groupField">
+        <label>所属组（组长必填）</label>
+        <select id="newGroupNo"><option value="">请选择组别</option></select>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal('addAdminModal')">取消</button>
+      <button class="btn btn-primary" onclick="confirmAddAdmin()">创建账号</button>
+    </div>
+  </div>
+</div>
+
+<!-- 村民详情模态框 -->
+<div class="modal-overlay" id="villagerModal">
+  <div class="modal" style="width:600px;">
+    <div class="modal-hd"><span id="villagerModalTitle">村民详情</span><span class="modal-close" onclick="closeModal('villagerModal')">×</span></div>
+    <div class="modal-bd" id="villagerModalBody" style="max-height:60vh;overflow-y:auto;"></div>
+    <div class="modal-ft"><button class="btn btn-outline" onclick="closeModal('villagerModal')">关闭</button></div>
+  </div>
+</div>
+
+<!-- 新增/编辑村民弹窗 -->
+<div class="modal-overlay" id="editVillagerModal">
+  <div class="modal" style="width:420px;">
+    <div class="modal-hd"><span id="editVillagerTitle">新增村民</span><span class="modal-close" onclick="closeModal('editVillagerModal')">×</span></div>
+    <div class="modal-bd">
+      <input type="hidden" id="editVillagerId" value="">
+      <div class="form-row">
+        <label class="form-label">姓名 <span style="color:var(--red)">*</span></label>
+        <input class="form-input" id="editVillagerName" placeholder="请输入姓名">
+      </div>
+      <div class="form-row">
+        <label class="form-label">性别 <span style="color:var(--red)">*</span></label>
+        <select class="form-input" id="editVillagerGender">
+          <option value="男">男</option>
+          <option value="女">女</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">所属组 <span style="color:var(--red)">*</span></label>
+        <select class="form-input" id="editVillagerGroup">
+          <option value="">请选择组别</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">身份证后4位 <span style="color:var(--red)">*</span></label>
+        <input class="form-input" id="editVillagerIdLast4" placeholder="4位数字" maxlength="4">
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal('editVillagerModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveVillager()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 注销确认弹窗 -->
+<div class="modal-overlay" id="deactivateModal">
+  <div class="modal" style="width:380px;">
+    <div class="modal-hd">注销村民<span class="modal-close" onclick="closeModal('deactivateModal')">×</span></div>
+    <div class="modal-bd">
+      <div id="deactivateInfo" style="margin-bottom:14px;padding:12px;background:var(--red-bg);border-radius:8px;color:var(--red);font-size:14px;"></div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.6;">注销后该村民将从系统中隐藏，积分记录保留不删除。适用于村民迁出、死亡等情况。<br>此操作可联系超级管理员恢复。</div>
+      <div class="form-row" style="margin-top:14px;">
+        <label class="form-label">注销原因 <span style="color:var(--red)">*</span></label>
+        <select class="form-input" id="deactivateReason">
+          <option value="">请选择原因</option>
+          <option value="迁出">迁出</option>
+          <option value="死亡">死亡</option>
+          <option value="其他">其他</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal('deactivateModal')">取消</button>
+      <button class="btn btn-danger" onclick="confirmDeactivate()">确认注销</button>
+    </div>
+  </div>
+</div>
+
+<!-- 重置密码模态框 -->
+<div class="modal-overlay" id="resetPwdModal">
+  <div class="modal">
+    <div class="modal-hd">重置密码<span class="modal-close" onclick="closeModal('resetPwdModal')">×</span></div>
+    <div class="modal-bd">
+      <div id="resetPwdInfo" style="background:var(--bg);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:13px;color:var(--text2);"></div>
+      <div class="form-row">
+        <label>新密码（至少8位）</label>
+        <input type="password" id="newPwd" placeholder="输入新密码">
+      </div>
+      <div class="form-row">
+        <label>确认新密码</label>
+        <input type="password" id="newPwd2" placeholder="再次输入新密码">
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal('resetPwdModal')">取消</button>
+      <button class="btn btn-primary" onclick="confirmResetPwd()">确认重置</button>
+    </div>
+  </div>
+</div>
+
+<!-- 新增/编辑物资模态框 -->
+<div class="modal-overlay" id="addGoodsModal">
+  <div class="modal">
+    <div class="modal-hd" id="addGoodsTitle">新增物资<span class="modal-close" onclick="closeModal('addGoodsModal')">×</span></div>
+    <div class="modal-bd">
+      <div class="form-row"><label>物资名称</label><input type="text" id="goodsName" placeholder="例：洗衣液"></div>
+      <div class="form-row"><label>图标（Emoji）</label><input type="text" id="goodsIcon" placeholder="例：🧴" maxlength="4"></div>
+      <div class="form-row"><label>兑换所需积分</label><input type="number" id="goodsPoints" min="1" placeholder="例：20"></div>
+      <div class="form-row"><label>初始库存数量</label><input type="number" id="goodsStock" min="0" placeholder="例：50"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal('addGoodsModal')">取消</button>
+      <button class="btn btn-primary" onclick="confirmAddGoods()">保存</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- 创建签到活动弹窗 -->
+<div class="modal-overlay" id="createCheckinModal">
+  <div class="modal">
+    <div class="modal-hd">创建签到活动<span class="modal-close" onclick="closeModal('createCheckinModal')">×</span></div>
+    <div class="modal-bd">
+      <div class="form-row"><label>活动标题</label><input type="text" id="checkinTitle" placeholder="例：村民大会签到"></div>
+      <div class="form-row"><label>关联积分事件（可选）</label><select id="checkinEventId" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;outline:none;"><option value="">不关联（自定义分值）</option></select></div>
+      <div class="form-row"><label>签到加分值</label><input type="number" id="checkinPoints" min="1" max="100" placeholder="例：5" value="5"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal('createCheckinModal')">取消</button>
+      <button class="btn btn-primary" onclick="confirmCreateCheckin()">创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- 签到二维码弹窗 -->
+<div class="modal-overlay" id="qrCodeModal">
+  <div class="modal" style="width:380px;text-align:center;">
+    <div class="modal-hd">签到二维码<span class="modal-close" onclick="closeModal('qrCodeModal')">×</span></div>
+    <div class="modal-bd">
+      <div style="font-size:16px;font-weight:600;margin-bottom:8px;" id="qrEventTitle"></div>
+      <div style="font-size:13px;color:var(--text3);margin-bottom:14px;">签到成功 +<span id="qrEventPoints" style="color:var(--green);font-weight:600;"></span> 分</div>
+      <div id="qrCodeContainer" style="display:inline-block;padding:12px;background:white;border:1px solid var(--border);border-radius:8px;"></div>
+      <div style="font-size:11px;color:var(--text3);margin-top:10px;">请村民使用手机扫描二维码签到</div>
+      <div style="font-size:10px;color:var(--amber);margin-top:4px;word-break:break-all;">链接：<span id="qrUrlText"></span></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="copyCheckinUrl()"><i class="ti ti-copy"></i>复制签到链接</button>
+    </div>
+  </div>
+</div>
+
+<!-- 新增/编辑积分规则模态框 -->
+<div class="modal-overlay" id="addEventModal">
+  <div class="modal">
+    <div class="modal-hd" id="addEventTitle">新增积分规则<span class="modal-close" onclick="closeModal('addEventModal')">×</span></div>
+    <div class="modal-bd">
+      <div class="form-row"><label>事件名称</label><input type="text" id="eventName" placeholder="例：优秀学生"></div>
+      <div class="form-row"><label>类别</label><input type="text" id="eventCategory" list="eventCategoryList" placeholder="例：教育积分 / 军旅积分 / 党建引领…"><datalist id="eventCategoryList"></datalist></div>
+      <div class="form-row"><label>分值（正数=加分，负数=扣分）</label><input type="number" id="eventPoints" placeholder="例：10 或 -20" min="-100" max="100"></div>
+      <div class="form-row"><label>验证方式（可选）</label><input type="text" id="eventVerify" placeholder="例：证书或管理员确认"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal('addEventModal')">取消</button>
+      <button class="btn btn-primary" onclick="confirmEvent()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 积分详情模态框 -->
+<div class="modal-overlay" id="scoreDetailModal">
+  <div class="modal" style="width:560px;">
+    <div class="modal-hd">积分记录详情<span class="modal-close" onclick="closeModal('scoreDetailModal')">×</span></div>
+    <div class="modal-bd" id="scoreDetailBody"></div>
+    <div class="modal-ft"><button class="btn btn-outline" onclick="closeModal('scoreDetailModal')">关闭</button></div>
+  </div>
+</div>
+
+<!-- 新增公告模态框 -->
+<div class="modal-overlay" id="addNoticeModal">
+  <div class="modal" style="width:520px;max-height:90vh;display:flex;flex-direction:column;">
+    <div class="modal-hd" id="addNoticeTitle">发布公告<span class="modal-close" onclick="closeModal('addNoticeModal')">×</span></div>
+    <div class="modal-bd" style="overflow-y:auto;flex:1;">
+      <div class="form-row"><label>标题 <span style="color:var(--red)">*</span></label><input type="text" id="noticeTitle" placeholder="公告标题"></div>
+      <div class="form-row"><label>类型</label>
+        <select id="noticeTag">
+          <option value="全村告示">全村告示</option>
+          <option value="积分通知">积分通知</option>
+          <option value="兑换通知">兑换通知</option>
+          <option value="活动公告">活动公告</option>
+        </select>
+      </div>
+      <div class="form-row"><label>内容 <span style="color:var(--red)">*</span></label><textarea id="noticeContent" rows="4" placeholder="公告内容…"></textarea></div>
+
+      <!-- 图片上传，最多9张 -->
+      <div class="form-row">
+        <label>图片附件 <span style="font-size:11px;color:var(--text3);">最多9张</span></label>
+        <div id="noticeImgPreview" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
+        <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:7px 14px;border:1px dashed var(--border);border-radius:8px;font-size:13px;color:var(--text2);">
+          <i class="ti ti-photo-plus"></i> 添加图片
+          <input type="file" id="noticeImgs" accept="image/*" multiple style="display:none;" onchange="previewNoticeImgs(this)">
+        </label>
+      </div>
+
+      <!-- 语音选项 -->
+      <div class="form-row">
+        <label>语音播报</label>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <button type="button" class="btn btn-outline btn-sm" id="audioOptNone" onclick="setAudioOpt('none')" style="flex:1;">无语音</button>
+          <button type="button" class="btn btn-outline btn-sm" id="audioOptTts" onclick="setAudioOpt('tts')" style="flex:1;"><i class="ti ti-speakerphone"></i> 普通话TTS</button>
+          <button type="button" class="btn btn-outline btn-sm" id="audioOptRecord" onclick="setAudioOpt('record')" style="flex:1;"><i class="ti ti-microphone"></i> 录音上传</button>
+        </div>
+        <!-- TTS提示 -->
+        <div id="audioTtsHint" style="display:none;padding:8px 12px;background:var(--green-bg);border-radius:8px;font-size:12px;color:var(--green);">
+          <i class="ti ti-info-circle"></i> 村民点击播放时，系统将自动朗读公告内容（普通话）
+        </div>
+        <!-- 录音上传 -->
+        <div id="audioRecordArea" style="display:none;">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <button type="button" class="btn btn-outline btn-sm" id="recordBtn" onclick="toggleRecord()"><i class="ti ti-microphone"></i> 开始录音</button>
+            <span id="recordTimer" style="font-size:13px;color:var(--text2);display:none;">⏺ 0:00</span>
+            <span id="recordStatus" style="font-size:12px;color:var(--text3);"></span>
+          </div>
+          <audio id="recordPreview" controls style="display:none;width:100%;margin-top:8px;height:36px;"></audio>
+          <div style="margin-top:6px;font-size:11px;color:var(--text3);">或直接上传音频文件：
+            <input type="file" id="audioFileInput" accept="audio/*" onchange="loadAudioFile(this)" style="font-size:11px;">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal('addNoticeModal')">取消</button>
+      <button class="btn btn-primary" id="noticeSubmitBtn" onclick="confirmAddNotice()"><i class="ti ti-send"></i> 发布</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 移动端底部导航 -->
+<nav class="mob-nav" id="mobNav">
+  <div class="mob-nav-item active" onclick="switchPage('dashboard')" data-page="dashboard">
+    <i class="ti ti-dashboard"></i><span>总览</span>
+  </div>
+  <div class="mob-nav-item" onclick="switchPage('scores')" data-page="scores">
+    <i class="ti ti-star"></i><span>审核</span>
+    <span class="mob-badge" id="mobPendingBadge" style="display:none;"></span>
+  </div>
+  <div class="mob-nav-item" onclick="switchPage('exchange')" data-page="exchange">
+    <i class="ti ti-gift"></i><span>兑换</span>
+  </div>
+  <div class="mob-nav-item" onclick="switchPage('notices')" data-page="notices">
+    <i class="ti ti-bell"></i><span>公告</span>
+  </div>
+  <div class="mob-nav-item" onclick="openMobMore()">
+    <i class="ti ti-dots"></i><span>更多</span>
+  </div>
+</nav>
+
+<!-- 移动端更多抽屉 -->
+<div class="mob-more-overlay" id="mobMoreOverlay" onclick="closeMobMore()" style="display:none;"></div>
+<div class="mob-more-sheet" id="mobMoreSheet" style="display:none;">
+  <div class="mob-more-title">更多功能</div>
+  <div class="mob-more-item" onclick="switchPage('dashboard');closeMobMore()"><i class="ti ti-dashboard"></i>数据总览</div>
+  <div class="mob-more-item" onclick="switchPage('villagers');closeMobMore()"><i class="ti ti-users"></i>村民管理</div>
+  <div class="mob-more-item" onclick="switchPage('goods');closeMobMore()"><i class="ti ti-package"></i>物资管理</div>
+  <div class="mob-more-item" onclick="switchPage('events');closeMobMore()"><i class="ti ti-adjustments"></i>积分规则</div>
+  <div class="mob-more-item" onclick="switchPage('export');closeMobMore()"><i class="ti ti-file-export"></i>数据导出</div>
+  <div class="mob-more-item" onclick="switchPage('admins');closeMobMore()"><i class="ti ti-shield"></i>账号管理</div>
+  <div class="mob-more-item" onclick="doLogout()" style="color:var(--red);"><i class="ti ti-logout" style="color:var(--red);"></i>退出登录</div>
+</div>
+
+<script>
+const BASE = '';
+var vc={name:"罗峪村",short:"罗峪",location:"桑植县凉水口镇罗峪村"};
+(async function(){try{var r=await api("GET","/api/admin/village-config");if(r&&r.data){vc.name=r.data.village_name;vc.short=r.data.village_short;vc.location=r.data.village_location}}catch(e){}})();
+let token = localStorage.getItem('luoyu_admin_token') || '';
+let adminInfo = JSON.parse(localStorage.getItem('luoyu_admin_info') || 'null');
+let currentPage = 'dashboard';
+let vPage = 1, sPage = 1, ePage = 1;
+let revokeId = null, stockGoodsId = null, editEventId = null;
+
+// ── 通用分页渲染 ──
+function renderPager(pagerId, page, total, loadFn) {
+  var el = document.getElementById(pagerId);
+  if (!el) return;
+  var totalPages = Math.max(1, Math.ceil(total / 15));
+  var html = '';
+  html += '<button class="page-btn" onclick="' + loadFn + '(1)" ' + (page <= 1 ? 'disabled' : '') + '>首页</button>';
+  html += '<button class="page-btn" onclick="' + loadFn + '(' + (page - 1) + ')" ' + (page <= 1 ? 'disabled' : '') + '>上一页</button>';
+  html += '<span style="margin:0 8px;">第 <input type="number" value="' + page + '" min="1" max="' + totalPages + '" style="width:50px;text-align:center;padding:4px;border:1px solid var(--border);border-radius:4px;" onchange="var v=parseInt(this.value);if(v>=1&&v<=' + totalPages + '){' + loadFn + '(v)}"> / ' + totalPages + ' 页</span>';
+  html += '<button class="page-btn" onclick="' + loadFn + '(' + (page + 1) + ')" ' + (page >= totalPages ? 'disabled' : '') + '>下一页</button>';
+  html += '<button class="page-btn" onclick="' + loadFn + '(' + totalPages + ')" ' + (page >= totalPages ? 'disabled' : '') + '>末页</button>';
+  html += '<span style="margin-left:8px;color:var(--text3);">共 ' + total + ' 条</span>';
+  el.innerHTML = html;
+}
+
+let allGroups = [];
+
+// ── API ──
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(BASE + path, opts);
+  const data = await r.json();
+  if (data.code === 401) { doLogout(); return null; }
+  return data;
+}
+
+// ── 登录 ──
+async function doLogin() {
+  const username = document.getElementById('loginUser').value.trim();
+  const password = document.getElementById('loginPass').value;
+  const err = document.getElementById('loginErr');
+  if (!username || !password) { err.textContent = '请输入账号和密码'; return; }
+  const res = await fetch(BASE + '/api/auth/login', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({username, password})
+  }).then(r=>r.json());
+  if (res.code !== 0) { err.textContent = res.message || '登录失败'; return; }
+  if (!['super','village_admin','viewer'].includes(res.data.admin.role)) {
+    err.textContent = '权限不足，此后台仅限管理员和村干部访问'; return;
+  }
+  token = res.data.token;
+  adminInfo = res.data.admin;
+  localStorage.setItem('luoyu_admin_token', token);
+  localStorage.setItem('luoyu_admin_info', JSON.stringify(adminInfo));
+  initApp();
+}
+
+function doLogout() {
+  token = ''; adminInfo = null;
+  localStorage.removeItem('luoyu_admin_token');
+  localStorage.removeItem('luoyu_admin_info');
+  document.getElementById('loginPage').style.display = 'flex';
+  document.getElementById('sidebar').style.display = 'none';
+  document.getElementById('mainArea').style.display = 'none';
+  document.getElementById('mobNav').style.display = 'none';
+}
+
+function initApp() {
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('sidebar').style.display = 'flex';
+  document.getElementById('mainArea').style.display = 'flex';
+  // Viewer mode
+  if (adminInfo.role === 'viewer') {
+    document.body.classList.add('viewer-mode');
+    document.getElementById('demoBanner').classList.add('show');
+  }
+  document.getElementById('userName').textContent = adminInfo.name;
+  document.getElementById('userRole').textContent = {super:'超管',village_admin:'村干部',group_leader:'组长',viewer:'仅查看'}[adminInfo.role]||'';
+  document.getElementById('userAv').textContent = adminInfo.name[0];
+  document.getElementById('pageTime').textContent = new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric'});
+  loadGroups();
+  loadDashboard();
+}
+
+// ── 组别 ──
+async function loadGroups() {
+  const res = await api('GET', '/api/admin/groups');
+  if (!res || res.code !== 0) return;
+  allGroups = res.data;
+  ['vGroup','sGroup','expVGroup','expSGroup','newGroupNo'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    // 保留第一个默认选项，清空其余
+    while (el.options.length > 1) el.remove(1);
+    allGroups.forEach(g => {
+      const opt = document.createElement('option');
+      opt.value = g;
+      opt.textContent = g.replace(vc.name,'');
+      el.appendChild(opt);
+    });
+  });
+}
+
+// ── 切换页面 ──
+function switchPage(name) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
+  
+  document.getElementById('page-'+name).classList.add('active');
+  const sbItem = document.querySelector(`.sb-item[onclick="switchPage('${name}')"]`);
+  if (sbItem) sbItem.classList.add('active');
+  currentPage = name;
+  const titles = {dashboard:'数据总览',villagers:'村民管理',scores:'积分管理',exchange:'兑换管理',goods:'物资管理',events:'积分规则',checkin:'签到管理',farming:'农事分析',crops:'作物配置',feedback:'村民反馈',settings:'系统设置',export:'数据导出',notices:'公告管理',admins:'账号管理'};
+  document.getElementById('pageTitle').textContent = titles[name]||name;
+  const loaders = {dashboard:loadDashboard,villagers:loadVillagers,scores:loadScores,exchange:()=>{loadExchangeSwitch();loadExchange();},goods:loadGoods,events:loadEvents,checkin:loadCheckins,farming:loadFarming,crops:loadCrops,feedback:loadFeedback,settings:loadSettings,notices:loadNotices,admins:loadAdmins};
+  if (loaders[name]) loaders[name]();
+}
+
+
+// ── 工具 ──
+function toggleSidebar() {
+  document.getElementById("sidebar").classList.toggle("open");
+  document.getElementById("sidebarOverlay").classList.toggle("open");
+}
+
+function showToast(msg, isErr) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = isErr ? '#c0392b' : '#1a1a1a';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function debounce(fn, delay) {
+  let t; return function(...args) { clearTimeout(t); t=setTimeout(()=>fn(...args), delay); };
+}
+function fmtDate(s) { return s ? s.slice(0,10) : '-'; }
+function roleName(r) { return {super:'超管',village_admin:'村干部',group_leader:'小组长'}[r]||r; }
+
+// ── 数据总览 ──
+async function loadDashboard() {
+  const res = await api('GET', '/api/admin/dashboard');
+  if (!res || res.code !== 0) return;
+  const d = res.data;
+  document.getElementById('s-villagers').textContent = d.total_villagers.toLocaleString();
+  document.getElementById('s-total-score').textContent = d.total_score.toLocaleString();
+  document.getElementById('s-month-points').textContent = '+' + d.month_points.toLocaleString();
+  document.getElementById('s-pending').textContent = d.pending;
+  document.getElementById('s-month-records').textContent = d.month_records;
+  if (d.pending > 0) {
+    document.getElementById('pendingBadge').style.display='';
+    document.getElementById('pendingBadge').textContent = d.pending;
+    document.getElementById('mobPendingBadge').style.display='';
+    document.getElementById('mobPendingBadge').textContent = d.pending;
+  } else {
+    document.getElementById('pendingBadge').style.display='none';
+    document.getElementById('mobPendingBadge').style.display='none';
+  }
+  // 各组积分柱状图
+  const maxScore = Math.max(...d.group_stats.map(g=>g.total), 1);
+  document.getElementById('groupChart').innerHTML = d.group_stats.map(g=>`
+    <div class="bar-row">
+      <div class="bar-label" title="${g.group_no}">${g.group_no.replace(vc.name,'')}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(g.total/maxScore*100)}%"></div></div>
+      <div class="bar-val">${g.total}</div>
+    </div>`).join('');
+  // 物资库存
+  document.getElementById('stockList').innerHTML = d.goods_stock.map(g=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;">
+      <span>${g.name}</span>
+      <span class="tag ${g.stock<=5?'tag-red':g.stock<=20?'tag-amber':'tag-green'}">${g.stock<=5?'库存紧张':g.stock<=20?'库存适中':'库存充足'} · ${g.stock}件</span>
+    </div>`).join('') || '<div class="empty-state"><i class="ti ti-package"></i>暂无物资数据</div>';
+}
+
+// ── 村民管理 ──
+function goVPage(p) { vPage = p; loadVillagers(); }
+async function loadVillagers() {
+  const q = document.getElementById('vSearch').value.trim();
+  const g = document.getElementById('vGroup').value;
+  let url = `/api/villagers?page=${vPage}&limit=15`;
+  if (q) url += '&name='+encodeURIComponent(q);
+  if (g) url += '&group_no='+encodeURIComponent(g);
+  const res = await api('GET', url);
+  if (!res || res.code !== 0) return;
+  renderPager('sPager', sPage, res.total, 'goSPage');
+  renderPager('vPager', vPage, res.total, 'goVPage');
+  const tbody = document.getElementById('villagersTbody');
+  if (!res.data.length) {
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><div class="empty-state"><i class="ti ti-users"></i>暂无数据</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = res.data.map(v=>`
+    <tr>
+      <td data-label="姓名"><strong>${v.name}</strong></td>
+      <td data-label="性别">${v.gender}</td>
+      <td data-label="所属组"><span class="tag tag-green">${v.group_no.replace(vc.name,'')}</span></td>
+      <td data-label="身份证" style="color:var(--text3);">****${v.id_last4}</td>
+      <td data-label="兑换积分"><strong style="color:var(--green);">${v.total_score}</strong> 分</td>
+      <td data-label="荣誉积分"><strong style="color:#c8a84b;">${v.honor_score||0}</strong> 分</td>
+      <td class="td-ops">
+        <button class="btn btn-outline btn-sm" onclick="viewVillager(${v.id},'${v.name}')"><i class="ti ti-eye"></i>详情</button>
+        <button class="btn btn-outline btn-sm" onclick="openEditVillager(${v.id},'${v.name}','${v.gender}','${v.group_no}','${v.id_last4}')"><i class="ti ti-pencil"></i>编辑</button>
+        <button class="btn btn-outline btn-sm" onclick="openDeactivate(${v.id},'${v.name}')" style="color:var(--red);"><i class="ti ti-user-off"></i>注销</button>
+      </td>
+    </tr>`).join('');
+}
+
+// ── 村民新增 / 编辑 / 注销 ──
+let deactivateVillagerId = null;
+
+async function openAddVillager() {
+  document.getElementById('editVillagerId').value = '';
+  document.getElementById('editVillagerTitle').textContent = '新增村民';
+  document.getElementById('editVillagerName').value = '';
+  document.getElementById('editVillagerGender').value = '男';
+  document.getElementById('editVillagerIdLast4').value = '';
+  // 填充组别选项
+  await _fillGroupSelect('editVillagerGroup', '');
+  openModal('editVillagerModal');
+}
+
+async function openEditVillager(id, name, gender, group_no, id_last4) {
+  document.getElementById('editVillagerId').value = id;
+  document.getElementById('editVillagerTitle').textContent = '编辑村民信息';
+  document.getElementById('editVillagerName').value = name;
+  document.getElementById('editVillagerGender').value = gender;
+  document.getElementById('editVillagerIdLast4').value = id_last4;
+  await _fillGroupSelect('editVillagerGroup', group_no);
+  openModal('editVillagerModal');
+}
+
+async function _fillGroupSelect(selectId, selected) {
+  const sel = document.getElementById(selectId);
+  // 保留第一个占位option，其余清空
+  while (sel.options.length > 1) sel.remove(1);
+  const res = await api('GET', '/api/admin/groups');
+  if (res && res.data) {
+    res.data.forEach(g => {
+      const opt = document.createElement('option');
+      opt.value = g; opt.textContent = g;
+      if (g === selected) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+}
+
+async function saveVillager() {
+  const id       = document.getElementById('editVillagerId').value;
+  const name     = document.getElementById('editVillagerName').value.trim();
+  const gender   = document.getElementById('editVillagerGender').value;
+  const group_no = document.getElementById('editVillagerGroup').value;
+  const id_last4 = document.getElementById('editVillagerIdLast4').value.trim();
+  if (!name || !gender || !group_no || !id_last4) { showToast('请填写完整信息', true); return; }
+  if (!/^\d{4}$/.test(id_last4)) { showToast('身份证后4位须为4位数字', true); return; }
+  let res;
+  if (id) {
+    res = await api('PUT', `/api/villagers/${id}`, { name, gender, group_no, id_last4 });
+  } else {
+    res = await api('POST', '/api/villagers', { name, gender, group_no, id_last4 });
+  }
+  if (res && res.code === 0) {
+    showToast(id ? '村民信息已更新' : '村民添加成功');
+    closeModal('editVillagerModal');
+    loadVillagers();
+  } else {
+    showToast(res?.message || '操作失败', true);
+  }
+}
+
+function openDeactivate(id, name) {
+  deactivateVillagerId = id;
+  document.getElementById('deactivateInfo').innerHTML =
+    `<i class="ti ti-alert-triangle"></i> 确认注销村民：<strong>${name}</strong>`;
+  document.getElementById('deactivateReason').value = '';
+  openModal('deactivateModal');
+}
+
+async function confirmDeactivate() {
+  const reason = document.getElementById('deactivateReason').value;
+  if (!reason) { showToast('请选择注销原因', true); return; }
+  const res = await api('PATCH', `/api/villagers/${deactivateVillagerId}/deactivate`, { reason });
+  if (res && res.code === 0) {
+    showToast('村民已注销');
+    closeModal('deactivateModal');
+    loadVillagers();
+    loadDashboard();
+  } else {
+    showToast(res?.message || '操作失败', true);
+  }
+}
+
+async function viewVillager(id, name) {
+  document.getElementById('villagerModalTitle').textContent = name + ' · 积分记录';
+  document.getElementById('villagerModalBody').innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);">加载中…</div>';
+  openModal('villagerModal');
+  const res = await api('GET', `/api/scores?villager_id=${id}&limit=50&status=approved`);
+  if (!res || res.code !== 0) return;
+  if (!res.data.length) {
+    document.getElementById('villagerModalBody').innerHTML = '<div class="empty-state"><i class="ti ti-clipboard-x"></i>暂无积分记录</div>';
+    return;
+  }
+  document.getElementById('villagerModalBody').innerHTML = res.data.map(r=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;">
+      <div style="width:32px;height:32px;border-radius:50%;background:${r.points>0?'var(--green-bg)':'var(--red-bg)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i class="ti ${r.points>0?'ti-plus':'ti-minus'}" style="color:${r.points>0?'var(--green)':'var(--red)'};font-size:14px;"></i>
+      </div>
+      <div style="flex:1;">
+        <div style="font-weight:500;">${r.event_name}${r.is_revoked?'<span class="tag tag-gray" style="margin-left:6px;">已撤回</span>':''}</div>
+        ${r.description?`<div style="color:var(--text3);font-size:12px;">${r.description}</div>`:''}
+        <div style="color:var(--text3);font-size:11px;">${fmtDate(r.created_at)} · ${r.submitted_by_name||''}</div>
+      </div>
+      <div style="font-weight:700;color:${r.points>0?'var(--green)':'var(--red)'};">${r.points>0?'+':''}${r.points}</div>
+    </div>`).join('');
+}
+
+// ── 积分管理 ──
+function goSPage(p) { sPage = p; loadScores(); }
+async function loadScores() {
+  const q = document.getElementById('sSearch').value.trim();
+  const status = document.getElementById('sStatus').value;
+  const group = document.getElementById('sGroup').value;
+  let url = `/api/scores?page=${sPage}&limit=15`;
+  if (q) url += '&villager_name='+encodeURIComponent(q);
+  if (status) url += '&status='+status;
+  if (group) url += '&group_no='+encodeURIComponent(group);
+  const res = await api('GET', url);
+  if (!res || res.code !== 0) return;
+  renderPager('sPager', sPage, res.total, 'goSPage');
+  let data = res.data;
+  const tbody = document.getElementById('scoresTbody');
+  if (!data.length) {
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="8"><div class="empty-state"><i class="ti ti-list"></i>暂无记录</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.map(r=>{
+    const statusTag = {pending:'<span class="tag tag-amber">待审核</span>',approved:'<span class="tag tag-green">已通过</span>',rejected:'<span class="tag tag-red">已拒绝</span>'}[r.status]||'';
+    const revokedTag = r.is_revoked ? '<span class="tag tag-gray">已撤回</span>' : '';
+    const canRevoke = adminInfo.role==='super' && r.status==='approved' && !r.is_revoked;
+    const approveBtn = r.status==='pending' ? `<button class="btn btn-outline btn-sm" onclick="approveScore(${r.id},1)" style="color:var(--green)"><i class="ti ti-check"></i>通过</button><button class="btn btn-outline btn-sm" onclick="approveScore(${r.id},0)" style="color:var(--red)"><i class="ti ti-x"></i>拒绝</button>` : '';
+    const revokeBtn = canRevoke ? `<button class="btn btn-danger btn-sm" onclick="openRevoke(${r.id},'${r.villager_name}','${r.event_name}',${r.points})"><i class="ti ti-arrow-back-up"></i>撤回</button>` : '';
+    const detailBtn = `<button class="btn btn-outline btn-sm" onclick="viewScoreDetail(${r.id})"><i class="ti ti-eye"></i>详情</button>`;
+    return `<tr>
+      <td data-label="村民"><strong>${r.villager_name}</strong></td>
+      <td data-label="所属组"><span class="tag tag-green">${(r.group_no||'').replace(vc.name,'')}</span></td>
+      <td data-label="事件">${r.event_name}</td>
+      <td data-label="分值" style="font-weight:700;color:${r.points>0?'var(--green)':'var(--red)'};">${r.points>0?'+':''}${r.points}</td>
+      <td data-label="状态">${statusTag}${revokedTag}</td>
+      <td data-label="提交人" style="color:var(--text3);">${r.submitted_by_name||'-'}</td>
+      <td data-label="时间" style="color:var(--text3);">${fmtDate(r.created_at)}</td>
+      <td class="td-ops">${detailBtn}${approveBtn}${revokeBtn}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function approveScore(id, approve) {
+  const isApprove = (approve === 1 || approve === true || approve === 'true');
+  // 传字符串，兼容所有body解析方式
+  const res = await api('PATCH', `/api/scores/${id}/review`, { approved: isApprove ? 'true' : 'false' });
+  if (res && res.code===0) { showToast(isApprove?'✅ 已通过审核':'❌ 已拒绝'); loadScores(); loadDashboard(); }
+  else showToast(res?.message||'操作失败', true);
+}
+
+function openRevoke(id, name, eventName, points) {
+  revokeId = id;
+  document.getElementById('revokeInfo').innerHTML = `
+    <div><strong>村民：</strong>${name}</div>
+    <div><strong>事件：</strong>${eventName}</div>
+    <div><strong>分值：</strong><span style="color:${points>0?'var(--green)':'var(--red)'};">${points>0?'+':''}${points}</span></div>`;
+  document.getElementById('revokeReason').value = '';
+  openModal('revokeModal');
+}
+
+async function confirmRevoke() {
+  const reason = document.getElementById('revokeReason').value.trim();
+  if (!reason) { showToast('请填写撤回原因', true); return; }
+  const res = await api('PATCH', `/api/admin/scores/${revokeId}/revoke`, { reason });
+  if (res && res.code===0) { showToast('撤回成功'); closeModal('revokeModal'); loadScores(); loadDashboard(); }
+  else showToast(res?.message||'撤回失败', true);
+}
+
+// ── 兑换窗口开关 ──
+let _exchangeOpen = false;
+
+async function loadExchangeSwitch() {
+  try {
+    const res = await api('GET', '/api/admin/exchange/switch');
+    if (!res || res.code !== 0) return;
+    _exchangeOpen = res.data.open;
+    updateSwitchUI(_exchangeOpen);
+  } catch(e) {}
+}
+
+function updateSwitchUI(isOpen) {
+  const badge = document.getElementById('switchStatusBadge');
+  const btn = document.getElementById('exchangeSwitchBtn');
+  const text = document.getElementById('switchStatusText');
+  if (!badge || !btn || !text) return;
+  if (isOpen) {
+    badge.textContent = '开放中';
+    badge.className = 'tag tag-green';
+    btn.textContent = '关闭兑换';
+    btn.className = 'btn btn-danger btn-sm';
+    text.textContent = '村民当前可以提交兑换申请';
+  } else {
+    badge.textContent = '已关闭';
+    badge.className = 'tag tag-gray';
+    btn.textContent = '开启兑换';
+    btn.className = 'btn btn-primary btn-sm';
+    text.textContent = '兑换窗口已关闭，村民无法提交兑换申请';
+  }
+}
+
+async function toggleExchangeSwitch() {
+  const btn = document.getElementById('exchangeSwitchBtn');
+  btn.disabled = true;
+  const newState = !_exchangeOpen;
+  try {
+    const res = await api('PATCH', '/api/admin/exchange/switch', { open: newState });
+    if (res && res.code === 0) {
+      _exchangeOpen = newState;
+      updateSwitchUI(_exchangeOpen);
+      showToast(res.message);
+    } else {
+      showToast(res?.message || '操作失败', true);
+    }
+  } catch(e) {
+    showToast('网络错误，请重试', true);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── 兑换管理 ──
+function goEPage(p) { ePage = p; loadExchange(); }
+async function loadExchange() {
+  const status = document.getElementById('eStatus').value;
+  let url = `/api/admin/exchange/records?page=${ePage}&limit=15`;
+  if (status) url += '&status='+encodeURIComponent(status);
+  if (status) url += '&status='+status;
+  const res = await api('GET', url);
+  if (!res || res.code !== 0) return;
+  renderPager('sPager', sPage, res.total, 'goSPage');
+  const tbody = document.getElementById('exchangeTbody');
+  if (!res.data.length) {
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="7"><div class="empty-state"><i class="ti ti-gift"></i>暂无兑换记录</div></td></tr>`;
+    const badge = document.getElementById('exchangePendingBadge');
+    if (badge) badge.style.display = 'none';
+    return;
+  }
+  // 更新待发放数量徽章（直接用预埋的元素，不动态注入）
+  const pendingCount = res.data.filter(r => r.status === 'pending').length;
+  const badge = document.getElementById('exchangePendingBadge');
+  if (badge) {
+    badge.textContent = pendingCount > 0 ? `${pendingCount} 待发放` : '';
+    badge.style.display = pendingCount > 0 ? '' : 'none';
+  }
+  tbody.innerHTML = res.data.map(r => {
+    const statusTag = {
+      pending: '<span class="tag tag-amber">待发放</span>',
+      done: '<span class="tag tag-green">已发放</span>',
+      cancelled: '<span class="tag tag-gray">已取消</span>'
+    }[r.status] || '';
+    const deliverBtn = r.status === 'pending'
+      ? `<button class="btn btn-primary btn-sm" onclick="deliverExchange(${r.id})"><i class="ti ti-check"></i>确认已发放</button>`
+      : '';
+    return `<tr>
+      <td data-label="村民"><strong>${r.villager_name}</strong></td>
+      <td data-label="所属组"><span class="tag tag-green">${(r.group_no||'').replace(vc.name,'')}</span></td>
+      <td data-label="兑换物资">${r.goods_name}</td>
+      <td data-label="扣除积分" style="color:var(--red);">-${r.points_cost}</td>
+      <td data-label="状态">${statusTag}</td>
+      <td data-label="时间" style="color:var(--text3);">${fmtDate(r.created_at)}</td>
+      <td class="td-ops">${deliverBtn}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function deliverExchange(id) {
+  try {
+    const res = await api('PATCH', `/api/admin/exchange/${id}/deliver`);
+    if (res && res.code === 0) { showToast('已确认发放'); loadExchange(); }
+    else showToast(res?.message || '操作失败', true);
+  } catch(e) { showToast('网络错误，请重试', true); }
+}
+
+// ── 物资管理 ──
+async function loadGoods() {
+  const res = await api('GET', '/api/exchange/goods');
+  if (!res || res.code !== 0) return;
+  document.getElementById('goodsTbody').innerHTML = res.data.map(g=>`
+    <tr>
+      <td data-label="物资名称"><strong>${g.name}</strong></td>
+      <td data-label="图标" style="font-size:20px;">${g.icon||'📦'}</td>
+      <td data-label="兑换积分">${g.points_cost} 积分</td>
+      <td data-label="当前库存"><strong style="color:${g.stock<=5?'var(--red)':g.stock<=20?'var(--amber)':'var(--green)'};">${g.stock}</strong></td>
+      <td data-label="状态"><span class="tag ${g.stock>0?'tag-green':'tag-red'}">${g.stock>0?'有库存':'已售罄'}</span></td>
+      <td class="td-ops">
+        <button class="btn btn-outline btn-sm" onclick="openStock(${g.id},'${g.name}',${g.stock})"><i class="ti ti-edit"></i>调整库存</button>
+        <button class="btn btn-outline btn-sm" onclick="openEditGoods(${g.id},'${g.name}','${g.icon||''}',${g.points_cost},${g.stock})"><i class="ti ti-pencil"></i>编辑</button>
+      </td>
+    </tr>`).join('') || `<tr><td colspan="6"><div class="empty-state"><i class="ti ti-package"></i>暂无物资</div></td></tr>`;
+}
+
+function openStock(id, name, stock) {
+  stockGoodsId = id;
+  document.getElementById('stockGoodsName').value = name;
+  document.getElementById('stockQty').value = stock;
+  openModal('stockModal');
+}
+
+async function confirmStock() {
+  const qty = parseInt(document.getElementById('stockQty').value);
+  if (isNaN(qty) || qty < 0) { showToast('请输入有效的库存数量', true); return; }
+  const res = await api('PATCH', `/api/admin/goods/${stockGoodsId}/stock`, { stock: qty });
+  if (res && res.code===0) { showToast('库存已更新'); closeModal('stockModal'); loadGoods(); loadDashboard(); }
+  else showToast(res?.message||'更新失败', true);
+}
+
+// ── 账号管理 ──
+async function loadAdmins() {
+  const res = await api('GET', '/api/admins');
+  if (!res || res.code !== 0) return;
+  document.getElementById('adminsTbody').innerHTML = res.data.map(a=>`
+    <tr>
+      <td data-label="账号"><code style="background:var(--bg);padding:2px 6px;border-radius:4px;">${a.username}</code></td>
+      <td data-label="姓名"><strong>${a.name}</strong></td>
+      <td data-label="角色"><span class="tag ${a.role==='super'?'tag-red':a.role==='village_admin'?'tag-blue':'tag-green'}">${roleName(a.role)}</span></td>
+      <td data-label="所属组" style="color:var(--text3);">${a.group_no?(a.group_no.replace(vc.name,'')):'—'}</td>
+      <td data-label="初始密码" style="color:var(--text3);font-size:12px;">${a.id===1?'自定义':'luoyu2026（初始）'}</td>
+      <td data-label="状态"><span class="tag ${a.is_active?'tag-green':'tag-gray'}">${a.is_active?'启用':'禁用'}</span></td>
+      <td class="td-ops">
+        <button class="btn btn-outline btn-sm" onclick="openResetPwd(${a.id},'${a.name}')"><i class="ti ti-key"></i>重置密码</button>
+        ${a.id!==adminInfo.id?`<button class="btn btn-outline btn-sm" onclick="toggleAdmin(${a.id},${a.is_active?0:1})">${a.is_active?'禁用':'启用'}</button>`:'-'}
+      </td>
+    </tr>`).join('');
+}
+
+function openAddAdmin() {
+  document.getElementById('newUsername').value='';
+  document.getElementById('newPassword').value='';
+  document.getElementById('newName').value='';
+  document.getElementById('newRole').value='village_admin';
+  document.getElementById('groupField').style.display='none';
+  openModal('addAdminModal');
+}
+
+function toggleGroupField() {
+  document.getElementById('groupField').style.display = document.getElementById('newRole').value==='group_leader' ? '' : 'none';
+}
+
+async function confirmAddAdmin() {
+  const body = {
+    username: document.getElementById('newUsername').value.trim(),
+    password: document.getElementById('newPassword').value,
+    name: document.getElementById('newName').value.trim(),
+    role: document.getElementById('newRole').value,
+    group_no: document.getElementById('newGroupNo').value || null,
+  };
+  if (!body.username||!body.password||!body.name) { showToast('请填写完整信息', true); return; }
+  const res = await api('POST', '/api/admins', body);
+  if (res && res.code===0) { showToast('账号创建成功'); closeModal('addAdminModal'); loadAdmins(); }
+  else showToast(res?.message||'创建失败', true);
+}
+
+async function toggleAdmin(id, status) {
+  const res = await api('PATCH', `/api/admins/${id}/status`, { is_active: status });
+  if (res && res.code===0) { showToast(status?'账号已启用':'账号已禁用'); loadAdmins(); }
+  else showToast(res?.message||'操作失败', true);
+}
+
+// ── 数据导出（前端生成Excel）──
+function toCSV(headers, rows) {
+  const esc = v => `"${String(v??'').replace(/"/g,'""')}"`;
+  return [headers.map(esc).join(','), ...rows.map(r=>r.map(esc).join(','))].join('\n');
+}
+
+function downloadCSV(filename, csv) {
+  const bom = '\uFEFF';
+  const blob = new Blob([bom+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function exportVillagers() {
+  const group = document.getElementById('expVGroup').value;
+  let url = '/api/admin/export/villagers';
+  if (group) url += '?group_no='+encodeURIComponent(group);
+  showToast('正在生成，请稍候…');
+  const res = await api('GET', url);
+  if (!res || res.code!==0) { showToast('导出失败', true); return; }
+  const headers = ['姓名','性别','所属组','身份证后4位','兑换积分','荣誉积分','本月积分','记录数'];
+  const rows = res.data.map(v=>[v.name,v.gender,v.group_no,v.id_last4,v.exchange_score||v.total_score,v.honor_score||0,v.month_score,v.record_count]);
+  const date = new Date().toISOString().slice(0,10);
+  downloadCSV(`罗峪村村民积分_${date}.csv`, toCSV(headers, rows));
+  showToast(`导出成功，共 ${rows.length} 条`);
+}
+
+async function exportScores() {
+  const start = document.getElementById('expStartDate').value;
+  const end = document.getElementById('expEndDate').value;
+  const group = document.getElementById('expSGroup').value;
+  let url = '/api/admin/export/scores?x=1';
+  if (start) url += '&start_date='+start;
+  if (end)   url += '&end_date='+end;
+  if (group) url += '&group_no='+encodeURIComponent(group);
+  showToast('正在生成，请稍候…');
+  const res = await api('GET', url);
+  if (!res || res.code!==0) { showToast('导出失败', true); return; }
+  const headers = ['村民姓名','所属组','事件','分值','说明','状态','是否撤回','提交人','时间'];
+  const rows = res.data.map(r=>[r.villager_name,r.group_no,r.event_name,r.points,r.description||'',
+    {pending:'待审核',approved:'已通过',rejected:'已拒绝'}[r.status]||r.status,
+    r.is_revoked?'已撤回':'正常',r.submitted_by,r.created_at]);
+  const date = new Date().toISOString().slice(0,10);
+  downloadCSV(`罗峪村积分记录_${date}.csv`, toCSV(headers, rows));
+  showToast(`导出成功，共 ${rows.length} 条`);
+}
+
+// ── 积分详情 ──
+async function viewScoreDetail(id) {
+  openModal('scoreDetailModal');
+  document.getElementById('scoreDetailBody').innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);">加载中…</div>';
+  const res = await api('GET', `/api/scores?page=1&limit=150`);
+  if (!res) return;
+  const rec = (res.data||[]).find(r=>r.id===id);
+  if (!rec) { document.getElementById('scoreDetailBody').innerHTML = '<div class="empty-state">记录不存在</div>'; return; }
+  const statusTag = {pending:'<span class="tag tag-amber">待审核</span>',approved:'<span class="tag tag-green">已通过</span>',rejected:'<span class="tag tag-red">已拒绝</span>'}[rec.status]||'';
+  const imgs = rec.image_urls && rec.image_urls.length
+    ? `<div style="margin-top:14px;"><div style="font-size:12px;color:var(--text3);margin-bottom:8px;font-weight:500;">附件图片（点击查看大图）</div><div style="display:flex;gap:8px;flex-wrap:wrap;">${rec.image_urls.map(url=>`<img src="${url}" style="width:120px;height:90px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid var(--border);" onclick="window.open('${url}','_blank')">`).join('')}</div></div>`
+    : '<div style="margin-top:10px;font-size:13px;color:var(--text3);">无附件图片</div>';
+  document.getElementById('scoreDetailBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+      <div><span style="color:var(--text3);">村民：</span><strong>${rec.villager_name}</strong></div>
+      <div><span style="color:var(--text3);">所属组：</span>${(rec.group_no||'').replace(vc.name,'')}</div>
+      <div><span style="color:var(--text3);">事件：</span><strong>${rec.event_name}</strong></div>
+      <div><span style="color:var(--text3);">分值：</span><strong style="font-size:16px;color:${rec.points>0?'var(--green)':'var(--red)'};">${rec.points>0?'+':''}${rec.points} 分</strong></div>
+      <div><span style="color:var(--text3);">提交人：</span>${rec.submitted_by_name||'-'}</div>
+      <div><span style="color:var(--text3);">状态：</span>${statusTag}${rec.is_revoked?'<span class="tag tag-gray" style="margin-left:4px;">已撤回</span>':''}</div>
+      <div><span style="color:var(--text3);">时间：</span>${fmtDate(rec.created_at)}</div>
+      <div><span style="color:var(--text3);">说明：</span>${rec.description||'（无）'}</div>
+    </div>
+    ${imgs}`;
+}
+
+// ── 公告管理 ──
+let _noticesData = [];
+async function loadNotices() {
+  _noticesData = [];
+  const res = await api('GET', '/api/admin/announcements');
+  if (!res || res.code !== 0) return;
+  _noticesData = res.data;
+  document.getElementById('noticesTbody').innerHTML = res.data.map(n=>{
+    const mediaTag = [
+      (n.image_urls&&n.image_urls.length) ? '<span style="font-size:11px;color:var(--text3);margin-left:4px;"><i class="ti ti-photo"></i>'+n.image_urls.length+'张</span>' : '',
+      n.audio_type==='tts' ? '<span style="font-size:11px;color:var(--green);margin-left:4px;"><i class="ti ti-speakerphone"></i>TTS</span>' : '',
+      n.audio_type==='record' ? '<span style="font-size:11px;color:var(--green);margin-left:4px;"><i class="ti ti-microphone"></i>录音</span>' : ''
+    ].join('');
+    var btns = '<button class="btn btn-outline btn-sm" onclick="viewNotice('+n.id+')" title="查看"><i class="ti ti-eye"></i></button> ';
+    btns += '<button class="btn btn-outline btn-sm" onclick="editNotice('+n.id+')" title="编辑"><i class="ti ti-pencil"></i></button> ';
+    btns += n.is_active
+      ? '<button class="btn btn-outline btn-sm" onclick="revokeNotice('+n.id+')" title="撤回"><i class="ti ti-arrow-back-up"></i></button> '
+      : '';
+    btns += '<button class="btn btn-danger btn-sm" onclick="deleteNotice('+n.id+')" title="删除"><i class="ti ti-trash"></i></button>';
+    return '<tr>'
+      + '<td data-label="标题"><strong>'+n.title+'</strong><div style="display:flex;flex-wrap:wrap;">'+mediaTag+'</div></td>'
+      + '<td data-label="类型"><span class="tag tag-blue">'+n.tag_type+'</span></td>'
+      + '<td data-label="状态"><span class="tag '+(n.is_active?'tag-green':'tag-gray')+'">'+(n.is_active?'已发布':'已撤回')+'</span></td>'
+      + '<td data-label="发布时间" style="color:var(--text3);">'+(n.created_at?n.created_at.slice(0,10):'')+'</td>'
+      + '<td class="td-ops">'+btns+'</td>'
+      + '</tr>';
+  }).join('') || '<tr><td colspan="5"><div class="empty-state"><i class="ti ti-bell-off"></i>暂无公告</div></td></tr>';
+}
+
+function openAddNotice() {
+  document.getElementById('noticeTitle').value = '';
+  document.getElementById('noticeContent').value = '';
+  document.getElementById('noticeTag').value = '全村告示';
+  document.getElementById('noticeImgPreview').innerHTML = '';
+  document.getElementById('noticeImgs').value = '';
+  document.getElementById('recordPreview').style.display = 'none';
+  document.getElementById('recordPreview').src = '';
+  document.getElementById('recordStatus').textContent = '';
+  document.getElementById('audioFileInput').value = '';
+  setAudioOpt('none');
+  _noticeRecordedBlob = null;
+  openModal('addNoticeModal');
+}
+
+async function confirmAddNotice() {
+  const title = document.getElementById('noticeTitle').value.trim();
+  const content = document.getElementById('noticeContent').value.trim();
+  const tag_type = document.getElementById('noticeTag').value;
+  if (!title || !content) { showToast('标题和内容不能为空', true); return; }
+
+  const btn = document.getElementById('noticeSubmitBtn');
+  btn.disabled = true; btn.textContent = '发布中…';
+
+  const fd = new FormData();
+  fd.append('title', title);
+  fd.append('content', content);
+  fd.append('tag_type', tag_type);
+
+  // 图片
+  const imgInput = document.getElementById('noticeImgs');
+  if (imgInput.files.length) {
+    Array.from(imgInput.files).slice(0,9).forEach(f => fd.append('images', f));
+  }
+
+  // 音频
+  const audioOpt = document.querySelector('.audio-opt-active')?.dataset.opt || 'none';
+  if (audioOpt === 'tts') {
+    fd.append('audio_type', 'tts');
+  } else if (audioOpt === 'record') {
+    const audioFile = document.getElementById('audioFileInput').files[0];
+    if (_noticeRecordedBlob) {
+      fd.append('audio', _noticeRecordedBlob, 'recording.webm');
+    } else if (audioFile) {
+      fd.append('audio', audioFile);
+    }
+  }
+
+  try {
+    const r = await fetch(BASE + '/api/announcements', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token },
+      body: fd
+    });
+    const res = await r.json();
+    btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> 发布';
+    if (res && res.code===0) { showToast('公告已发布'); closeModal('addNoticeModal'); loadNotices(); }
+    else showToast(res?.message||'发布失败', true);
+  } catch(e) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> 发布'; showToast('网络错误', true); }
+}
+
+// 返回公告列表
+function showNoticeList() {
+  document.getElementById('noticeDetailView').style.display = 'none';
+  document.getElementById('noticeListView').style.display = '';
+}
+
+// 查看公告详情
+async function viewNotice(id) {
+  let n = _noticesData.find(x => x.id == id);
+  if (!n) {
+    const res = await fetch(BASE + '/api/announcements').then(r=>r.json());
+    if (res && res.data) { n = res.data.find(x => x.id == id); }
+  }
+  if (!n) { showToast('公告不存在', true); return; }
+
+  const tagColors = {'活动通知':'tt','体育活动':'tg','政策宣传':'tb','全村告示':'ta','积分通知':'tg','兑换通知':'ta','活动公告':'tb'};
+
+  // 图片九宫格
+  let imgHtml = '';
+  if (n.image_urls && n.image_urls.length) {
+    const cnt = Math.min(n.image_urls.length, 9);
+    const cols = cnt === 1 ? '1fr' : cnt === 2 ? '1fr 1fr' : '1fr 1fr 1fr';
+    imgHtml = '<div style="display:grid;grid-template-columns:'+cols+';gap:4px;margin:12px 0;">'
+      + n.image_urls.slice(0,9).map(url =>
+        '<img src="'+url+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="window.open(this.src,\'_blank\')">'  
+      ).join('') + '</div>';
+  }
+
+  // 音频
+  let audioHtml = '';
+  if (n.audio_type === 'tts') {
+    audioHtml = '<div style="padding:10px 14px;background:var(--green-bg);border-radius:8px;margin:10px 0;font-size:13px;color:var(--green);"><i class="ti ti-speakerphone"></i> 已设置普通话TTS语音播报</div>';
+  } else if (n.audio_type === 'record' && n.audio_url) {
+    audioHtml = '<div style="margin:10px 0;"><div style="font-size:12px;color:var(--text3);margin-bottom:4px;">语音公告</div><audio controls src="'+n.audio_url+'" style="width:100%;height:36px;"></audio></div>';
+  }
+
+  document.getElementById('noticeDetailHeadTitle').textContent = n.title;
+  document.getElementById('noticeDetailContent').innerHTML =
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">'
+    + '<span class="tag '+(tagColors[n.tag_type]||'tg')+'">'+n.tag_type+'</span>'
+    + '<span style="font-size:13px;color:var(--text3);">'+(n.created_at?n.created_at.slice(0,10):'')+'</span>'
+    + '</div>'
+    + audioHtml
+    + '<div style="font-size:15px;line-height:1.9;color:var(--text1);white-space:pre-wrap;padding:4px 0;">'+n.content+'</div>'
+    + imgHtml;
+  document.getElementById('noticeListView').style.display = 'none';
+  document.getElementById('noticeDetailView').style.display = '';
+}
+
+var _editNoticeId = null;
+function editNotice(id) {
+  var n = _noticesData.find(function(x) { return x.id === id; });
+  if (!n) return;
+  _editNoticeId = id;
+  document.getElementById('noticeTitle').value = n.title;
+  document.getElementById('noticeContent').value = n.content;
+  document.getElementById('noticeTag').value = n.tag_type;
+  _noticeImgs = [];
+  _noticeAudioFile = null;
+  document.getElementById('noticeImgPreview').innerHTML = '';
+  document.getElementById('noticeImgs').value = '';
+  document.getElementById('recordPreview').style.display = 'none';
+  document.getElementById('addNoticeTitle').innerHTML = '编辑公告<span class="modal-close" onclick="closeModal(\'addNoticeModal\')">×</span>';
+  openModal('addNoticeModal');
+}
+async function deleteNotice(id) {
+  if (!confirm('确定永久删除此公告？此操作不可恢复。')) return;
+  var res = await api('DELETE', '/api/admin/announcements/' + id);
+  if (res && res.code === 0) { showToast('公告已删除'); loadNotices(); }
+  else showToast(res && res.message || '删除失败', true);
+}
+
+async function revokeNotice(id) {
+  if (!confirm('确认撤回该公告？')) return;
+  try {
+    const res = await api('DELETE', `/api/announcements/${id}`);
+    if (res && res.code===0) { showToast('公告已撤回'); loadNotices(); loadNotices(); }
+    else showToast(res?.message||'操作失败', true);
+  } catch(e) { showToast('网络错误，请重试', true); }
+}
+
+// ── 重置密码 ──
+let resetPwdId = null;
+function openResetPwd(id, name) {
+  resetPwdId = id;
+  document.getElementById('resetPwdInfo').textContent = `正在为「${name}」重置密码`;
+  document.getElementById('newPwd').value = '';
+  document.getElementById('newPwd2').value = '';
+  openModal('resetPwdModal');
+}
+async function confirmResetPwd() {
+  const pwd = document.getElementById('newPwd').value;
+  const pwd2 = document.getElementById('newPwd2').value;
+  if (!pwd || pwd.length < 8) { showToast('密码不能少于8位', true); return; }
+  if (pwd !== pwd2) { showToast('两次输入的密码不一致', true); return; }
+  const res = await api('PATCH', `/api/admins/${resetPwdId}/reset-password`, { new_password: pwd });
+  if (res && res.code===0) { showToast('密码重置成功'); closeModal('resetPwdModal'); }
+  else showToast(res?.message||'重置失败', true);
+}
+
+// ── 新增/编辑物资 ──
+let editGoodsId = null;
+function openAddGoods() {
+  editGoodsId = null;
+  document.getElementById('addGoodsTitle').innerHTML = '新增物资<span class="modal-close" onclick="closeModal(\'addGoodsModal\')">×</span>';
+  document.getElementById('goodsName').value = '';
+  document.getElementById('goodsIcon').value = '📦';
+  document.getElementById('goodsPoints').value = '';
+  document.getElementById('goodsStock').value = '0';
+  openModal('addGoodsModal');
+}
+function openEditGoods(id, name, icon, points, stock) {
+  editGoodsId = id;
+  document.getElementById('addGoodsTitle').innerHTML = '编辑物资<span class="modal-close" onclick="closeModal(\'addGoodsModal\')">×</span>';
+  document.getElementById('goodsName').value = name;
+  document.getElementById('goodsIcon').value = icon;
+  document.getElementById('goodsPoints').value = points;
+  document.getElementById('goodsStock').value = stock;
+  openModal('addGoodsModal');
+}
+async function confirmAddGoods() {
+  const name = document.getElementById('goodsName').value.trim();
+  const icon = document.getElementById('goodsIcon').value.trim() || '📦';
+  const points = parseInt(document.getElementById('goodsPoints').value);
+  const stock = parseInt(document.getElementById('goodsStock').value);
+  if (!name) { showToast('请填写物资名称', true); return; }
+  if (isNaN(points) || points < 1) { showToast('请填写有效的兑换积分', true); return; }
+  if (isNaN(stock) || stock < 0) { showToast('库存不能为负数', true); return; }
+  let res;
+  if (editGoodsId) {
+    res = await api('PUT', `/api/admin/goods/${editGoodsId}`, { name, icon, points_cost: points, stock });
+  } else {
+    res = await api('POST', `/api/admin/goods`, { name, icon, points_cost: points, stock });
+  }
+  if (res && res.code===0) { showToast(editGoodsId?'物资已更新':'物资添加成功'); closeModal('addGoodsModal'); loadGoods(); loadDashboard(); }
+  else showToast(res?.message||'操作失败', true);
+}
+
+
+
+// ── 农事分析 ──
+var farmingWeather = null;
+var farmingMatched = [];
+var editFarmingRuleId = null;
+
+async function loadFarming() {
+  await Promise.all([getWeather(), loadFarmingRules()]);
+}
+
+async function getWeather() {
+  var btn = event.target;
+  btn.disabled = true; btn.textContent = '获取中…';
+  try {
+    var res = await api('GET', '/api/farming/weather');
+    if (!res || res.code !== 0) { showToast(res?.message || '天气获取失败', true); return; }
+    farmingWeather = res.data;
+    var w = res.data;
+    showToast('天气已更新 · 桑植县');
+    var icon = '⛅';
+    if (w.weather_text.indexOf('雨')>=0) icon='🌧️';
+    else if (w.weather_text.indexOf('雪')>=0) icon='❄️';
+    else if (w.weather_text.indexOf('云')>=0) icon='⛅';
+    else if (w.weather_text.indexOf('晴')>=0) icon='☀️';
+    document.getElementById('weatherCard').innerHTML =
+      '<div style="text-align:center;">' +
+      '<div style="font-size:13px;color:var(--text2);margin-bottom:6px;">📍 桑植县凉水口镇</div>' +
+      '<div style="font-size:48px;">' + icon + '</div>' +
+      '<div style="font-size:28px;font-weight:700;">' + w.temp + '°C</div>' +
+      '<div style="font-size:14px;color:var(--text2);margin-top:4px;">体感 ' + w.feels_like + '°C · ' + w.weather_text + (w.from_forecast?' <span style="font-size:10px;color:var(--blue);">预报</span>':'') + '</div>' +
+      '<div style="display:flex;justify-content:center;gap:16px;margin-top:10px;font-size:13px;color:var(--text3);">' +
+      '<span>💧 ' + w.humidity + '%</span><span>💨 ' + w.wind_speed + 'km/h</span>' +
+      '</div>' +
+      '<div style="font-size:11px;color:var(--text3);margin-top:6px;">' + (w.rain_3day?'🌧 近3天有雨':'☀ 近3天无雨') + ' · ' + (w.rain_5day?'🌧 近5天有雨':'☀ 近5天无雨') + '</div>' +
+      (res.mock ? '<div style="font-size:10px;color:var(--amber);margin-top:4px;">模拟数据（未配置API Key）</div>' : '') +
+      '</div>';
+    document.getElementById('weatherTime').textContent = w.updated ? w.updated.slice(11,16) : '';
+  } catch(e) { showToast('网络错误', true); }
+  finally { btn.disabled = false; btn.textContent = '获取天气'; }
+}
+
+async function loadFarmingRules() {
+  var res = await api('GET', '/api/farming/rules');
+  if (!res || res.code !== 0) return;
+  var taskTypes = {plant:'种植',pest:'防虫',weed:'除草',harvest:'收割',irrigate:'灌溉',other:'其他'};
+  document.getElementById('farmingRulesTbody').innerHTML = res.data.map(function(r) {
+    var cond = typeof r.conditions==='string' ? r.conditions : JSON.stringify(r.conditions);
+    var mText = (r.active_months && r.active_months.length) ? r.active_months.join('、') + '月' : '全年';
+    return '<tr>' +
+      '<td><strong>' + r.title + '</strong><div style="font-size:10px;color:var(--text3);">' + cond + '</div><div style="font-size:10px;color:var(--primary);margin-top:2px;">生效：' + mText + '</div></td>' +
+      '<td>' + (taskTypes[r.task_type]||'其他') + '</td>' +
+      '<td>' + r.priority + '</td>' +
+      '<td><span class="tag ' + (r.is_active?'tag-green':'tag-gray') + '">' + (r.is_active?'启用':'禁用') + '</span></td>' +
+      '<td class="td-ops">' +
+        '<button class="btn btn-outline btn-sm" onclick="editFarmingRule(' + r.id + ')">编辑</button>' +
+        '<button class="btn btn-outline btn-sm" onclick="toggleFarmingRule(' + r.id + ',' + (r.is_active?0:1) + ')">' + (r.is_active?'禁用':'启用') + '</button>' +
+      '</td>' +
+    '</tr>';
+  }).join('') || '<tr><td colspan="5" class="empty-state">暂无规则</td></tr>';
+}
+
+async function runAnalyze() {
+  if (!farmingWeather) { showToast('请先获取天气数据', true); return; }
+  var soil = document.getElementById('soilMoisture').value;
+  var crop = document.getElementById('cropStage').value;
+  var res = await api('POST', '/api/farming/analyze', { soil_moisture: soil||null, crop_stage: crop||null });
+  if (!res || res.code !== 0) return;
+  farmingMatched = res.data.matched;
+  var el = document.getElementById('matchResults');
+  document.getElementById('matchCount').textContent = '匹配 ' + farmingMatched.length + ' 条';
+  if (!farmingMatched.length) {
+    el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text3);">当前条件未匹配到农事建议</div>';
+    document.getElementById('publishBtn').disabled = true;
+  } else {
+    var icons = {plant:'🌱',pest:'🐛',weed:'🌿',harvest:'🌾',irrigate:'💧',other:'📋'};
+    el.innerHTML = farmingMatched.map(function(r) {
+      return '<div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:10px;">' +
+        '<span style="font-size:24px;">' + (icons[r.task_type]||'📋') + '</span>' +
+        '<div style="flex:1;"><strong>' + r.title + '</strong><div style="font-size:13px;color:var(--text2);margin-top:2px;">' + r.suggestion + '</div></div>' +
+        '<span style="font-size:11px;color:var(--text3);">优先级 ' + r.priority + '</span>' +
+      '</div>';
+    }).join('');
+    document.getElementById('publishBtn').disabled = false;
+  }
+}
+
+async function publishReport() {
+  if (!farmingMatched.length) { showToast('没有可发布的建议', true); return; }
+  var res = await api('POST', '/api/farming/report', {
+    suggestions: farmingMatched,
+    weather: farmingWeather,
+    soil_input: { moisture: document.getElementById('soilMoisture').value, crop_stage: document.getElementById('cropStage').value }
+  });
+  if (res && res.code === 0) { showToast('农事报告已发布，村民可在首页查看'); }
+  else showToast(res && res.message || '发布失败', true);
+}
+
+function setFarmingMonths(months) {
+  document.querySelectorAll('.fr-month').forEach(function(cb) {
+    cb.checked = !months || months.indexOf(parseInt(cb.value)) >= 0;
+  });
+}
+
+function getFarmingMonths() {
+  var list = [];
+  document.querySelectorAll('.fr-month:checked').forEach(function(cb) { list.push(parseInt(cb.value)); });
+  return list;
+}
+
+function openFarmingRule() {
+  editFarmingRuleId = null;
+  document.getElementById('farmingRuleTitle').innerHTML = '新增农事规则<span class="modal-close" onclick="closeModal(&#39;farmingRuleModal&#39;)">×</span>';
+  document.getElementById('frTitle').value = '';
+  document.getElementById('frType').value = 'other';
+  document.getElementById('frConditions').value = '';
+  document.getElementById('frSuggestion').value = '';
+  document.getElementById('frPriority').value = '0';
+  setFarmingMonths(null);
+  openModal('farmingRuleModal');
+}
+
+async function editFarmingRule(id) {
+  var res = await api('GET', '/api/farming/rules');
+  if (!res || res.code !== 0) return;
+  var rule = res.data.find(function(r) { return r.id === id; });
+  if (!rule) return;
+  editFarmingRuleId = id;
+  document.getElementById('farmingRuleTitle').innerHTML = '编辑农事规则<span class="modal-close" onclick="closeModal(&#39;farmingRuleModal&#39;)">×</span>';
+  document.getElementById('frTitle').value = rule.title;
+  document.getElementById('frType').value = rule.task_type;
+  document.getElementById('frConditions').value = JSON.stringify(rule.conditions);
+  document.getElementById('frSuggestion').value = rule.suggestion;
+  document.getElementById('frPriority').value = rule.priority;
+  setFarmingMonths(rule.active_months || null);
+  openModal('farmingRuleModal');
+}
+
+async function saveFarmingRule() {
+  var title = document.getElementById('frTitle').value.trim();
+  var cond = document.getElementById('frConditions').value.trim();
+  var sug = document.getElementById('frSuggestion').value.trim();
+  if (!title || !cond || !sug) { showToast('请填写完整信息', true); return; }
+  var conditions;
+  try { conditions = JSON.parse(cond); } catch(e) { showToast('条件JSON格式错误', true); return; }
+  var data = {
+    title: title,
+    task_type: document.getElementById('frType').value,
+    conditions: conditions,
+    active_months: getFarmingMonths(),
+    suggestion: sug,
+    priority: parseInt(document.getElementById('frPriority').value) || 0
+  };
+  var res;
+  if (editFarmingRuleId) {
+    res = await api('PUT', '/api/farming/rules/' + editFarmingRuleId, data);
+  } else {
+    res = await api('POST', '/api/farming/rules', data);
+  }
+  if (res && res.code === 0) { showToast(editFarmingRuleId?'规则已更新':'规则已添加'); closeModal('farmingRuleModal'); loadFarmingRules(); }
+  else showToast(res && res.message || '操作失败', true);
+}
+
+async function toggleFarmingRule(id, active) {
+  var res = await api('PATCH', '/api/farming/rules/' + id + '/toggle', { is_active: active });
+  if (res && res.code === 0) { showToast(res.message); loadFarmingRules(); }
+}
+
+// ── Checkin Management ──
+let currentCheckinQrUrl = '';
+let selectedVillagers = {};
+
+async function loadCheckins() {
+  const res = await api('GET', '/api/checkin/list');
+  if (!res || res.code !== 0) return;
+  document.getElementById('checkinTbody').innerHTML = res.data.map(function(c) {
+    return '<tr>' +
+      '<td data-label="活动标题"><strong>' + c.title + '</strong></td>' +
+      '<td data-label="签到分值"><span class="tag tag-green">+' + c.score_points + '分</span></td>' +
+      '<td data-label="签到人数"><strong>' + c.checkin_count + '</strong> 人</td>' +
+      '<td data-label="创建时间" style="color:var(--text3);">' + (c.created_at ? c.created_at.slice(0,10) : '') + '</td>' +
+      '<td data-label="状态"><span class="tag ' + (c.is_active ? 'tag-green' : 'tag-gray') + '">' + (c.is_active ? '进行中' : '已关闭') + '</span></td>' +
+      '<td class="td-ops">' +
+        (c.is_active ? '<button class="btn btn-outline btn-sm" onclick="showQrCode(\'' + c.qr_token + '\',\'' + escHtml(c.title) + '\',' + c.score_points + ')"><i class="ti ti-qrcode"></i>二维码</button> ' : '') +
+        '<button class="btn btn-outline btn-sm" onclick="viewCheckinRecords(' + c.id + ',\'' + escHtml(c.title) + '\')"><i class="ti ti-list"></i>名单</button> ' +
+        (c.is_active ? '<button class="btn btn-outline btn-sm" onclick="closeCheckin(' + c.id + ')">关闭</button>' : '') +
+      '</td>' +
+    '</tr>';
+  }).join('') || '<tr><td colspan="6"><div class="empty-state"><i class="ti ti-qrcode"></i>暂无签到活动</div></td></tr>';
+}
+
+async function openCreateCheckin() {
+  var res = await api('GET', '/api/scores/events');
+  if (res && res.code === 0) {
+    var sel = document.getElementById('checkinEventId');
+    sel.innerHTML = '<option value="">不关联（自定义分值）</option>' +
+      res.data.map(function(e) { return '<option value="' + e.id + '">' + e.name + ' (+' + e.points + '分)</option>'; }).join('');
+  }
+  document.getElementById('checkinTitle').value = '';
+  document.getElementById('checkinPoints').value = '5';
+  openModal('createCheckinModal');
+}
+
+async function confirmCreateCheckin() {
+  var title = document.getElementById('checkinTitle').value.trim();
+  var eventId = document.getElementById('checkinEventId').value;
+  var points = parseInt(document.getElementById('checkinPoints').value);
+  if (!title) { showToast('请填写活动标题', true); return; }
+  if (isNaN(points) || points <= 0) { showToast('请填写有效的签到分值', true); return; }
+  var res = await api('POST', '/api/checkin/create', { title: title, score_event_id: eventId || null, score_points: points });
+  if (res && res.code === 0) {
+    showToast('签到活动已创建');
+    closeModal('createCheckinModal');
+    showQrCode(res.data.qr_token, title, points, res.data.url);
+    loadCheckins();
+  } else {
+    showToast(res && res.message || '创建失败', true);
+  }
+}
+
+function showQrCode(token, title, points, url) {
+  currentCheckinQrUrl = url || (location.origin + '/index.html?checkin=' + token);
+  document.getElementById('qrEventTitle').textContent = title;
+  document.getElementById('qrEventPoints').textContent = points;
+  document.getElementById('qrUrlText').textContent = currentCheckinQrUrl;
+  document.getElementById('qrCodeContainer').innerHTML = '';
+  openModal('qrCodeModal');
+  // Generate QR code using qrcodejs if available
+  if (typeof QRCode !== 'undefined') {
+    new QRCode(document.getElementById('qrCodeContainer'), {
+      text: currentCheckinQrUrl,
+      width: 200,
+      height: 200,
+      colorDark: '#1a3d0f',
+      colorLight: '#ffffff'
+    });
+  } else {
+    document.getElementById('qrCodeContainer').innerHTML = '<div style="padding:20px;color:var(--text3);">QR库加载中...<br>请复制链接使用</div>';
+  }
+}
+
+function copyCheckinUrl() {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(currentCheckinQrUrl).then(function() {
+      showToast('签到链接已复制，可发送到微信群');
+    });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = currentCheckinQrUrl;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('签到链接已复制');
+  }
+}
+
+async function viewCheckinRecords(id, title) {
+  document.getElementById('checkinRecTitle').textContent = title + ' - 签到名单';
+  var res = await api('GET', '/api/checkin/' + id + '/records');
+  if (!res || res.code !== 0) return;
+  document.getElementById('checkinRecTbody').innerHTML = res.data.map(function(r) {
+    var photoCell = r.photo_url
+      ? '<img src="' + r.photo_url + '" style="width:48px;height:48px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="window.open(\'' + r.photo_url + '\')" title="点击查看大图">'
+      : '<span style="color:var(--text3);font-size:11px;">无照片</span>';
+    return '<tr>' +
+      '<td data-label="村民姓名"><strong>' + r.villager_name + '</strong></td>' +
+      '<td data-label="组别">' + (r.group_no || '-') + '</td>' +
+      '<td data-label="签到照片">' + photoCell + '</td>' +
+      '<td data-label="签到时间" style="color:var(--text3);">' + (r.created_at ? r.created_at.slice(0,19) : '') + '</td>' +
+    '</tr>';
+  }).join('') || '<tr><td colspan="4"><div class="empty-state">暂无签到记录</div></td></tr>';
+  switchPage('checkin-records');
+}
+
+async function closeCheckin(id) {
+  if (!confirm('确定关闭此签到活动？关闭后村民将无法继续签到。')) return;
+  var res = await api('PATCH', '/api/checkin/' + id + '/close');
+  if (res && res.code === 0) { showToast('签到活动已关闭'); loadCheckins(); }
+  else showToast(res && res.message || '操作失败', true);
+}
+
+// ── Batch Selection for Score Recording ──
+function renderVillagerDrop(vlist) {
+  var drop = document.getElementById('villagerDrop');
+  if (!vlist.length) { drop.innerHTML = '<div style="padding:10px;color:var(--text3);text-align:center;">无匹配村民</div>'; drop.style.display='block'; return; }
+  drop.innerHTML = vlist.map(function(v) {
+    var checked = selectedVillagers[v.id] ? 'checked' : '';
+    return '<div style="padding:8px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;border-bottom:1px solid #f0f0f0;font-size:13px;" onclick="toggleVillager(' + v.id + ',\'' + escHtml(v.name) + '\',\'' + escHtml(v.group_no) + '\')">' +
+      '<input type="checkbox" ' + checked + ' style="pointer-events:none;">' +
+      '<span>' + v.name + '</span>' +
+      '<span style="color:var(--text3);font-size:11px;">' + (v.group_no||'').replace(vc.name,'') + '</span>' +
+      '</div>';
+  }).join('');
+  drop.style.display = 'block';
+}
+
+function toggleVillager(id, name, group) {
+  if (selectedVillagers[id]) {
+    delete selectedVillagers[id];
+  } else {
+    selectedVillagers[id] = { name: name, group: group };
+  }
+  updateBatchUI();
+  // Re-render drop with current search
+  var val = document.getElementById('villagerInput').value;
+  if (val) searchVillager(val);
+}
+
+function updateBatchUI() {
+  var ids = Object.keys(selectedVillagers);
+  var bar = document.getElementById('batchBar');
+  var tags = document.getElementById('batchTags');
+  var countEl = document.getElementById('batchCount');
+  if (ids.length > 0) {
+    bar.style.display = 'flex';
+    countEl.textContent = ids.length;
+    tags.style.display = 'flex';
+    tags.innerHTML = Object.entries(selectedVillagers).map(function(e) {
+      return '<span style="display:inline-flex;align-items:center;gap:3px;background:var(--green-bg);color:var(--green-dark);padding:2px 8px;border-radius:12px;font-size:11px;">' +
+        e[1].name + '<button onclick="event.stopPropagation();delete selectedVillagers[' + e[0] + '];updateBatchUI();" style="background:none;border:none;color:var(--red);cursor:pointer;padding:0;line-height:1;">×</button></span>';
+    }).join('');
+  } else {
+    bar.style.display = 'none';
+    tags.style.display = 'none';
+  }
+}
+
+function clearAllSelection() {
+  selectedVillagers = {};
+  updateBatchUI();
+}
+
+function clearVillager() {
+  currentVillager = null;
+  selectedVillagers = {};
+  document.getElementById('villagerSelected').style.display = 'none';
+  document.getElementById('villagerInput').value = '';
+  document.getElementById('villagerDrop').style.display = 'none';
+  updateBatchUI();
+  updateSteps();
+}
+
+// ── 年度积分清零 ──
+async function triggerReset() {
+  if (!confirm('⚠ 确定要清零所有村民的兑换积分吗？\n\n此操作将把所有村民的 total_score（兑换积分）重置为 0，荣誉积分保持不变。\n\n此操作不可撤销！')) return;
+  if (!confirm('再次确认：您确定要执行年度积分清零？')) return;
+  var res = await api('POST', '/api/admin/scores/reset');
+  if (res && res.code === 0) {
+    showToast(res.message);
+    loadDashboard();
+  } else {
+    showToast(res && res.message || '操作失败', true);
+  }
+}
+
+async function loadResetLog() {
+  var res = await api('GET', '/api/admin/scores/reset/log');
+  if (!res || res.code !== 0) return;
+  var el = document.getElementById('resetLogTable');
+  el.style.display = 'block';
+  if (!res.data.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:13px;margin-top:8px;">暂无清零记录</div>';
+    return;
+  }
+  el.innerHTML = '<table style="margin-top:8px;"><thead><tr><th>年份</th><th>清零人数</th><th>触发方式</th><th>操作人</th><th>时间</th></tr></thead><tbody>' +
+    res.data.map(function(r) {
+      return '<tr>' +
+        '<td>' + r.reset_year + '</td>' +
+        '<td>' + r.villagers_count + ' 人</td>' +
+        '<td><span class="tag ' + (r.triggered_by === 'auto' ? 'tag-blue' : 'tag-amber') + '">' + (r.triggered_by === 'auto' ? '系统自动' : '人工操作') + '</span></td>' +
+        '<td>' + (r.admin_name || '-') + '</td>' +
+        '<td style="color:var(--text3);">' + (r.created_at ? r.created_at.slice(0,19) : '') + '</td>' +
+      '</tr>';
+    }).join('') +
+    '</tbody></table>';
+}
+
+// Show/hide reset card based on role
+(function() {
+  var origInitApp = initApp;
+  initApp = function() {
+    origInitApp();
+    if (adminInfo && adminInfo.role === 'super') {
+      var rc = document.getElementById('resetCard');
+      if (rc) rc.style.display = '';
+    }
+  };
+})();
+
+
+// ── 村民反馈管理 ──
+var _feedbackData = [];
+async function loadFeedback() {
+  var res = await api('GET', '/api/public/admin/feedback');
+  if (!res || res.code !== 0) return;
+  _feedbackData = res.data || [];
+  var unread = _feedbackData.filter(function(f){ return !f.is_read; }).length;
+  var badge = document.getElementById('feedbackBadge');
+  if (badge) { badge.style.display = unread > 0 ? 'inline' : 'none'; badge.textContent = unread; }
+  document.getElementById('feedbackTbody').innerHTML = _feedbackData.map(function(f) {
+    var hasAudio = f.audio_url ? '<span style="font-size:11px;color:var(--green);margin-left:4px;"><i class="ti ti-microphone"></i></span>' : '';
+    return '<tr style="cursor:pointer;' + (f.is_read ? '' : 'background:#fffde7;') + '" onclick="viewFeedback(' + f.id + ')">' +
+      '<td data-label="留言人" style="color:' + (f.villager_name ? 'var(--text1)' : 'var(--text3)') + ';">' + (f.villager_name || '匿名') + hasAudio + '</td>' +
+      '<td data-label="内容" style="max-width:300px;word-break:break-word;">' + (f.content || '(语音留言)') + '</td>' +
+      '<td data-label="时间" style="color:var(--text3);font-size:12px;">' + (f.created_at ? f.created_at.slice(0,16) : '') + '</td>' +
+      '<td data-label="状态"><span class="tag ' + (f.is_read ? 'tag-gray' : 'tag-amber') + '">' + (f.is_read ? '已读' : '未读') + '</span></td>' +
+    '</tr>';
+  }).join('') || '<tr><td colspan="4"><div class="empty-state"><i class="ti ti-message"></i>暂无反馈</div></td></tr>';
+}
+
+function viewFeedback(id) {
+  var f = _feedbackData.find(function(x) { return x.id === id; });
+  if (!f) return;
+  var audioHtml = '';
+  if (f.audio_url) {
+    audioHtml = '<div style="margin:12px 0;"><div style="font-size:12px;color:var(--text3);margin-bottom:4px;">🎙 语音留言</div><audio controls src="' + f.audio_url + '" style="width:100%;"></audio></div>';
+  }
+  document.getElementById('feedbackDetailContent').innerHTML =
+    '<div style="font-size:13px;color:var(--text3);margin-bottom:4px;">' + (f.villager_name || '匿名') + ' · ' + (f.created_at ? f.created_at.slice(0,16) : '') + '</div>' +
+    audioHtml +
+    (f.content ? '<div style="font-size:15px;color:var(--text1);line-height:1.8;white-space:pre-wrap;">' + f.content + '</div>' : '') +
+    '<div style="margin-top:12px;"><span class="tag ' + (f.is_read ? 'tag-gray' : 'tag-amber') + '">' + (f.is_read ? '已读' : '未读') + '</span></div>';
+  openModal('feedbackDetailModal');
+  // 自动标记已读
+  if (!f.is_read) {
+    api('PATCH', '/api/public/admin/feedback/' + f.id + '/read');
+    f.is_read = 1;
+    loadFeedback();
+  }
+}
+
+
+
+// ── 系统设置 ──
+function loadCrops() {}
+function loadCropList() {}
+function parseCrops() {}
+function openAddCrop() {}
+function editCrop() {}
+function saveCrop() {}
+function deleteCrop() {}
+
+function loadSettings() { loadVillageConfig(); }
+async function loadVillageConfig() {
+  var res = await api('GET', '/api/admin/village-config');
+  if (!res || !res.data) return;
+  document.getElementById('"setVillageName"').value = res.data.village_name || '';
+  document.getElementById('"setVillageShort"').value = res.data.village_short || '';
+  document.getElementById('"setVillageLoc"').value = res.data.village_location || '';
+  var ht = document.getElementById('"setHomeTab"'); if(ht && res.data.home_tab) ht.value = res.data.home_tab;
+}
+async function saveVillageConfig() {
+  var name = document.getElementById('"setVillageName"').value.trim();
+  var sh = document.getElementById('"setVillageShort"').value.trim();
+  var loc = document.getElementById('"setVillageLoc"').value.trim();
+  if (!name) { showToast('"请填写村名"', true); return; }
+  var res = await api('PUT', '/api/admin/village-config', { village_name:name, village_short:sh, village_location:loc, home_tab: document.getElementById('"setHomeTab"').value });
+  if (res && res.code === 0) { showToast('"设置已保存，刷新生效"'); vc.name=name; vc.short=sh; vc.location=loc; }
+  else showToast(res?.message||'"保存失败"', true);
+}
+
+// ── 键盘事件 ──
+// ── 积分规则管理 ──
+async function loadEvents() {
+  const res = await api('GET', '/api/admin/events');
+  if (!res || res.code !== 0) return;
+  const events = res.data || [];
+  const dlist = document.getElementById('eventCategoryList');
+  const cats = [...new Set(events.map(e => e.category))].sort();
+  dlist.innerHTML = cats.map(c => '<option value="' + c + '">').join('');
+  document.getElementById('eventsTbody').innerHTML = events.map(function(e) {
+    return '<tr>' +
+      '<td data-label="事件名称"><strong>' + e.name + '</strong></td>' +
+      '<td data-label="类别"><span class="tag tag-blue">' + e.category + '</span></td>' +
+      '<td data-label="分值"><strong style="color:' + (e.points>0?'var(--green)':'var(--red)') + ';">' + (e.points>0?'+':'') + e.points + '分</strong></td>' +
+      '<td data-label="验证方式" style="color:var(--text3);">' + (e.verify_method||'—') + '</td>' +
+      '<td data-label="状态"><span class="tag ' + (e.is_active?'tag-green':'tag-gray') + '">' + (e.is_active?'启用':'禁用') + '</span></td>' +
+      '<td class="td-ops">' +
+        '<button class="btn btn-outline btn-sm" onclick="openEditEvent(' + e.id + ',\'' + escHtml(e.name) + '\',\'' + escHtml(e.category) + '\',' + e.points + ',\'' + escHtml(e.verify_method||'') + '\')"><i class="ti ti-pencil"></i>编辑</button> ' +
+        '<button class="btn btn-outline btn-sm" onclick="toggleEvent(' + e.id + ',' + (e.is_active?0:1) + ')">' + (e.is_active?'禁用':'启用') + '</button>' +
+      '</td>' +
+    '</tr>';
+  }).join('') || '<tr><td colspan="6"><div class="empty-state"><i class="ti ti-adjustments"></i>暂无积分规则，点击上方按钮添加</div></td></tr>';
+}
+function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function openAddEvent() {
+  editEventId = null;
+  document.getElementById('addEventTitle').innerHTML = '新增积分规则<span class="modal-close" onclick="closeModal(\'addEventModal\')">×</span>';
+  document.getElementById('eventName').value = '';
+  document.getElementById('eventCategory').value = '';
+  document.getElementById('eventPoints').value = '';
+  document.getElementById('eventVerify').value = '';
+  openModal('addEventModal');
+}
+function openEditEvent(id, name, category, points, verify) {
+  editEventId = id;
+  document.getElementById('addEventTitle').innerHTML = '编辑积分规则<span class="modal-close" onclick="closeModal(\'addEventModal\')">×</span>';
+  document.getElementById('eventName').value = name;
+  document.getElementById('eventCategory').value = category;
+  document.getElementById('eventPoints').value = points;
+  document.getElementById('eventVerify').value = verify;
+  openModal('addEventModal');
+}
+async function confirmEvent() {
+  var name = document.getElementById('eventName').value.trim();
+  var category = document.getElementById('eventCategory').value.trim();
+  var points = parseInt(document.getElementById('eventPoints').value);
+  var verify = document.getElementById('eventVerify').value.trim();
+  if (!name) { showToast('请填写事件名称', true); return; }
+  if (!category) { showToast('请填写类别', true); return; }
+  if (isNaN(points) || points === 0) { showToast('请填写有效的分值（不能为0）', true); return; }
+  var res;
+  if (editEventId) {
+    res = await api('PUT', '/api/admin/events/' + editEventId, { name: name, category: category, points: points, verify_method: verify });
+  } else {
+    res = await api('POST', '/api/admin/events', { name: name, category: category, points: points, verify_method: verify });
+  }
+  if (res && res.code === 0) { showToast(editEventId?'积分规则已更新':'积分规则已添加'); closeModal('addEventModal'); loadEvents(); }
+  else showToast(res && res.message || '操作失败', true);
+}
+async function toggleEvent(id, isActive) {
+  var res = await api('PATCH', '/api/admin/events/' + id + '/toggle', { is_active: isActive });
+  if (res && res.code === 0) { showToast(res.message); loadEvents(); }
+  else showToast(res && res.message || '操作失败', true);
+}
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+  if (token && adminInfo && ['super','village_admin'].includes(adminInfo.role)) initApp();
+});
+
+// ── 公告富媒体函数 ──
+function previewNoticeImgs(input) {
+  const preview = document.getElementById('noticeImgPreview');
+  const files = Array.from(input.files).slice(0,9);
+  preview.innerHTML = files.map((f,i) => {
+    const url = URL.createObjectURL(f);
+    return '<div style="position:relative;width:64px;height:64px;">'
+      + '<img src="'+url+'" style="width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--border);">'
+      + '<button type="button" onclick="removeNoticeImg('+i+')" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--red);color:white;border:none;cursor:pointer;font-size:10px;line-height:16px;text-align:center;">×</button>'
+      + '</div>';
+  }).join('');
+}
+
+function removeNoticeImg(idx) {
+  const input = document.getElementById('noticeImgs');
+  const dt = new DataTransfer();
+  Array.from(input.files).forEach((f,i) => { if(i!==idx) dt.items.add(f); });
+  input.files = dt.files;
+  previewNoticeImgs(input);
+}
+
+function setAudioOpt(opt) {
+  ['none','tts','record'].forEach(o => {
+    const id = 'audioOpt' + o.charAt(0).toUpperCase() + o.slice(1);
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.classList.toggle('btn-primary', o===opt);
+    btn.classList.toggle('btn-outline', o!==opt);
+    if (o===opt) { btn.classList.add('audio-opt-active'); btn.dataset.opt = o; }
+    else btn.classList.remove('audio-opt-active');
+  });
+  document.getElementById('audioTtsHint').style.display = opt==='tts' ? 'block' : 'none';
+  document.getElementById('audioRecordArea').style.display = opt==='record' ? 'block' : 'none';
+}
+
+let _noticeMediaRecorder = null, _noticeRecordedBlob = null, _noticeRecordChunks = [], _noticeRecordTimer = null, _noticeRecordSec = 0;
+
+async function toggleRecord() {
+  const btn = document.getElementById('recordBtn');
+  if (_noticeMediaRecorder && _noticeMediaRecorder.state === 'recording') {
+    _noticeMediaRecorder.stop();
+    clearInterval(_noticeRecordTimer);
+    btn.innerHTML = '<i class="ti ti-microphone"></i> 开始录音';
+    document.getElementById('recordTimer').style.display = 'none';
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    _noticeRecordChunks = []; _noticeRecordSec = 0;
+    _noticeMediaRecorder = new MediaRecorder(stream);
+    _noticeMediaRecorder.ondataavailable = e => { if(e.data.size>0) _noticeRecordChunks.push(e.data); };
+    _noticeMediaRecorder.onstop = () => {
+      _noticeRecordedBlob = new Blob(_noticeRecordChunks, { type: 'audio/webm' });
+      const url = URL.createObjectURL(_noticeRecordedBlob);
+      const preview = document.getElementById('recordPreview');
+      preview.src = url; preview.style.display = 'block';
+      document.getElementById('recordStatus').textContent = '录音完成，可试听';
+      stream.getTracks().forEach(t => t.stop());
+    };
+    _noticeMediaRecorder.start();
+    btn.innerHTML = '<i class="ti ti-player-stop"></i> 停止录音';
+    const timerEl = document.getElementById('recordTimer');
+    timerEl.style.display = 'inline';
+    _noticeRecordTimer = setInterval(() => {
+      _noticeRecordSec++;
+      const m = Math.floor(_noticeRecordSec/60), s = _noticeRecordSec%60;
+      timerEl.textContent = '⏺ ' + m + ':' + s.toString().padStart(2,'0');
+    }, 1000);
+    document.getElementById('recordStatus').textContent = '录音中…';
+  } catch(e) { showToast('无法访问麦克风，请检查权限', true); }
+}
+
+function loadAudioFile(input) {
+  if (!input.files[0]) return;
+  _noticeRecordedBlob = null;
+  const url = URL.createObjectURL(input.files[0]);
+  const preview = document.getElementById('recordPreview');
+  preview.src = url; preview.style.display = 'block';
+  document.getElementById('recordStatus').textContent = '已选择：' + input.files[0].name;
+}
+
+</script>
+</body>
+</html>

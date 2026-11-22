@@ -23,6 +23,9 @@ app.use('/api/checkin',       require('./routes/checkin'));
 app.use('/api/farming',       require('./routes/farming'));
 app.use('/api/public',        require('./routes/public'));
 
+// 积分动态分享页（/f/:id，单条动态独立链接 + 海报生成）
+app.use('/', require('./routes/feed'));
+
 // 健康检查
 app.get('/health', (req, res) => res.json({ status: 'ok', time: new Date() }));
 
