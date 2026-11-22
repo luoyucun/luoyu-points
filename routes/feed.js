@@ -101,9 +101,13 @@ ${img ? '<meta property="og:image" content="' + esc(img) + '">' : ''}
   #posterBox{display:none;text-align:center;margin-top:16px;}
   #posterBox img{max-width:100%;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.15);}
   .tip{font-size:12.5px;color:var(--text3);text-align:center;margin-top:8px;}
+  .wx-guide{position:fixed;top:0;left:0;right:0;z-index:99;background:rgba(0,0,0,.78);color:#fff;padding:14px 16px calc(14px + env(safe-area-inset-top));font-size:14px;line-height:1.6;display:none;}
+  .wx-guide b{color:#FFD76A;}
 </style>
 </head>
 <body>
+<!-- 微信内引导条：提醒用「转发给朋友」才会带标题卡片（复制裸链接微信只显示网址） -->
+<div class="wx-guide" id="wxGuide">👆 点右上角 <b>⋯</b> 选「转发给朋友」，分享卡片会自动带上这条动态的标题和图片。长按本条提示可关闭。</div>
 <div class="hero">
   <div class="v">罗峪村 · 积分动态</div>
   <div class="t">${esc(name)} ${esc(r.event_name)}</div>
@@ -130,6 +134,29 @@ ${img ? '<meta property="og:image" content="' + esc(img) + '">' : ''}
 <script src="/vendor/qrcode.min.js"></script>
 <script>
 var DATA = ${JSON.stringify({ id: r.id, name: name, event: r.event_name, points: Number(r.points), desc: r.description || '', date: date, group: r.group_no ? String(r.group_no).replace('罗峪村', '') : '', url: url, imgs: r.image_urls.map(encPath) })};
+
+// 仅在微信内置浏览器显示引导条；长按关闭（当日不再打扰）
+(function () {
+  if (!/micromessenger/i.test(navigator.userAgent)) return;
+  var g = document.getElementById('wxGuide');
+  var dismissKey = 'wx_share_guide_' + new Date().toISOString().slice(0, 10);
+  if (localStorage.getItem(dismissKey)) return;
+  g.style.display = 'block';
+  var closed = false;
+  function hide() {
+    if (closed) return;
+    closed = true;
+    g.style.display = 'none';
+    try { localStorage.setItem(dismissKey, '1'); } catch (e) {}
+  }
+  g.addEventListener('click', hide);       // 点一下关闭
+  var pressT = null;
+  g.addEventListener('touchstart', function () { pressT = Date.now(); });
+  g.addEventListener('touchend', function () {
+    if (pressT && Date.now() - pressT > 600) hide();   // 长按关闭
+    pressT = null;
+  });
+})();
 
 function copyLink() {
   var t = DATA.url;
