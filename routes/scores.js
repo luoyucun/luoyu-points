@@ -193,4 +193,65 @@ router.post('/', authMiddleware, requireEdit, upload.array('images', 4), async (
   finally { conn.release(); }
 });
 
+// PUT /api/scores/:id — 编辑积分记录（2026-11-23 用户需求：动态生成后只能看不能改）
+// 可改：事件名 / 分值 / 说明 / 是否展示在动态；可追加图片（multipart 时）
+// 关键：已通过且未撤回的记录改分值时，必须同步调整该村民的兑换积分与荣誉积分（增量）
+router.put('/:id', authMiddleware, requireVillageAdmin, upload.array('images', 4), async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!id) return res.status(400).json({ code: 400, message: '记录 id 不合法' });
+  const [rows] = await db.execute('SELECT * FROM score_records WHERE id=?', [id]);
+  if (!rows.length) return res.status(404).json({ code: 404, message: '记录不存在' });
+  const old = rows[0];
+  if (old.is_revoked) return res.status(400).json({ code: 400, message: '已撤回的记录不能编辑' });
+
+  const b = req.body || {};
+  const eventName = b.event_name !== undefined ? String(b.event_name).trim().slice(0, 50) : old.event_name;
+  if (!eventName) return res.status(400).json({ code: 400, message: '事件名称不能为空' });
+
+  let points = old.points;
+  if (b.points !== undefined && b.points !== '') {
+    points = parseInt(b.points, 10);
+    if (isNaN(points) || points === 0) return res.status(400).json({ code: 400, message: '分值必须是非零整数' });
+    if (Math.abs(points) > 100) return res.status(400).json({ code: 400, message: '单次积分不能超过 100 分' });
+  }
+  const description = b.description !== undefined ? (String(b.description).trim().slice(0, 500) || null) : old.description;
+  let showInFeed = old.show_in_feed;
+  if (b.show_in_feed !== undefined) showInFeed = (b.show_in_feed === '1' || b.show_in_feed === 1 || b.show_in_feed === true) ? 1 : 0;
+
+  // 追加图片（保留原有）
+  let imageUrls = [];
+  try { imageUrls = old.image_urls ? (typeof old.image_urls === 'string' ? JSON.parse(old.image_urls) : old.image_urls) : []; } catch (e) { imageUrls = []; }
+  if (!Array.isArray(imageUrls)) imageUrls = [];
+  if (req.files && req.files.length) {
+    const added = req.files.map(f => {
+      const ext = path.extname(f.filename);
+      const newName = 'v' + String(old.villager_id).slice(0, 8) + '_edit_' + Date.now() + '_' + Math.random().toString(36).slice(2, 4) + ext;
+      try { fs.renameSync(path.join(UPLOAD_DIR, f.filename), path.join(UPLOAD_DIR, newName)); return '/uploads/' + newName; }
+      catch (e) { return '/uploads/' + f.filename; }
+    });
+    imageUrls = imageUrls.concat(added).slice(0, 4);
+  }
+
+  const delta = points - old.points;
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+    await conn.execute(
+      'UPDATE score_records SET event_name=?, points=?, description=?, show_in_feed=?, image_urls=? WHERE id=?',
+      [eventName, points, description, showInFeed, imageUrls.length ? JSON.stringify(imageUrls) : null, id]
+    );
+    // 已生效的记录改分值 → 村民积分同步增减
+    if (old.status === 'approved' && delta !== 0) {
+      await conn.execute(
+        'UPDATE villagers SET total_score=total_score+?, honor_score=honor_score+? WHERE id=?',
+        [delta, delta, old.villager_id]
+      );
+    }
+    await conn.commit();
+  } catch (e) { await conn.rollback(); throw e; } finally { conn.release(); }
+
+  console.log('[SCORE EDIT] id=' + id + ' by=' + (req.admin && req.admin.username) + ' points ' + old.points + '→' + points + ' delta=' + delta);
+  res.json({ code: 0, message: delta ? ('已保存，积分同步调整 ' + (delta > 0 ? '+' : '') + delta) : '已保存' });
+});
+
 module.exports = router;

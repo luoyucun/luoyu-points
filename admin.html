@@ -839,6 +839,26 @@ tr:last-child td{border-bottom:none;}
   </div>
 </div>
 
+<!-- 积分记录编辑模态框（2026-11-23） -->
+<div class="modal-overlay" id="scoreEditModal">
+  <div class="modal">
+    <div class="modal-hd">编辑积分记录<span class="modal-close" onclick="closeModal('scoreEditModal')">×</span></div>
+    <div class="modal-bd">
+      <div id="esInfo" style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;color:var(--text2);line-height:1.9;"></div>
+      <div class="form-row"><label>事件名称 <span style="color:var(--red);">*</span></label><input type="text" id="esEvent" maxlength="50" placeholder="如：参加环境清扫"></div>
+      <div class="form-row"><label>分值 <span style="color:var(--red);">*</span> <span style="font-size:11px;color:var(--text3);">（正数加分 / 负数扣分，绝对值 ≤100）</span></label><input type="number" id="esPoints" min="-100" max="100" step="1"></div>
+      <div class="form-row"><label>说明</label><textarea id="esDesc" rows="3" maxlength="500" placeholder="选填，展示给村民"></textarea></div>
+      <div class="form-row"><label>追加图片 <span style="font-size:11px;color:var(--text3);">（原有图片保留，最多共 4 张）</span></label><input type="file" id="esImgs" accept="image/*" multiple></div>
+      <div class="form-row"><label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" id="esFeed"> 展示在「积分动态」中</label></div>
+      <div style="font-size:12px;color:var(--amber);background:var(--amber-bg);border-radius:8px;padding:10px;line-height:1.7;">⚠️ 已通过的记录修改分值，该村民的兑换积分与荣誉积分会同步增减。</div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal('scoreEditModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveEditScore()">保存</button>
+    </div>
+  </div>
+</div>
+
 <!-- 积分撤回模态框 -->
 <div class="modal-overlay" id="revokeModal">
   <div class="modal">
@@ -1488,6 +1508,7 @@ async function loadScores() {
   if (!res || res.code !== 0) return;
   renderPager('sPager', sPage, res.total, 'goSPage');
   let data = res.data;
+  _scoresCache = data || [];
   const tbody = document.getElementById('scoresTbody');
   if (!data.length) {
     tbody.innerHTML = `<tr class="loading-row"><td colspan="8"><div class="empty-state"><i class="ti ti-list"></i>暂无记录</div></td></tr>`;
@@ -1500,6 +1521,7 @@ async function loadScores() {
     const approveBtn = r.status==='pending' ? `<button class="btn btn-outline btn-sm" onclick="approveScore(${r.id},1)" style="color:var(--green)"><i class="ti ti-check"></i>通过</button><button class="btn btn-outline btn-sm" onclick="approveScore(${r.id},0)" style="color:var(--red)"><i class="ti ti-x"></i>拒绝</button>` : '';
     const revokeBtn = canRevoke ? `<button class="btn btn-danger btn-sm" onclick="openRevoke(${r.id},'${r.villager_name}','${r.event_name}',${r.points})"><i class="ti ti-arrow-back-up"></i>撤回</button>` : '';
     const detailBtn = `<button class="btn btn-outline btn-sm" onclick="viewScoreDetail(${r.id})"><i class="ti ti-eye"></i>详情</button>`;
+    const editBtn = (!r.is_revoked && ['super','village_admin'].includes(adminInfo.role)) ? `<button class="btn btn-outline btn-sm" onclick="openEditScore(${r.id})"><i class="ti ti-pencil"></i>编辑</button>` : '';
     return `<tr>
       <td data-label="村民"><strong>${r.villager_name}</strong></td>
       <td data-label="所属组"><span class="tag tag-green">${(r.group_no||'').replace(vc.name,'')}</span></td>
@@ -1508,9 +1530,57 @@ async function loadScores() {
       <td data-label="状态">${statusTag}${revokedTag}</td>
       <td data-label="提交人" style="color:var(--text3);">${r.submitted_by_name||'-'}</td>
       <td data-label="时间" style="color:var(--text3);">${fmtDate(r.created_at)}</td>
-      <td class="td-ops">${detailBtn}${approveBtn}${revokeBtn}</td>
+      <td class="td-ops">${detailBtn}${editBtn}${approveBtn}${revokeBtn}</td>
     </tr>`;
   }).join('');
+}
+
+// ── 编辑积分记录（2026-11-23）──
+var _scoresCache = [];
+var editScoreId = null;
+function openEditScore(id) {
+  var r = _scoresCache.find(function (x) { return x.id === id; });
+  if (!r) return showToast('记录不存在，请刷新', true);
+  editScoreId = id;
+  document.getElementById('esInfo').innerHTML =
+    '<div><strong>村民：</strong>' + escHtml(r.villager_name || '') + (r.group_no ? '（' + escHtml(String(r.group_no).replace(vc.name, '')) + '）' : '') + '</div>' +
+    '<div><strong>原分值：</strong><span style="color:' + (r.points > 0 ? 'var(--green)' : 'var(--red)') + ';">' + (r.points > 0 ? '+' : '') + r.points + '</span>' +
+    ' ｜ 状态：' + ({ pending: '待审核', approved: '已通过', rejected: '已拒绝' }[r.status] || r.status) + '</div>';
+  document.getElementById('esEvent').value = r.event_name || '';
+  document.getElementById('esPoints').value = r.points;
+  document.getElementById('esDesc').value = r.description || '';
+  document.getElementById('esFeed').checked = !!r.show_in_feed;
+  document.getElementById('esImgs').value = '';
+  openModal('scoreEditModal');
+}
+
+async function saveEditScore() {
+  if (!editScoreId) return;
+  var name = document.getElementById('esEvent').value.trim();
+  var pts = parseInt(document.getElementById('esPoints').value, 10);
+  if (!name) return showToast('事件名称不能为空', true);
+  if (!pts || Math.abs(pts) > 100) return showToast('分值必须是非零整数且不超过 100', true);
+  var fd = new FormData();
+  fd.append('event_name', name);
+  fd.append('points', String(pts));
+  fd.append('description', document.getElementById('esDesc').value.trim());
+  fd.append('show_in_feed', document.getElementById('esFeed').checked ? '1' : '0');
+  var imgs = document.getElementById('esImgs').files;
+  for (var i = 0; i < Math.min(imgs.length, 4); i++) fd.append('images', imgs[i]);
+  try {
+    var resp = await fetch(BASE + '/api/scores/' + editScoreId, {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + token },
+      body: fd
+    });
+    var r = await resp.json();
+    if (r && r.code === 0) {
+      showToast(r.message || '已保存');
+      closeModal('scoreEditModal');
+      editScoreId = null;
+      loadScores(); loadDashboard();
+    } else showToast((r && r.message) || '保存失败', true);
+  } catch (e) { showToast('保存失败：' + e.message, true); }
 }
 
 async function approveScore(id, approve) {
