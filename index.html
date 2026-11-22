@@ -603,7 +603,10 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
   <!-- 公开浏览横幅 -->
   <div id="pubBanner" style="display:flex;">
     <span>🌾 罗峪村村民积分</span>
-    <button class="pub-login-btn" onclick="showLogin()">登录</button>
+    <span style="display:flex;align-items:center;gap:8px;">
+      <a href="/portal/" style="color:inherit;text-decoration:none;font-size:12px;opacity:.85;border:1px solid currentColor;border-radius:12px;padding:3px 9px;">🏡 数字家园</a>
+      <button class="pub-login-btn" onclick="showLogin()">登录</button>
+    </span>
   </div>
 
   <!-- 公开底部导航 -->
@@ -625,7 +628,10 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
         <h1 id="headerTitle">罗峪村村民积分</h1>
         <div class="sub" id="headerSub"></div>
       </div>
-      <button class="logout-btn" onclick="doLogout()">退出登录</button>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <a href="/portal/" style="color:inherit;text-decoration:none;font-size:12px;opacity:.9;border:1px solid rgba(255,255,255,.5);border-radius:12px;padding:3px 9px;">🏡 数字家园</a>
+        <button class="logout-btn" onclick="doLogout()">退出登录</button>
+      </div>
     </div>
   </div>
 
