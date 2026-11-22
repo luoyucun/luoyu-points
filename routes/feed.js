@@ -25,6 +25,11 @@ function esc(s) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+// 图片路径安全编码：文件名可能含中文（如 v705_参加环境清扫_xxx.jpg），未编码会 404
+function encPath(p) {
+  return String(p || '').split('/').map(function (seg) { return encodeURIComponent(seg); }).join('/');
+}
+
 async function loadRecord(id) {
   const [rows] = await db.execute(
     'SELECT sr.id, v.name AS villager_name, v.group_no, sr.event_name, sr.points, sr.description, sr.image_urls, sr.created_at ' +
@@ -49,12 +54,13 @@ router.get('/f/:id', async function (req, res) {
 
   const add = Number(r.points) > 0;
   const pts = (add ? '+' : '') + Number(r.points);
-  const name = maskName(r.villager_name);
+  // 2026-11-23 用户要求：分享页显示完整姓名（与公开「积分动态」列表口径一致）
+  const name = String(r.villager_name || '');
   const date = fmtDate(r.created_at);
   const title = name + ' ' + r.event_name + '（' + pts + '分）· 罗峪村积分动态';
   const url = 'https://luoyu.goodsport.fun/f/' + r.id;
   const desc = [r.event_name, date, r.group_no ? String(r.group_no).replace('罗峪村', '') : ''].filter(Boolean).join(' ｜ ');
-  const img = r.image_urls[0] ? 'https://luoyu.goodsport.fun' + r.image_urls[0] : '';
+  const img = r.image_urls[0] ? 'https://luoyu.goodsport.fun' + encPath(r.image_urls[0]) : '';
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 'no-cache');
@@ -109,7 +115,7 @@ ${img ? '<meta property="og:image" content="' + esc(img) + '">' : ''}
   <div class="who">👤 ${esc(name)}${r.group_no ? ' · ' + esc(String(r.group_no).replace('罗峪村', '')) : ''}</div>
   <div class="meta">📅 ${esc(date)}</div>
   ${r.description ? '<div class="desc">' + esc(r.description) + '</div>' : ''}
-  ${r.image_urls.length ? '<div class="imgs">' + r.image_urls.map(function (u) { return '<img src="' + esc(u) + '" alt="">'; }).join('') + '</div>' : ''}
+  ${r.image_urls.length ? '<div class="imgs">' + r.image_urls.map(function (u) { return '<img src="' + esc(encPath(u)) + '" alt="">'; }).join('') + '</div>' : ''}
 </div>
 
 <div class="ops">
@@ -123,7 +129,7 @@ ${img ? '<meta property="og:image" content="' + esc(img) + '">' : ''}
 <canvas id="cv" width="750" height="1000" style="display:none;"></canvas>
 <script src="/vendor/qrcode.min.js"></script>
 <script>
-var DATA = ${JSON.stringify({ id: r.id, name: name, event: r.event_name, points: Number(r.points), desc: r.description || '', date: date, group: r.group_no ? String(r.group_no).replace('罗峪村', '') : '', url: url })};
+var DATA = ${JSON.stringify({ id: r.id, name: name, event: r.event_name, points: Number(r.points), desc: r.description || '', date: date, group: r.group_no ? String(r.group_no).replace('罗峪村', '') : '', url: url, imgs: r.image_urls.map(encPath) })};
 
 function copyLink() {
   var t = DATA.url;
@@ -157,9 +163,36 @@ function wrapText(ctx, text, x, y, maxW, lineH, maxLines) {
   return lines.length;
 }
 
-function makePoster() {
+// 载入图片（同源 /uploads，不会被 canvas 污染）；失败返回 null
+function loadImg(src) {
+  return new Promise(function (resolve) {
+    if (!src) return resolve(null);
+    var im = new Image();
+    im.onload = function () { resolve(im); };
+    im.onerror = function () { resolve(null); };
+    im.src = src;
+  });
+}
+// cover 裁切绘制
+function drawCover(ctx, img, x, y, w, h) {
+  var ir = img.width / img.height, tr = w / h, sw, sh, sx, sy;
+  if (ir > tr) { sh = img.height; sw = sh * tr; sx = (img.width - sw) / 2; sy = 0; }
+  else { sw = img.width; sh = sw / tr; sx = 0; sy = (img.height - sh) / 2; }
+  ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+}
+
+async function makePoster() {
   var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
-  var W = 750, H = 1000;
+  var btn = document.querySelector('.ops .btn.primary');
+  if (btn) { btn.disabled = true; btn.textContent = '正在生成…'; }
+
+  // 先尝试载入记录照片（最多 1 张主图）
+  var photo = null;
+  if (DATA.imgs && DATA.imgs.length) photo = await loadImg(DATA.imgs[0]);
+
+  var W = 750;
+  var H = photo ? 1400 : 1000;
+  cv.width = W; cv.height = H;   // 画布尺寸随是否带图变化
   // 底
   var g = ctx.createLinearGradient(0, 0, 0, H);
   g.addColorStop(0, '#F7F5F0'); g.addColorStop(1, '#EFEBE2');
@@ -206,9 +239,22 @@ function makePoster() {
     wrapText(ctx, DATA.desc, 96, 566, 560, 40, 3);
   }
 
+  // 现场照片卡片（有图时才画，宽度撑满卡片、4:3 裁切）
+  var qrTop = 700;
+  if (photo) {
+    ctx.fillStyle = '#fff'; ctx.shadowColor = 'rgba(0,0,0,.10)'; ctx.shadowBlur = 20; ctx.shadowOffsetY = 8;
+    roundRect(ctx, 50, 690, 650, 380, 24); ctx.fill();
+    ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+    ctx.save();
+    roundRect(ctx, 70, 710, 610, 340, 16); ctx.clip();
+    drawCover(ctx, photo, 70, 710, 610, 340);
+    ctx.restore();
+    qrTop = 1100;
+  }
+
   // 二维码卡片
   ctx.fillStyle = '#fff'; ctx.shadowColor = 'rgba(0,0,0,.10)'; ctx.shadowBlur = 20; ctx.shadowOffsetY = 8;
-  roundRect(ctx, 50, 700, 650, 200, 24); ctx.fill();
+  roundRect(ctx, 50, qrTop, 650, 200, 24); ctx.fill();
   ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
 
   var qrHost = document.createElement('div');
@@ -216,26 +262,27 @@ function makePoster() {
   var qrCanvas = qrHost.querySelector('canvas') || qrHost.querySelector('img');
   ctx.fillStyle = '#1a1a1a';
   ctx.font = '600 30px "PingFang SC",sans-serif';
-  ctx.fillText('扫码查看这条积分动态', 240, 770);
+  ctx.fillText('扫码查看这条积分动态', 240, qrTop + 70);
   ctx.fillStyle = '#9A9186';
   ctx.font = '400 22px "PingFang SC",sans-serif';
-  ctx.fillText('罗峪村村民积分系统', 240, 812);
-  ctx.fillText('积分共建 · 美丽乡村', 240, 848);
+  ctx.fillText('罗峪村村民积分系统', 240, qrTop + 112);
+  ctx.fillText('积分共建 · 美丽乡村', 240, qrTop + 148);
   if (qrCanvas) {
-    try { ctx.drawImage(qrCanvas, 80, 725, 130, 130); } catch (e) {}
+    try { ctx.drawImage(qrCanvas, 80, qrTop + 25, 130, 130); } catch (e) {}
   }
 
   // 底部
   ctx.fillStyle = '#9A9186';
   ctx.font = '400 22px "PingFang SC",sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('数据来自罗峪村积分系统 ｜ ' + DATA.date, W / 2, 950);
+  ctx.fillText('数据来自罗峪村积分系统 ｜ ' + DATA.date, W / 2, qrTop + 250);
   ctx.textAlign = 'left';
 
   var img = document.getElementById('posterImg');
   img.src = cv.toDataURL('image/png');
   document.getElementById('posterBox').style.display = 'block';
   img.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  if (btn) { btn.disabled = false; btn.textContent = '🖼 生成分享海报'; }
 }
 </script>
 </body>
