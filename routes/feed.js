@@ -125,6 +125,9 @@ ${img ? '<meta property="og:image" content="' + esc(img) + '">' : ''}
 <div class="ops">
   <button class="btn primary" onclick="makePoster()">🖼 生成分享海报</button>
   <button class="btn plain" onclick="copyLink()">🔗 复制本页链接</button>
+  <!-- 2026-11-23 补：分享页可回首页/门户（此前从分享页只能复制链接，无路可走） -->
+  <button class="btn plain" onclick="location.href='https://luoyu.goodsport.fun/#feed'">‹ 返回积分动态</button>
+  <button class="btn plain" onclick="location.href='/portal/'">🏡 数字家园</button>
 </div>
 <div id="posterBox"><img id="posterImg" alt="分享海报"><div class="tip">长按图片可保存到相册，再发微信群或朋友圈</div></div>
 
