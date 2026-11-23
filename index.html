@@ -260,7 +260,7 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 
 /* ── 公开浏览 ── */
 /* 登录屏：返回门户（v1.3.2，此前登录页无任何返回路径） */
-.login-home-link{position:fixed;top:12px;right:12px;z-index:60;display:inline-flex;align-items:center;gap:4px;padding:7px 13px;border:1px solid rgba(255,255,255,.55);border-radius:16px;color:#fff;font-size:13px;text-decoration:none;background:rgba(255,255,255,.14);}
+.login-home-link{display:inline-flex;align-items:center;gap:5px;margin-top:12px;padding:8px 16px;border:1px solid rgba(255,255,255,.6);border-radius:18px;color:#fff;font-size:14px;text-decoration:none;background:rgba(255,255,255,.14);}
 .login-home-link:active{background:rgba(255,255,255,.3);}
 #pubBanner{display:flex;align-items:center;justify-content:space-between;padding:6px 16px;background:var(--green-bg);font-size:12px;color:var(--green-dark);}
 #pubBanner .pub-login-btn{background:var(--green);color:white;border:none;border-radius:14px;padding:3px 12px;font-size:12px;cursor:pointer;}
@@ -397,7 +397,6 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 
 <!-- ============ LOGIN ============ -->
 <div id="loginScreen" class="login-screen" style="display:none;">
-  <a href="/portal/" class="login-home-link">🏡 返回罗峪家园</a>
   <div class="login-bg-deco">
     <!-- 山林稻田背景SVG -->
     <svg class="login-bg-landscape" viewBox="0 0 400 220" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
@@ -501,6 +500,7 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
     <div class="login-place">桑植县凉水口镇罗峪村</div>
     <div class="login-sysname">村民积分系统</div>
     <div class="login-motto">积分明德行，善治兴乡村</div>
+    <a href="/portal/" class="login-home-link">🏡 返回罗峪家园</a>
   </div>
 
   <!-- 村民登录（主入口） -->
